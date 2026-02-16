@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { wcApi } from "../../api/woocommerce";
 import { useCart } from "../../context/CartContext";
@@ -25,17 +25,49 @@ const ProductDetailsPage = () => {
         });
     }, [slug,]);
 
-    const handleAddToCart = async (product) => {
-    if (!isInCart(product.id)) {
-        setLoadingId(product.id);
-        try {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            addToCart(product, quantity); 
-        } finally {
-            setLoadingId(null);
+    const viewContentFired = useRef(false);
+
+    useEffect(() => {
+        if (product && window.fbq && !viewContentFired.current) {
+
+            viewContentFired.current = true;
+
+            window.fbq("track", "ViewContent", {
+                content_ids: [product.id],
+                content_name: product.name,
+                content_type: "product",
+                value: parseFloat(product.price),
+                currency: product.currency || "USD"
+            });
         }
-    }
+    }, [product]);
+
+
+    const handleAddToCart = async (product) => {
+        if (!isInCart(product.id)) {
+            setLoadingId(product.id);
+            try {
+                await new Promise((resolve) => setTimeout(resolve, 500));
+
+                // 🛒 Your existing cart logic
+                addToCart(product, quantity);
+
+                // 🔥 META PIXEL - ADD TO CART EVENT
+                if (window.fbq && product) {
+                    window.fbq("track", "AddToCart", {
+                        content_ids: [product.id],
+                        content_name: product.name,
+                        content_type: "product",
+                        value: parseFloat(product.price) * quantity,
+                        currency: product.currency || "USD"
+                    });
+                }
+            } finally {
+                setLoadingId(null);
+            }
+        }
     };
+
 
     return (
     <>

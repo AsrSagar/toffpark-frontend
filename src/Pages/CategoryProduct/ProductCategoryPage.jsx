@@ -12,11 +12,12 @@ const CategoryProducts = () => {
 
   // Extract full category path
   const categoryPath = location.pathname
-    .replace("/wp-react-theme/product-category/", "")
+    .replace("/product-category/", "")
     .replace(/\/$/, "");
 
-  // WooCommerce uses the LAST slug
+  // WooCommerce uses LAST slug
   const slug = categoryPath.split("/").pop();
+  const categoryName = slug.replace(/-/g, " ");
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +26,7 @@ const CategoryProducts = () => {
     if (!permalink) return "";
     const parts = permalink.split("/").filter(Boolean);
     return parts[parts.length - 1];
-  }
+  };
 
   const goToProduct = (productLink) => {
     const slug = getSlugFromPermalink(productLink);
@@ -33,23 +34,43 @@ const CategoryProducts = () => {
   };
 
   const handleAddToCart = (product) => {
-    if (!isInCart(product.id)) {
-      setLoadingId(product.id);
-      setTimeout(() => {
+    if (isInCart(product.id)) return;
+
+    setLoadingId(product.id);
+
+    const addProduct = async () => {
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 600));
         addToCart(product);
+
+        // ✅ AddToCart Event
+        if (window.fbq) {
+          window.fbq("track", "AddToCart", {
+            content_ids: [product.id],
+            content_name: product.name,
+            value: product.prices?.price
+              ? parseFloat(product.prices.price) / 100
+              : 0,
+            currency: "BDT",
+          });
+        }
+      } catch (error) {
+        console.error("Add to cart failed:", error);
+      } finally {
         setLoadingId(null);
-      }, 600);
-    }
+      }
+    };
+
+    addProduct();
   };
 
+  // Fetch category products
   useEffect(() => {
     if (!slug) return;
 
     setLoading(true);
 
-    fetch(
-      `${API_URL}/wc/store/v1/products?category=${slug}`
-    )
+    fetch(`${API_URL}/wc/store/v1/products?category=${slug}`)
       .then((res) => res.json())
       .then((data) => {
         setProducts(Array.isArray(data) ? data : []);
@@ -60,6 +81,44 @@ const CategoryProducts = () => {
         setLoading(false);
       });
   }, [slug, API_URL]);
+
+  // ✅ ViewCategory + ViewContent (StrictMode Safe)
+  useEffect(() => {
+    if (!slug) return;
+
+    const eventKey = `view_category_${slug}`;
+    if (sessionStorage.getItem(eventKey)) return;
+
+    const fireEvents = () => {
+      if (!window.fbq) return;
+
+      // Standard Meta Event
+      window.fbq("track", "ViewContent", {
+        content_type: "product_group",
+        content_category: categoryName,
+      });
+
+      // Custom Event
+      window.fbq("trackCustom", "ViewCategory", {
+        category_name: categoryName,
+      });
+
+      sessionStorage.setItem(eventKey, "true");
+    };
+
+    if (window.fbq) {
+      fireEvents();
+    } else {
+      const interval = setInterval(() => {
+        if (window.fbq) {
+          fireEvents();
+          clearInterval(interval);
+        }
+      }, 300);
+
+      return () => clearInterval(interval);
+    }
+  }, [slug, categoryName]);
 
   return (
     <>
@@ -89,6 +148,7 @@ const CategoryProducts = () => {
           </div>
         </div>
       </div>
+
       <div id="content" className="site-content global-layout-right-sidebar">
         <div className="container">
           <div className="inner-wrapper">
@@ -97,16 +157,19 @@ const CategoryProducts = () => {
                 <div className="section-products">
                   <div className="inner-wrapper">
                     <div className="products-inner-wrapper clear-fix">
+
                       {loading && (
                         <div className="grid-message">
                           <p>Loading products...</p>
                         </div>
                       )}
+
                       {!loading && products.length === 0 && (
                         <div className="grid-message">
                           <p>No products found.</p>
                         </div>
                       )}
+
                       {!loading && products.length > 0 && (
                         <div className="products-grid-row clear-fix">
                           {products.map((product) => (
@@ -116,74 +179,96 @@ const CategoryProducts = () => {
                             >
                               <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
                                 <div className="product-thumb zoom-effect">
-                                    <a
-                                      href="/"
-                                      className="thumbnail"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        goToProduct(product.link);
-                                      }}
-                                    >
-                                      <img alt={product.name} src={product.images[0]?.src} />
-                                    </a>
 
-                                    <div className="pruduct-buttons">
-                                        <button
-                                          className="product-button tooltip"
-                                          onClick={() => handleAddToCart(product)}
-                                          disabled={loadingId === product.id || isInCart(product.id)}
-                                        >
-                                          <i
-                                            className={
-                                              loadingId === product.id
-                                                ? "fas fa-spinner fa-spin"
-                                                : isInCart(product.id)
-                                                ? "fas fa-check"
-                                                : "fas fa-cart-plus"
-                                            }
-                                          ></i>
-                                          <span className="tooltiptext tooltip-right">
-                                            {loadingId === product.id
-                                              ? "Adding..."
-                                              : isInCart(product.id)
-                                              ? "Added"
-                                              : "Add To Cart"}
-                                          </span>
-                                        </button>
-                                        <button href="#" className="product-button tooltip">
-                                            <i className="far fa-heart"></i>
-                                            <span className="tooltiptext tooltip-right">Wishlist</span>
-                                        </button>
-                                        <button href="#" className="product-button tooltip">
-                                            <i className="fa fa-retweet"></i>
-                                            <span className="tooltiptext tooltip-right">Compair</span>
-                                        </button>
-                                    </div>
-                                    <div className="quick-view">
-                                        <a href="#quick-view-content-wrappr" className="custom-button button-small quick-view-link">
-                                            <i className="far fa-eye"></i>Quick View
-                                        </a>
-                                    </div>
-                                    <span className="ribbon-rotated onsale">-16%</span>
+                                  <a
+                                    href="/"
+                                    className="thumbnail"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      goToProduct(product.link);
+                                    }}
+                                  >
+                                    <img
+                                      alt={product.name}
+                                      src={product.images[0]?.src}
+                                    />
+                                  </a>
+
+                                  <div className="pruduct-buttons">
+                                    <button
+                                      className="product-button tooltip"
+                                      onClick={() => handleAddToCart(product)}
+                                      disabled={
+                                        loadingId === product.id ||
+                                        isInCart(product.id)
+                                      }
+                                    >
+                                      <i
+                                        className={
+                                          loadingId === product.id
+                                            ? "fas fa-spinner fa-spin"
+                                            : isInCart(product.id)
+                                            ? "fas fa-check"
+                                            : "fas fa-cart-plus"
+                                        }
+                                      ></i>
+                                      <span className="tooltiptext tooltip-right">
+                                        {loadingId === product.id
+                                          ? "Adding..."
+                                          : isInCart(product.id)
+                                          ? "Added"
+                                          : "Add To Cart"}
+                                      </span>
+                                    </button>
+
+                                    <button className="product-button tooltip">
+                                      <i className="far fa-heart"></i>
+                                      <span className="tooltiptext tooltip-right">Wishlist</span>
+                                    </button>
+
+                                    <button className="product-button tooltip">
+                                      <i className="fa fa-retweet"></i>
+                                      <span className="tooltiptext tooltip-right">Compare</span>
+                                    </button>
+                                  </div>
+
+                                  <div className="quick-view">
+                                    <a
+                                      href="#quick-view-content-wrappr"
+                                      className="custom-button button-small quick-view-link"
+                                    >
+                                      <i className="far fa-eye"></i>Quick View
+                                    </a>
+                                  </div>
+
+                                  <span className="ribbon-rotated onsale">
+                                    -16%
+                                  </span>
                                 </div>
 
                                 <div className="product-item-details">
                                   <h3 className="product-title">
-                                    <Link to={`/product/${getSlugFromPermalink(product.permalink)}`}>
+                                    <Link
+                                      to={`/product/${getSlugFromPermalink(product.permalink)}`}
+                                    >
                                       {product.name}
                                     </Link>
                                   </h3>
 
                                   <div
                                     className="product-price-container"
-                                    dangerouslySetInnerHTML={{ __html: product.price_html }}
+                                    dangerouslySetInnerHTML={{
+                                      __html: product.price_html,
+                                    }}
                                   />
                                 </div>
+
                               </div>
                             </div>
                           ))}
                         </div>
                       )}
+
                     </div>
                   </div>
                 </div>
@@ -197,24 +282,19 @@ const CategoryProducts = () => {
                   <h3 className="widget-title">Categories</h3>
                   <ul>
                     <li>
-                      <a href="/wp-react-theme/product-category/winter">
-                        Winter
-                      </a>
+                      <a href="/wp-react-theme/product-category/winter">Winter</a>
                     </li>
                     <li>
-                      <a href="/wp-react-theme/product-category/winter/jackets">
-                        Jackets
-                      </a>
+                      <a href="/wp-react-theme/product-category/winter/jackets">Jackets</a>
                     </li>
                     <li>
-                      <a href="/wp-react-theme/product-category/winter/jackets/leather">
-                        Leather Jackets
-                      </a>
+                      <a href="/wp-react-theme/product-category/winter/jackets/leather">Leather Jackets</a>
                     </li>
                   </ul>
                 </aside>
               </div>
             </div>
+
           </div>
         </div>
       </div>

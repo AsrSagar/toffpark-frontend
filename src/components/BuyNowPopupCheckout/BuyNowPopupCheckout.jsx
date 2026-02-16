@@ -22,6 +22,11 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
     cost: 70,
   });
 
+  const [promoCode, setPromoCode] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [promoMessage, setPromoMessage] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+
   const shippingRates = {
     inside_dhaka: 70,
     outside_dhaka: 120,
@@ -40,7 +45,50 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
   };
 
   const subtotal = product.price * qty;
-  const total = subtotal + shipping.cost;
+  const total = subtotal - discountAmount + shipping.cost;
+
+  // Apply Promo Code
+  const applyPromoCode = async () => {
+    if (!promoCode) return;
+
+    setPromoLoading(true);
+    setPromoMessage("");
+
+    try {
+      const res = await axios.get(`${API_URL}/wc/v3/coupons?code=${promoCode}`, {
+        auth: {
+          username: "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
+          password: "cs_2029a263378e25918c8886931b530f0ab82ff9e1",
+        },
+      });
+
+      if (res.data.length > 0) {
+        const coupon = res.data[0];
+
+        if (coupon.discount_type === "percent") {
+          const discount = (subtotal * parseFloat(coupon.amount)) / 100; // only product total
+          setDiscountAmount(discount);
+          setPromoMessage(`Promo code applied! ${coupon.amount}% discount: ৳${discount.toFixed(2)}`);
+        } else if (coupon.discount_type === "fixed_cart") {
+          const discount = parseFloat(coupon.amount);
+          setDiscountAmount(discount);
+          setPromoMessage(`Promo code applied! Fixed discount: ৳${discount.toFixed(2)}`);
+        } else {
+          setDiscountAmount(0);
+          setPromoMessage("This promo code cannot be applied.");
+        }
+      } else {
+        setDiscountAmount(0);
+        setPromoMessage("Invalid promo code");
+      }
+    } catch (error) {
+      console.error(error.response?.data || error.message);
+      setDiscountAmount(0);
+      setPromoMessage("Error validating promo code");
+    }
+
+    setPromoLoading(false);
+  };
 
   const placeOrder = async () => {
     if (!billing.name || !billing.phone || !billing.address) {
@@ -77,22 +125,41 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
           total: shipping.cost.toString(),
         },
       ],
+      coupon_lines:
+        discountAmount > 0
+          ? [
+              {
+                code: promoCode,
+              },
+            ]
+          : [],
       customer_note: billing.note,
     };
 
     try {
       const response = await axios.post(`${API_URL}/wc/v3/orders`, orderData, {
         auth: {
-          username: consumerKey,
-          password: consumerSecret,
+          username: "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
+          password: "cs_2029a263378e25918c8886931b530f0ab82ff9e1",
         },
       });
 
-      // Success: show Thank You popup
-      setOrderId(response.data.id);
+      const orderId = response.data.id;
+      setOrderId(orderId);
       setShowThankYou(true);
       setShowModal(false);
       setOrderStatus(`Order placed successfully! Order ID: ${response.data.id}`);
+      // ===== Facebook Pixel Purchase Tracking =====
+      if (window.fbq) {
+        window.fbq("track", "Purchase", {
+          value: total.toFixed(2),      // total amount
+          currency: "BDT",              // currency
+          content_ids: [product.id],    // array of product ids
+          content_name: product.name,   // product name
+          content_type: "product",
+        });
+        console.log("FB Pixel Purchase event sent:", product.name, total.toFixed(2));
+      }
     } catch (error) {
       console.error(error.response?.data || error.message);
       setOrderStatus("Failed to place order. Check console.");
@@ -155,6 +222,20 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
               <textarea name="note" placeholder="Order Note" rows={2} value={billing.note} onChange={handleBillingChange}></textarea>
             </div>
 
+            {/* Promo Code */}
+            <div className="promo-code">
+              <input
+                type="text"
+                placeholder="Promo Code"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
+              />
+              <button type="button" onClick={applyPromoCode} disabled={promoLoading}>
+                {promoLoading ? "Applying..." : "Apply"}
+              </button>
+              {promoMessage && <p>{promoMessage}</p>}
+            </div>
+
             {/* Shipping */}
             <div className="shipping-methods">
               <h3>Shipping Method</h3>
@@ -177,6 +258,12 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
                     <td>{product.name} × {qty}</td>
                     <td>৳ {subtotal}</td>
                   </tr>
+                  {discountAmount > 0 && (
+                    <tr>
+                      <td>Discount</td>
+                      <td>-৳ {discountAmount.toFixed(2)}</td>
+                    </tr>
+                  )}
                 </tbody>
                 <tfoot>
                   <tr>
@@ -189,7 +276,7 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
                   </tr>
                   <tr className="order-total">
                     <th>Total</th>
-                    <td><strong>৳ {total}</strong></td>
+                    <td><strong>৳ {total.toFixed(2)}</strong></td>
                   </tr>
                 </tfoot>
               </table>
@@ -212,6 +299,7 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
           </div>
         </div>
       )}
+
       <ThankYouPopup
         show={showThankYou}
         orderId={orderId}
