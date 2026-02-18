@@ -65,6 +65,8 @@ export const CartProvider = ({ children }) => {
     [cartItems]
   );
 
+  const [cartOpen, setCartOpen] = useState(false);
+
   return (
     <CartContext.Provider
       value={{
@@ -76,6 +78,8 @@ export const CartProvider = ({ children }) => {
         cartCount,
         cartTotal,
         isInCart,
+        cartOpen,
+        setCartOpen
       }}
     >
       {children}

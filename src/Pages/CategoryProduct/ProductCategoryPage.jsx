@@ -7,7 +7,7 @@ const CategoryProducts = () => {
   const API_URL = config.API_URL;
   const location = useLocation();
   const navigate = useNavigate();
-  const { addToCart, isInCart } = useCart();
+  const { addToCart, setCartOpen, isInCart } = useCart();
   const [loadingId, setLoadingId] = useState(null);
 
   // Extract full category path
@@ -41,7 +41,9 @@ const CategoryProducts = () => {
     const addProduct = async () => {
       try {
         await new Promise((resolve) => setTimeout(resolve, 600));
+
         addToCart(product);
+        setCartOpen(true);
 
         // ✅ AddToCart Event
         if (window.fbq) {
@@ -91,13 +93,6 @@ const CategoryProducts = () => {
 
     const fireEvents = () => {
       if (!window.fbq) return;
-
-      // Standard Meta Event
-      window.fbq("track", "ViewContent", {
-        content_type: "product_group",
-        content_category: categoryName,
-      });
-
       // Custom Event
       window.fbq("trackCustom", "ViewCategory", {
         category_name: categoryName,
