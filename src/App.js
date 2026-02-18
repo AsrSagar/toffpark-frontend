@@ -11,6 +11,7 @@ import CategoryProducts from "./Pages/CategoryProduct/ProductCategoryPage";
 import BlogGridPage from "./Pages/Blog/BlogPageContent";
 import ContactPageContent from "./Pages/ContactPage/ContactPageConent";
 import BlogSinglePage from "./Pages/Blog/BlogSinglePage";
+import MiniCart from "./components/SideBar/MiniCart";
 
 // 🔥 THIS COMPONENT TRACKS PAGE VIEW ON EVERY ROUTE CHANGE
 function PixelTracker() {
@@ -29,7 +30,8 @@ function App() {
   return (
     <>
       <PixelTracker />
-      <Header />
+      <Header/>
+      <MiniCart/>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/shop" element={<ShopPage />} />

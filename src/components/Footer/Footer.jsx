@@ -7,11 +7,12 @@ const Footer = () => {
                 <div className="container">
                     <div className="inner-wrapper">
                         <aside className="col-grid-3 footer-widget-area">
-                            <h3 className="widget-title">ABOUT US</h3>
+                            <h3 className="widget-title">CONTACT</h3>
                             <div className="widget-quick-contact">
-                                <p><i className="fas fa-phone" aria-hidden="true"></i> (800) 123 45 67</p>
-                                <p><i className="fas fa-envelope" aria-hidden="true"></i> info@anilbasnet.net</p>
-                                <p><i className="far fa-map"></i> 121 King Street, Australia</p>
+                                <p><i className="far fa-map" aria-hidden="true"></i> Level 2, Rupayan Latifa Shamsuddin Square, Mirpur 1, Dhaka-1216</p>
+                                <p><i className="fas fa-phone" aria-hidden="true"></i> +8801811877477</p>
+                                <p><i className="fas fa-envelope" aria-hidden="true"></i> support@toffpark.com</p>
+                                <p><i className="far fa-clock" aria-hidden="true"></i> 7 Days / 10:00 AM - 10:00 PM</p>
                             </div>
                         </aside>
                         <aside className="col-grid-3 footer-widget-area">
@@ -51,14 +52,11 @@ const Footer = () => {
                 <div className="colophon-bottom">
                     <div className="container">
                         <div className="inner-wrapper">
-                            <div className="col-grid-4 copyright text-alignleft">
-                                <p>Copyright © 2018 <a href="/">Byapar</a>. All rights reserved.</p>
+                            <div className="col-grid-6 copyright text-alignleft">
+                                <p>Copyright © 2025 Toffpark. All rights reserved.</p>
                             </div>
-                            <div className="col-grid-4 copyright">
+                            <div className="col-grid-6 copyright text-alignright">
                                 <p><span>We Accept: </span> <img src="/images/payment-getway.png" alt="payment" /></p>
-                            </div>
-                            <div className="col-grid-4 site-info text-alignright">
-                                <p>Byapar by <a href="/anilbasnet.html" target="_blank" rel="noopener noreferrer">Anil Basnet</a></p>
                             </div>
                         </div>
                     </div>

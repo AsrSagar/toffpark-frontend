@@ -9,6 +9,28 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
   const [orderStatus, setOrderStatus] = useState("");
   const [showThankYou, setShowThankYou] = useState(false);
   const [orderId, setOrderId] = useState(null);
+  const [promoCode, setPromoCode] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [promoMessage, setPromoMessage] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [checkoutInitiated, setCheckoutInitiated] = useState(false);
+
+  const handleBuyNowClick = () => {
+    // ===== Facebook Pixel AddToCart Tracking =====
+    if (window.fbq) {
+      window.fbq("track", "AddToCart", {
+        value: product.price,
+        currency: "BDT",
+        content_ids: [product.id],
+        content_name: product.name,
+        content_type: "product",
+      });
+
+      console.log("FB Pixel AddToCart event sent:", product.name);
+    }
+
+    setShowModal(true);
+  };
 
   const [billing, setBilling] = useState({
     name: "",
@@ -22,10 +44,7 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
     cost: 70,
   });
 
-  const [promoCode, setPromoCode] = useState("");
-  const [discountAmount, setDiscountAmount] = useState(0);
-  const [promoMessage, setPromoMessage] = useState("");
-  const [promoLoading, setPromoLoading] = useState(false);
+
 
   const shippingRates = {
     inside_dhaka: 70,
@@ -37,6 +56,20 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
 
   const handleBillingChange = (e) => {
     setBilling({ ...billing, [e.target.name]: e.target.value });
+
+    // ===== Facebook Pixel InitiateCheckout Tracking =====
+    if (!checkoutInitiated && window.fbq) {
+      window.fbq("track", "InitiateCheckout", {
+        value: subtotal,
+        currency: "BDT",
+        content_ids: [product.id],
+        content_name: product.name,
+        content_type: "product",
+      });
+
+      console.log("FB Pixel InitiateCheckout event sent:", product.name);
+      setCheckoutInitiated(true); // so it fires only once
+    }
   };
 
   const handleShippingChange = (e) => {
@@ -174,7 +207,7 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
       <button
         type="button"
         className="custom-button button-small"
-        onClick={() => setShowModal(true)}
+        onClick={handleBuyNowClick}
       >
         Buy Now
       </button>

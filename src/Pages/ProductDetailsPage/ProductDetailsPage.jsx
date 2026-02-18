@@ -13,7 +13,7 @@ const ProductDetailsPage = () => {
     const [loading, setLoading] = useState(true);
     const [loadingId, setLoadingId] = useState(null); 
     const [quantity, setQuantity] = useState(1); 
-    const { addToCart, isInCart } = useCart();
+    const { addToCart, setCartOpen, isInCart } = useCart();
     const API_URL = config.API_URL;
 
     useEffect(() => {
@@ -51,7 +51,8 @@ const ProductDetailsPage = () => {
 
                 // 🛒 Your existing cart logic
                 addToCart(product, quantity);
-
+                
+                setCartOpen(true);
                 // 🔥 META PIXEL - ADD TO CART EVENT
                 if (window.fbq && product) {
                     window.fbq("track", "AddToCart", {
