@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { wcApi } from "../../api/woocommerce";
 import { useCart } from "../../context/CartContext";
@@ -8,67 +8,124 @@ import config from "../../config";
 
 const ProductDetailsPage = () => {
     const { slug } = useParams();
+    const { addToCart, setCartOpen, isInCart } = useCart();
+
     const [product, setProduct] = useState(null);
     const [activeImage, setActiveImage] = useState("");
     const [loading, setLoading] = useState(true);
     const [loadingId, setLoadingId] = useState(null); 
     const [quantity, setQuantity] = useState(1); 
-    const { addToCart, setCartOpen, isInCart } = useCart();
+    const [variations, setVariations] = useState([]);
+    const [selectedVariation, setSelectedVariation] = useState(null);
+    const [selectedSize, setSelectedSize] = useState(null);
+
     const API_URL = config.API_URL;
 
     useEffect(() => {
-        wcApi.get("/products", { params: { slug } }).then((res) => {
-        const p = res.data[0];
-        setProduct(p);
-        setActiveImage(p.images[0]?.src);
-        setLoading(false);
-        });
-    }, [slug,]);
-
-    const viewContentFired = useRef(false);
-
-    useEffect(() => {
-        if (product && window.fbq && !viewContentFired.current) {
-
-            viewContentFired.current = true;
-
-            window.fbq("track", "ViewContent", {
-                content_ids: [product.id],
-                content_name: product.name,
-                content_type: "product",
-                value: parseFloat(product.price),
-                currency: product.currency || "USD"
-            });
+    let isMounted = true; // prevent setting state on unmounted component
+    const fetchProduct = async () => {
+        try {
+            const res = await wcApi.get("/products", { params: { slug } });
+            if (!isMounted) return;
+            const p = res.data[0];
+            setProduct(p);
+            setActiveImage(p.images[0]?.src);
+            if (p.type === "variable") {
+            const variationRes = await wcApi.get(
+                `/products/${p.id}/variations`
+            );
+            setVariations(variationRes.data);
+            }
+            setLoading(false);
+        } catch (err) {
+            if (!isMounted) return;
+            console.error("Product fetch error:", err);
+            setLoading(false);
         }
-    }, [product]);
+    };
 
+    fetchProduct();
+        return () => {
+            isMounted = false;
+        };
+    }, [slug]);
 
+    // const viewContentFired = useRef(false);
+    // useEffect(() => {
+    //     if (product && window.fbq && !viewContentFired.current) {
+    //             viewContentFired.current = true;
+    //             window.fbq("track", "ViewContent", {
+    //             content_ids: [product.id],
+    //             content_name: product.name,
+    //             content_type: "product",
+    //             value: parseFloat(product.price),
+    //             currency: product.currency || "USD"
+    //         });
+    //     }
+    // }, [product]);
+
+    // Handle Variation Select
+    const handleSizeSelect = (size) => {
+        setSelectedSize(size);
+
+        const matchedVariation = variations.find((v) =>
+            v.attributes.some(
+                (attr) => attr.option.toLowerCase() === size.toLowerCase()
+            )
+        );
+
+        if( matchedVariation === undefined) {
+            alert("Selected size is not available. Please choose another size.");
+            return;
+        }
+ 
+        
+        setSelectedVariation(matchedVariation || null);
+    };
+
+    // Add to Cart with Out of Stock / Not Purchasable check
     const handleAddToCart = async (product) => {
-        if (!isInCart(product.id)) {
-            setLoadingId(product.id);
+        const isOutOfStock = product?.stock_status !== "instock";
+
+        if (isOutOfStock) return; // block adding
+
+        if (product.type === "variable" && !selectedVariation) {
+            alert("Please select a size");
+            return;
+        }
+
+        const checkId = product.type === "variable" ? selectedVariation?.id : product.id;
+
+        if (!isInCart(checkId)) {
+            setLoadingId(checkId);
             try {
                 await new Promise((resolve) => setTimeout(resolve, 500));
 
-                // 🛒 Your existing cart logic
-                addToCart(product, quantity);
-                
+                const itemToAdd = product.type === "variable" ? selectedVariation : product;
+
+                addToCart(product, quantity, itemToAdd);
                 setCartOpen(true);
-                // 🔥 META PIXEL - ADD TO CART EVENT
-                if (window.fbq && product) {
-                    window.fbq("track", "AddToCart", {
-                        content_ids: [product.id],
-                        content_name: product.name,
-                        content_type: "product",
-                        value: parseFloat(product.price) * quantity,
-                        currency: product.currency || "USD"
-                    });
-                }
+
+                // if (window.fbq && product) {
+                //     window.fbq("track", "AddToCart", {
+                //         content_ids: [product.id],
+                //         content_name: product.name,
+                //         content_type: "product",
+                //         value: parseFloat(product.price) * quantity,
+                //         currency: product.currency || "USD"
+                //     });
+                // }
             } finally {
                 setLoadingId(null);
             }
         }
     };
 
+    const isOutOfStock = product?.stock_status !== "instock";
+
+    const sizeAttribute = product?.attributes?.find(
+        (attr) => attr.slug === "pa_size"
+    );
 
     return (
     <>
@@ -79,7 +136,6 @@ const ProductDetailsPage = () => {
             <div id="custom-header">
                 <div className="custom-header-content">
                     <div className="container">
-                        <h1 className="page-title">{product.name}</h1>
                         <div id="breadcrumb">
                             <div  aria-label="Breadcrumbs" className="breadcrumbs breadcrumb-trail">
                                 <ul className="trail-items">
@@ -103,7 +159,9 @@ const ProductDetailsPage = () => {
                                             <div className="single-thumb-detail">
                                                 <div className="single-main-thumb">
                                                     <div className="single-thumb">
-                                                        <span className="ribbon-rotated onsale">-16%</span>
+                                                        {isOutOfStock && (
+                                                        <span className="ribbon-rotated onsale">Out of Stock</span>
+                                                        )}
                                                         <img src={activeImage} alt="product" />
                                                     </div>
                                                 </div>
@@ -163,6 +221,30 @@ const ProductDetailsPage = () => {
                                                     <i className="fas fa-check-circle" />
                                                     <span>200 in stock</span>
                                                 </div>
+                                                {/* SIZE LABEL */}
+                                                {selectedSize && (
+                                                <div style={{ marginBottom: "10px", fontWeight: "500" }}>
+                                                    SIZE: {selectedSize}
+                                                </div>
+                                                )}
+                                                {sizeAttribute && (
+                                                <div className="quick-filter filter-by-size">
+                                                    <div className="filter-size-container">
+                                                        {sizeAttribute.options.map((size) => (
+                                                            <button
+                                                                type="button"
+                                                                key={size}
+                                                                className={`filter-size-box ${
+                                                                    selectedSize === size ? "active" : ""
+                                                                }`}
+                                                                onClick={() => handleSizeSelect(size)}
+                                                                >
+                                                                {size}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                )}
                                                 <form className="single-cart">
                                                     <input
                                                         type="number"
@@ -174,27 +256,27 @@ const ProductDetailsPage = () => {
                                                     <button
                                                         className="custom-button button-small"
                                                         onClick={(e) => {
-                                                        e.preventDefault();
-                                                        handleAddToCart(product);
+                                                            e.preventDefault();
+                                                            handleAddToCart(product);
                                                         }}
-                                                        disabled={loadingId === product.id || isInCart(product.id)}
-                                                    >
-                                                        {loadingId === product.id ? (
-                                                        <>
-                                                            <i className="fas fa-spinner fa-spin"></i> Adding...
-                                                        </>
-                                                        ) : isInCart(product.id) ? (
-                                                        "Added"
-                                                        ) : (
-                                                        "Add To Cart"
-                                                        )}
+                                                        disabled={loadingId === product?.id || isInCart(product?.id) || isOutOfStock}
+                                                        >
+                                                        {isOutOfStock
+                                                            ? "Out of Stock"
+                                                            : loadingId === product?.id
+                                                            ? "Adding..."
+                                                            : isInCart(product?.id)
+                                                            ? "Added"
+                                                            : "Add To Cart"}
                                                     </button>
-                                                    <BuyNowPopupCheckout
-                                                        product={product}
-                                                        API_URL={API_URL}
-                                                        consumerKey="ck_f43a06935403d58d90635d22f1db7e10570e2b73"
-                                                        consumerSecret="cs_2029a263378e25918c8886931b530f0ab82ff9e1"
-                                                    />
+
+                                                    {product && !isOutOfStock && (
+                                                        <BuyNowPopupCheckout
+                                                            product={product}
+                                                            API_URL={API_URL}
+                                                            selectedVariation={selectedVariation}
+                                                        />
+                                                    )}
                                                 </form>
                                                 <div className="share-on">
                                                     <h4>SHARE PRODUCT:</h4>
@@ -256,22 +338,6 @@ const ProductDetailsPage = () => {
                                     </div>
                                 </div>
                             </main>
-                        </div>
-                        <div id="sidebar-primary" className="sidebar widget-area">
-                            <aside className="widget widget-category">
-                            <h3 className="widget-title">Categories</h3>
-                            <ul>
-                                <li className="active">
-                                <a href="/">Outerwear</a>
-                                </li>
-                                <li>
-                                <a href="/">Winter</a>
-                                </li>
-                                <li>
-                                <a href="/">Denim</a>
-                                </li>
-                            </ul>
-                            </aside>
                         </div>
                     </div>
                 </div>

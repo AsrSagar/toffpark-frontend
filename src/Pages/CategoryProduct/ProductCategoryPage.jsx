@@ -2,13 +2,25 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import config from "../../config";
+import './ProductCategoryPage.css';
 
 const CategoryProducts = () => {
   const API_URL = config.API_URL;
   const location = useLocation();
   const navigate = useNavigate();
   const { addToCart, setCartOpen, isInCart } = useCart();
+
   const [loadingId, setLoadingId] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // ✅ Pagination & Sorting States
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [sortBy, setSortBy] = useState("date");
+  const [sortOrder, setSortOrder] = useState("desc");
+
+  const PER_PAGE = 12;
 
   // Extract full category path
   const categoryPath = location.pathname
@@ -19,9 +31,6 @@ const CategoryProducts = () => {
   const slug = categoryPath.split("/").pop();
   const categoryName = slug.replace(/-/g, " ");
 
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-
   const getSlugFromPermalink = (permalink) => {
     if (!permalink) return "";
     const parts = permalink.split("/").filter(Boolean);
@@ -30,11 +39,12 @@ const CategoryProducts = () => {
 
   const goToProduct = (productLink) => {
     const slug = getSlugFromPermalink(productLink);
-    navigate(`/wp-react-theme/product/${slug}`);
+    navigate(`/product/${slug}`);
   };
 
   const handleAddToCart = (product) => {
     if (isInCart(product.id)) return;
+    if (!product.is_in_stock || !product.is_purchasable) return;
 
     setLoadingId(product.id);
 
@@ -46,16 +56,16 @@ const CategoryProducts = () => {
         setCartOpen(true);
 
         // ✅ AddToCart Event
-        if (window.fbq) {
-          window.fbq("track", "AddToCart", {
-            content_ids: [product.id],
-            content_name: product.name,
-            value: product.prices?.price
-              ? parseFloat(product.prices.price) / 100
-              : 0,
-            currency: "BDT",
-          });
-        }
+        // if (window.fbq) {
+        //   window.fbq("track", "AddToCart", {
+        //     content_ids: [product.id],
+        //     content_name: product.name,
+        //     value: product.prices?.price
+        //       ? parseFloat(product.prices.price) / 100
+        //       : 0,
+        //     currency: "BDT",
+        //   });
+        // }
       } catch (error) {
         console.error("Add to cart failed:", error);
       } finally {
@@ -66,14 +76,47 @@ const CategoryProducts = () => {
     addProduct();
   };
 
+  // ✅ Sorting Handler
+  const handleSort = (type) => {
+    setCurrentPage(1);
+
+    switch (type) {
+      case "popularity":
+        setSortBy("popularity");
+        setSortOrder("desc");
+        break;
+      case "rating":
+        setSortBy("rating");
+        setSortOrder("desc");
+        break;
+      case "price_low":
+        setSortBy("price");
+        setSortOrder("asc");
+        break;
+      case "price_high":
+        setSortBy("price");
+        setSortOrder("desc");
+        break;
+      default:
+        setSortBy("date");
+        setSortOrder("desc");
+    }
+  };
+
   // Fetch category products
   useEffect(() => {
     if (!slug) return;
 
     setLoading(true);
 
-    fetch(`${API_URL}/wc/store/v1/products?category=${slug}`)
-      .then((res) => res.json())
+    fetch(
+      `${API_URL}/wc/store/v1/products?category=${slug}&page=${currentPage}&per_page=${PER_PAGE}&orderby=${sortBy}&order=${sortOrder}`
+    )
+      .then((res) => {
+        const total = res.headers.get("X-WP-TotalPages");
+        setTotalPages(Number(total) || 1);
+        return res.json();
+      })
       .then((data) => {
         setProducts(Array.isArray(data) ? data : []);
         setLoading(false);
@@ -82,7 +125,7 @@ const CategoryProducts = () => {
         console.error("API Error:", err);
         setLoading(false);
       });
-  }, [slug, API_URL]);
+  }, [slug, currentPage, sortBy, sortOrder, API_URL]);
 
   // ✅ ViewCategory + ViewContent (StrictMode Safe)
   useEffect(() => {
@@ -120,7 +163,6 @@ const CategoryProducts = () => {
       <div id="custom-header">
         <div className="custom-header-content">
           <div className="container">
-            <h1 className="page-title">{slug.replace(/-/g, " ")}</h1>
             <div id="breadcrumb">
               <div
                 aria-label="Breadcrumbs"
@@ -150,6 +192,55 @@ const CategoryProducts = () => {
             <div id="primary" className="content-area">
               <main id="main" className="site-main">
                 <div className="section-products">
+                  <div className="pruduct-filter-row clear-fix">
+                    <div className="filter-row-box product-listing-filter">
+                      <div className="sort-by">
+                        <span className="sort-by-list">Sort by</span>
+                        <ul>
+                          <li><a href="/" onClick={(e)=>{e.preventDefault();handleSort("popularity")}}>Sort by popularity</a></li>
+                          <li><a href="/" onClick={(e)=>{e.preventDefault();handleSort("rating")}}>Sort by average rating</a></li>
+                          <li><a href="/" onClick={(e)=>{e.preventDefault();handleSort("newness")}}>Sort by newness</a></li>
+                          <li><a href="/" onClick={(e)=>{e.preventDefault();handleSort("price_low")}}>Sort by price: low to high</a></li>
+                          <li><a href="/" onClick={(e)=>{e.preventDefault();handleSort("price_high")}}>Sort by price: high to low</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                    <nav className="filter-row-box navigation pagination pull-right">
+                      <div className="nav-links">
+                        {currentPage > 1 && (
+                          <span
+                            className="page-numbers"
+                            onClick={() => setCurrentPage(currentPage - 1)}
+                          >
+                            « Prev
+                          </span>
+                        )}
+
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .slice(Math.max(currentPage - 2, 0), currentPage + 1)
+                          .map((page) => (
+                            <span
+                              key={page}
+                              className={`page-numbers ${
+                                currentPage === page ? "current" : ""
+                              }`}
+                              onClick={() => setCurrentPage(page)}
+                            >
+                              {page}
+                            </span>
+                          ))}
+
+                        {currentPage < totalPages && (
+                          <span
+                            className="page-numbers"
+                            onClick={() => setCurrentPage(currentPage + 1)}
+                          >
+                            Next »
+                          </span>
+                        )}
+                      </div>
+                    </nav>
+                  </div>
                   <div className="inner-wrapper">
                     <div className="products-inner-wrapper clear-fix">
 
@@ -167,10 +258,12 @@ const CategoryProducts = () => {
 
                       {!loading && products.length > 0 && (
                         <div className="products-grid-row clear-fix">
-                          {products.map((product) => (
-                            <div
+                          {products.map((product) => {
+                            const isOutOfStock = !product.is_in_stock || !product.is_purchasable;
+                            return(
+                              <div
                               key={product.id}
-                              className="product-item col-grid-4 top-space"
+                              className="product-item col-grid-3 top-space"
                             >
                               <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
                                 <div className="product-thumb zoom-effect">
@@ -195,12 +288,15 @@ const CategoryProducts = () => {
                                       onClick={() => handleAddToCart(product)}
                                       disabled={
                                         loadingId === product.id ||
-                                        isInCart(product.id)
+                                        isInCart(product.id) ||
+                                        isOutOfStock
                                       }
                                     >
                                       <i
                                         className={
-                                          loadingId === product.id
+                                          isOutOfStock
+                                            ? "fas fa-times"
+                                            : loadingId === product.id
                                             ? "fas fa-spinner fa-spin"
                                             : isInCart(product.id)
                                             ? "fas fa-check"
@@ -208,14 +304,15 @@ const CategoryProducts = () => {
                                         }
                                       ></i>
                                       <span className="tooltiptext tooltip-right">
-                                        {loadingId === product.id
+                                        {isOutOfStock
+                                          ? "Out of Stock"
+                                          : loadingId === product.id
                                           ? "Adding..."
                                           : isInCart(product.id)
                                           ? "Added"
                                           : "Add To Cart"}
                                       </span>
                                     </button>
-
                                     <button className="product-button tooltip">
                                       <i className="far fa-heart"></i>
                                       <span className="tooltiptext tooltip-right">Wishlist</span>
@@ -236,9 +333,11 @@ const CategoryProducts = () => {
                                     </a>
                                   </div>
 
-                                  <span className="ribbon-rotated onsale">
-                                    -16%
-                                  </span>
+                                  {isOutOfStock && (
+                                    <span className="ribbon-rotated onsale">
+                                      Out of Stock
+                                    </span>
+                                  )}
                                 </div>
 
                                 <div className="product-item-details">
@@ -260,7 +359,9 @@ const CategoryProducts = () => {
 
                               </div>
                             </div>
-                          ))}
+                            )
+                          }
+                          )}
                         </div>
                       )}
 
@@ -268,26 +369,6 @@ const CategoryProducts = () => {
                   </div>
                 </div>
               </main>
-            </div>
-
-            {/* SIDEBAR */}
-            <div id="sidebar-primary" className="sidebar widget-area">
-              <div className="sidebar-widget-wrapper">
-                <aside className="widget widget-category">
-                  <h3 className="widget-title">Categories</h3>
-                  <ul>
-                    <li>
-                      <a href="/wp-react-theme/product-category/winter">Winter</a>
-                    </li>
-                    <li>
-                      <a href="/wp-react-theme/product-category/winter/jackets">Jackets</a>
-                    </li>
-                    <li>
-                      <a href="/wp-react-theme/product-category/winter/jackets/leather">Leather Jackets</a>
-                    </li>
-                  </ul>
-                </aside>
-              </div>
             </div>
 
           </div>

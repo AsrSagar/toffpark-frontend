@@ -120,18 +120,17 @@ const CheckoutPage = () => {
 
   // 🔥 META PIXEL - INITIATE CHECKOUT
   const checkoutFired = useRef(false);
-
   useEffect(() => {
     if (window.fbq && cartItems.length > 0 && !checkoutFired.current) {
 
       checkoutFired.current = true;
 
-      window.fbq("track", "InitiateCheckout", {
-        value: Number(cartTotal),
-        currency: "BDT",
-        content_ids: cartItems.map(item => item.id),
-        content_type: "product"
-      });
+      // window.fbq("track", "InitiateCheckout", {
+      //   value: Number(cartTotal),
+      //   currency: "BDT",
+      //   content_ids: cartItems.map(item => item.id),
+      //   content_type: "product"
+      // });
     }
   }, [cartItems, cartTotal]);
 
@@ -146,10 +145,13 @@ const CheckoutPage = () => {
 
     setLoading(true);
 
-    const line_items = cartItems.map((item) => ({
-      product_id: item.id,
-      quantity: item.qty,
-    }));
+    const line_items = cartItems.map((item) => {
+      return {
+        product_id: item.parent_id ? item.parent_id : item.id,
+        variation_id: item.variation_id ? item.variation_id : 0,
+        quantity: item.qty,
+      };
+    });
 
     const orderData = {
       payment_method: paymentMethod,
@@ -231,7 +233,18 @@ const CheckoutPage = () => {
       <div id="custom-header">
         <div className="custom-header-content">
           <div className="container">
-            <h1 className="page-title">Checkout</h1>
+            <div id="breadcrumb">
+              <div aria-label="Breadcrumbs" className="breadcrumbs breadcrumb-trail">
+                <ul className="trail-items">
+                  <li className="trail-item trail-begin">
+                    <a href="/" rel="home"><span>Home</span></a>
+                  </li>
+                  <li className="trail-item trail-end">
+                    <span>Checkout</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>

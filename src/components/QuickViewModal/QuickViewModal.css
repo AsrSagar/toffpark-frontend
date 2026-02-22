@@ -1,0 +1,27 @@
+.quick-view-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quick-view-content {
+  background: #fff;
+  width: 90%;
+  max-width: 1000px;
+  padding: 30px;
+  position: relative;
+}
+
+.quick-close {
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  font-size: 22px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
