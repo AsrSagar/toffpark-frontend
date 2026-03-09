@@ -7,8 +7,6 @@ const ContactPageContent = () => {
       <div id="custom-header">
         <div className="custom-header-content">
           <div className="container">
-            <h1 className="page-title">Contact Us</h1>
-
             <div id="breadcrumb">
               <div
                 aria-label="Breadcrumbs"

@@ -41,7 +41,6 @@ const BlogGridPage = () => {
       <div id="custom-header">
         <div className="custom-header-content">
           <div className="container">
-            <h1 className="page-title">Blog</h1>
             <div id="breadcrumb">
               <div className="breadcrumbs breadcrumb-trail">
                 <ul className="trail-items">
@@ -50,13 +49,8 @@ const BlogGridPage = () => {
                       <span>Home</span>
                     </Link>
                   </li>
-                  <li className="trail-item">
-                    <span>
-                      <Link to="/blog">Blog</Link>
-                    </span>
-                  </li>
                   <li className="trail-item trail-end">
-                    <span>Blog Grid</span>
+                    <span>Blog</span>
                   </li>
                 </ul>
               </div>

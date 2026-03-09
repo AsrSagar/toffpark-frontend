@@ -65,21 +65,10 @@ const Header = () => {
       <div id="tophead">
         <div className="container">
           <div className="top-head-left">
-            <div className="top-head-col multi-language pull-left">
-                <a href="/" className="multi-language-current" type="button">
-                  <img src="/images/language/en.png" alt="language" /> English
-                </a>
-                <ul class="multi-language-sub">
-                  <li><a href="/"><img alt="language" src="/images/language/nl.png"/>Nederlands</a></li>
-                  <li><a href="/"><img alt="language" src="/images/language/la.png"/>Latin</a></li>
-                  <li><a href="/"><img alt="language" src="/images/language/nl.png"/>Nederlands</a></li>
-                </ul>
-            </div>
             <div className="top-head-col quick-contact pull-left">
               <ul>
                 <li className="quick-call">
-                  <i className="fas fa-phone-volume"></i>
-                  <a href="tel:+5417543010">+541-754-3010</a>
+                  <a href="tel:+8801811877477">Call Us +8801811877477</a>
                 </li>
               </ul>
             </div>
@@ -88,17 +77,12 @@ const Header = () => {
           <div className="top-head-right pull-right">
             <a href="/" className="header-link" type="button">
               <i className="fas fa-phone"></i>
-              <span className="header-text">Help</span>
             </a>
-
             <a href="/" className="header-link" type="button">
               <i className="fas fa-th-large"></i>
-              <span className="header-text">More</span>
             </a>
-
             <a href="/" className="header-link my-account" type="button">
               <i className="fa fa-user"></i>
-              <span className="header-text">Account</span>
             </a>
           </div>
         </div>

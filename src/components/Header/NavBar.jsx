@@ -3,11 +3,15 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import config from "../../config";
 import HeaderMiniCart from "./HeaderMiniCart";
+import './header.css';
 
 const NavBar = () => {
     const API_URL = config.API_URL; 
     const SITE_URL = config.SITE_URL;
     const [menuItems, setMenuItems] = useState([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [searchResults, setSearchResults] = useState([]);
+    const [searchLoading, setSearchLoading] = useState(false);
 
     useEffect(() => {
         axios
@@ -16,7 +20,36 @@ const NavBar = () => {
         .catch((err) => console.error(err));
     }, [API_URL]);
 
-      // Render normal submenu recursively
+    useEffect(() => {
+        if (!searchTerm) {
+            setSearchResults([]);
+            return;
+        }
+        const delayDebounce = setTimeout(() => {
+            setSearchLoading(true);
+
+            axios
+            .get(`${API_URL}/wc/store/v1/products`, {
+                params: {
+                    search: searchTerm,
+                    per_page: 5,
+                },
+                auth: {
+                    username: "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
+                    password: "cs_2029a263378e25918c8886931b530f0ab82ff9e1",
+                },
+            })
+            .then((res) => {
+                setSearchResults(res.data);
+            })
+            .catch((err) => console.error(err))
+            .finally(() => setSearchLoading(false));
+        }, 500); // debounce 500ms
+
+        return () => clearTimeout(delayDebounce);
+    }, [searchTerm, API_URL]);
+
+    // Render normal submenu recursively
     const renderSubMenu = (items) => {
         if (!items || items.length === 0) return null;
 
@@ -77,9 +110,9 @@ const NavBar = () => {
     return (
         <header id="masthead" className="site-header sticky-enabled">
             <div className="container">
-                <div class="site-branding pull-left">
+                <div className="site-branding pull-left">
                     <div id="site-identity">
-                        <h1 class="site-title">
+                        <h1 className="site-title">
                             <Link to="/"  rel="home">
                                 <img
                                     src="https://toffpark.com/wp-content/uploads/2021/08/Toffpark-Logo-Black-1.png"
@@ -90,14 +123,54 @@ const NavBar = () => {
                         </h1>
                     </div>
                 </div>
-                <Link
-                to="/contact"
-                className="custom-button custom-secondary-button pull-right quick-link-button button-small"
-                >
-                Quick Contact
-                </Link>
                 <HeaderMiniCart />
-                <nav className="main-navigation pull-right">
+                <div className="searchForm pull-right">
+                    <div className="product-search-wrapper">
+                        <input
+                        type="text"
+                        placeholder="Search Products"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <button>
+                        <i className="fas fa-search"></i>
+                        </button>
+
+                        {/* 🔥 Search Dropdown */}
+                        {searchTerm && (
+                        <div className="search-dropdown">
+                            {searchLoading && <p>Searching...</p>}
+
+                            {!searchLoading && searchResults.length === 0 && (
+                            <p>No products found</p>
+                            )}
+
+                            {searchResults.map((product) => (
+                            <Link
+                                key={product.id}
+                                to={`/product/${product.slug}`}
+                                className="search-item"
+                                onClick={() => {
+                                setSearchTerm("");
+                                setSearchResults([]);
+                                }}
+                            >
+                                <img
+                                    src={product.images[0]?.src}
+                                    alt={product.name}
+                                    width="40"
+                                />
+                                <div className="search-product-info">
+                                    <p>{product.name}</p>
+                                    <div dangerouslySetInnerHTML={{ __html: product.price_html }} />
+                                </div>
+                            </Link>
+                            ))}
+                        </div>
+                        )}
+                    </div>
+                </div>
+                <nav className="main-navigation text-center">
                     <ul>
                         {menuItems.map((item) => (
                         <li

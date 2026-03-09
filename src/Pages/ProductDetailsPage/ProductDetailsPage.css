@@ -1,0 +1,16 @@
+.filter-size-box.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.filter-size-box.crossed::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: red;
+  top: 50%;
+  left: 0;
+  transform: rotate(-45deg);
+}

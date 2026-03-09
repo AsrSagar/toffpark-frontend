@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import ThankYouPopup from "../../Pages/ThankYouPopup/ThankYouPopup";
 
-const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) => {
+const BuyNowPopupCheckout = ({ product,selectedVariation, API_URL}) => {
   const [showModal, setShowModal] = useState(false);
   const [qty, setQty] = useState(product.qty || 1);
   const [loading, setLoading] = useState(false);
@@ -13,21 +13,28 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
   const [discountAmount, setDiscountAmount] = useState(0);
   const [promoMessage, setPromoMessage] = useState("");
   const [promoLoading, setPromoLoading] = useState(false);
-  const [checkoutInitiated, setCheckoutInitiated] = useState(false);
+  // const [checkoutInitiated, setCheckoutInitiated] = useState(false);
 
   const handleBuyNowClick = () => {
-    // ===== Facebook Pixel AddToCart Tracking =====
-    if (window.fbq) {
-      window.fbq("track", "AddToCart", {
-        value: product.price,
-        currency: "BDT",
-        content_ids: [product.id],
-        content_name: product.name,
-        content_type: "product",
-      });
 
-      console.log("FB Pixel AddToCart event sent:", product.name);
+    // 🔴 If product is variable and no variation selected
+    if (product.type === "variable" && !selectedVariation) {
+      alert("Please select a size before continuing.");
+      return;
     }
+
+    // ===== Facebook Pixel AddToCart Tracking =====
+    // if (window.fbq) {
+    //   window.fbq("track", "AddToCart", {
+    //     value: product.price,
+    //     currency: "BDT",
+    //     content_ids: [product.id],
+    //     content_name: product.name,
+    //     content_type: "product",
+    //   });
+
+    //   console.log("FB Pixel AddToCart event sent:", product.name);
+    // }
 
     setShowModal(true);
   };
@@ -44,8 +51,6 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
     cost: 70,
   });
 
-
-
   const shippingRates = {
     inside_dhaka: 70,
     outside_dhaka: 120,
@@ -58,26 +63,39 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
     setBilling({ ...billing, [e.target.name]: e.target.value });
 
     // ===== Facebook Pixel InitiateCheckout Tracking =====
-    if (!checkoutInitiated && window.fbq) {
-      window.fbq("track", "InitiateCheckout", {
-        value: subtotal,
-        currency: "BDT",
-        content_ids: [product.id],
-        content_name: product.name,
-        content_type: "product",
-      });
+    // if (!checkoutInitiated && window.fbq) {
+    //   window.fbq("track", "InitiateCheckout", {
+    //     value: subtotal,
+    //     currency: "BDT",
+    //     content_ids: [product.id],
+    //     content_name: product.name,
+    //     content_type: "product",
+    //   });
 
-      console.log("FB Pixel InitiateCheckout event sent:", product.name);
-      setCheckoutInitiated(true); // so it fires only once
-    }
+    //   console.log("FB Pixel InitiateCheckout event sent:", product.name);
+    //   setCheckoutInitiated(true); 
+    // }
   };
-
   const handleShippingChange = (e) => {
     const method = e.target.value;
     setShipping({ method, cost: shippingRates[method] });
   };
 
-  const subtotal = product.price * qty;
+  const variationId = selectedVariation?.id || null;
+
+  const size =
+    selectedVariation?.attributes?.find(
+      (attr) =>
+        attr.name.toLowerCase() === "size" ||
+        attr.slug === "pa_size"
+    )?.option || null;
+
+  const finalPrice =
+    selectedVariation?.price
+      ? Number(selectedVariation.price)
+      : product.price;
+
+  const subtotal = finalPrice * qty;
   const total = subtotal - discountAmount + shipping.cost;
 
   // Apply Promo Code
@@ -122,7 +140,6 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
 
     setPromoLoading(false);
   };
-
   const placeOrder = async () => {
     if (!billing.name || !billing.phone || !billing.address) {
       alert("Please fill Name, Phone, and Address!");
@@ -146,10 +163,16 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
         address_1: billing.address,
       },
       line_items: [
-        {
-          product_id: product.id,
-          quantity: qty,
-        },
+        variationId
+          ? {
+              product_id: product.id,
+              variation_id: variationId,
+              quantity: qty,
+            }
+          : {
+              product_id: product.id,
+              quantity: qty,
+            },
       ],
       shipping_lines: [
         {
@@ -183,16 +206,16 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
       setShowModal(false);
       setOrderStatus(`Order placed successfully! Order ID: ${response.data.id}`);
       // ===== Facebook Pixel Purchase Tracking =====
-      if (window.fbq) {
-        window.fbq("track", "Purchase", {
-          value: total.toFixed(2),      // total amount
-          currency: "BDT",              // currency
-          content_ids: [product.id],    // array of product ids
-          content_name: product.name,   // product name
-          content_type: "product",
-        });
-        console.log("FB Pixel Purchase event sent:", product.name, total.toFixed(2));
-      }
+      // if (window.fbq) {
+      //   window.fbq("track", "Purchase", {
+      //     value: total.toFixed(2),      
+      //     currency: "BDT",              
+      //     content_ids: [variationId || product.id],
+      //     content_name: product.name,   
+      //     content_type: "product",
+      //   });
+      //   console.log("FB Pixel Purchase event sent:", product.name, total.toFixed(2));
+      // }
     } catch (error) {
       console.error(error.response?.data || error.message);
       setOrderStatus("Failed to place order. Check console.");
@@ -232,7 +255,10 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
               <tbody>
                 <tr>
                   <td><img src={product.images[0]?.src} width="40" height="40" alt={product.name} /></td>
-                  <td>{product.name}</td>
+                  <td>
+                    {product.name}
+                    {size && ` (Size: ${size})`} × {qty}
+                  </td>
                   <td>
                     <div className="popup-qty-wrap">
                       <button type="button" onClick={decreaseQty}>-</button>
@@ -241,7 +267,7 @@ const BuyNowPopupCheckout = ({ product, API_URL, consumerKey, consumerSecret }) 
                     </div>
                   </td>
                   <td>৳ {subtotal}</td>
-                  <td><button type="button" onClick={() => setShowModal(false)}>×</button></td>
+                  <td><button className="pop-dlt-btn" type="button" onClick={() => setShowModal(false)}><i className="fa fa-trash-alt"></i></button></td>
                 </tr>
               </tbody>
             </table>

@@ -1,0 +1,24 @@
+.products-grid-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: -15px;
+  margin-right: -15px;
+}
+
+.col-grid-4 {
+  width: 33.3333%;
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 992px) {
+  .col-grid-4 {
+    width: 50%;
+  }
+}
+
+@media (max-width: 576px) {
+  .col-grid-4 {
+    width: 100%;
+  }
+}

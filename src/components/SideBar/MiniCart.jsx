@@ -4,9 +4,18 @@ import { Link } from "react-router-dom";
 import "./MiniCart.css";
 
 const MiniCart = () => {
-  const { cartItems, removeFromCart, updateQuantity, cartOpen, setCartOpen } = useCart();
+  const {
+    cartItems,
+    removeFromCart,
+    updateQuantity,
+    cartOpen,
+    setCartOpen,
+  } = useCart();
 
-  const subtotal = cartItems.reduce((total, item) => total + item.price * item.qty, 0);
+  const subtotal = cartItems.reduce(
+    (total, item) => total + item.price * item.qty,
+    0
+  );
 
   return (
     <>
@@ -30,38 +39,62 @@ const MiniCart = () => {
             <p>Your cart is empty</p>
           ) : (
             cartItems.map((item) => (
-              <div className="product-mini-cart-item" key={item.id}>
-                <img src={item.image} alt={item.name} className="cart-item-img" />
+              <div
+                className="product-mini-cart-item"
+                key={item.cartId} // ✅ use cartId
+              >
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="cart-item-img"
+                />
+
                 <div className="cart-item-details">
                   <h6>{item.name}</h6>
 
+                  {/* ✅ Show Variation Info */}
+                  {item.size && (
+                    <span className="variation-info">
+                      Size: {item.size}
+                    </span>
+                  )}
+
                   <div className="price-qty">
                     <span>
-                      {item.qty} × ৳ {item.price} {item.unit || "/each"}
+                      {item.qty} × ৳ {item.price}
                     </span>
                   </div>
 
                   <div className="qty-controls">
                     <button
                       onClick={() =>
-                        updateQuantity(item.id, item.qty - 1 > 0 ? item.qty - 1 : 1)
+                        updateQuantity(
+                          item.cartId,
+                          item.qty - 1 > 0 ? item.qty - 1 : 1
+                        )
                       }
                     >
                       -
                     </button>
+
                     <span>{item.qty}</span>
-                    <button onClick={() => updateQuantity(item.id, item.qty + 1)}>
+
+                    <button
+                      onClick={() =>
+                        updateQuantity(item.cartId, item.qty + 1)
+                      }
+                    >
                       +
+                    </button>
+
+                    <button
+                      className="mini-remove-btn"
+                      onClick={() => removeFromCart(item.cartId)}
+                    >
+                      <i className="fa fa-trash-alt"></i>
                     </button>
                   </div>
                 </div>
-
-                <button
-                  className="mini-remove-btn"
-                  onClick={() => removeFromCart(item.id)}
-                >
-                  <i className="fa fa-trash-alt"></i>
-                </button>
               </div>
             ))
           )}
@@ -70,12 +103,22 @@ const MiniCart = () => {
         <div className="cart-footer">
           <div className="subtotal">
             <span>Subtotal:</span>
-            <span>৳ {subtotal}</span>
+            <span>৳ {subtotal.toFixed(2)}</span>
           </div>
-          <Link to="/cart" className="btn btn-light w-100 mb-2">
+
+          <Link
+            to="/cart"
+            className="btn btn-light w-100 mb-2"
+            onClick={() => setCartOpen(false)}
+          >
             View Cart
           </Link>
-          <Link to="/checkout" className="btn btn-success w-100">
+
+          <Link
+            to="/checkout"
+            className="btn btn-success w-100"
+            onClick={() => setCartOpen(false)}
+          >
             Checkout
           </Link>
         </div>

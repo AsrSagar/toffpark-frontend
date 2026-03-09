@@ -2,25 +2,23 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import config from "../../config";
+import QuickViewModal from "../../components/QuickViewModal/QuickViewModal";
 
 const ShopPage = () => {
   const API_URL = config.API_URL;
-
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-    const [loadingId, setLoadingId] = useState(null);
-
+  const [loadingId, setLoadingId] = useState(null);
   const [sortBy, setSortBy] = useState("popularity");
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
 
-  const perPage = 12;
+  const perPage = 20;
 
   const { addToCart, setCartOpen, isInCart } = useCart();
   const navigate = useNavigate();
 
-  // Extract slug from permalink
   const getSlugFromPermalink = (permalink) => {
     if (!permalink) return "";
     return permalink.split("/").filter(Boolean).pop();
@@ -32,27 +30,31 @@ const ShopPage = () => {
     navigate(`/product/${slug}`);
   };
 
-  // Add to Cart + Meta Pixel
+  // Add to Cart + Out of Stock / Not Purchasable Check
   const handleAddToCart = (product) => {
     if (isInCart(product.id)) return;
+
+    // Block if out of stock or not purchasable
+    if (!product.is_in_stock || !product.is_purchasable) return;
+
     setLoadingId(product.id);
     addToCart(product);
     setCartOpen(true);
 
-    if (window.fbq) {
-      window.fbq("track", "AddToCart", {
-        content_ids: [product.id],
-        content_name: product.name,
-        content_type: "product",
-        value: product.prices?.price
-          ? parseFloat(product.prices.price) / 100
-          : 0,
-        currency: "BDT",
-      });
-    }
+    // if (window.fbq) {
+    //   window.fbq("track", "AddToCart", {
+    //     content_ids: [product.id],
+    //     content_name: product.name,
+    //     content_type: "product",
+    //     value: product.prices?.price
+    //       ? parseFloat(product.prices.price) / 100
+    //       : 0,
+    //     currency: "BDT",
+    //   });
+    // }
   };
 
-  // Fetch Products (Dynamic Pagination + Sorting)
+  // Fetch Products
   useEffect(() => {
     setLoading(true);
 
@@ -78,10 +80,8 @@ const ShopPage = () => {
     )
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch products");
-
         const total = res.headers.get("X-WP-TotalPages");
         if (total) setTotalPages(parseInt(total));
-
         return res.json();
       })
       .then((data) => {
@@ -92,7 +92,6 @@ const ShopPage = () => {
         console.error("Product fetch error:", err);
         setLoading(false);
       });
-
   }, [API_URL, currentPage, sortBy]);
 
   // Scroll to top on page change
@@ -100,7 +99,6 @@ const ShopPage = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentPage]);
 
-  // Condensed Pagination Logic
   const renderPagination = () => {
     const pages = [];
 
@@ -108,9 +106,7 @@ const ShopPage = () => {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       pages.push(1, 2, 3);
-
       if (currentPage > 4) pages.push("...");
-
       pages.push(totalPages);
     }
 
@@ -140,7 +136,14 @@ const ShopPage = () => {
       <div id="custom-header">
         <div className="custom-header-content">
           <div className="container">
-            <h1 className="page-title">Shop</h1>
+            <div id="breadcrumb">
+              <div  aria-label="Breadcrumbs" className="breadcrumbs breadcrumb-trail">
+                <ul className="trail-items">
+                  <li className="trail-item trail-begin"><a href="/" rel="home"><span>Home</span></a></li>
+                  <li className="trail-item trail-end"><span>Shop</span></li>
+                </ul>
+              </div> 
+            </div> 
           </div>
         </div>
       </div>
@@ -151,11 +154,7 @@ const ShopPage = () => {
             <div id="primary" className="content-area">
               <main id="main" className="site-main">
                 <div className="section-products">
-
-                  {/* Filter Row */}
                   <div className="pruduct-filter-row clear-fix">
-
-                    {/* Sorting */}
                     <div className="filter-row-box product-listing-filter">
                       <div className="sort-by">
                         <span className="sort-by-list">Sort by</span>
@@ -168,12 +167,9 @@ const ShopPage = () => {
                         </ul>
                       </div>
                     </div>
-
-                    {/* Pagination */}
                     <nav className="filter-row-box navigation pagination pull-right">
                       <div className="nav-links">
                         {renderPagination()}
-
                         {currentPage < totalPages && (
                           <span
                             className="next page-numbers"
@@ -185,12 +181,8 @@ const ShopPage = () => {
                         )}
                       </div>
                     </nav>
-
                   </div>
-
-                  {/* Products */}
                   <div className="products-inner-wrapper clear-fix">
-
                     {loading
                       ? [...Array(perPage)].map((_, idx) => (
                           <div key={idx} className="product-item col-grid-3 top-space">
@@ -201,93 +193,108 @@ const ShopPage = () => {
                           </div>
                         ))
                       : products.length > 0
-                      ? products.map((product) => (
-                          <div key={product.id} className="product-item col-grid-3 top-space">
-                            <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
+                      ? products.map((product) => {
 
-                              <div className="product-thumb zoom-effect">
-                                <a
-                                  className="thumbnail"
-                                  href={product.permalink}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    goToProduct(product.permalink);
-                                  }}
-                                >
-                                  <img
-                                    alt={product.name}
-                                    src={product.images[0]?.src}
-                                  />
-                                </a>
+                          const isOutOfStock = !product.is_in_stock || !product.is_purchasable;
 
-                                <div className="pruduct-buttons">
-                                  <button
-                                    className="product-button tooltip"
-                                    onClick={() => handleAddToCart(product)}
-                                    disabled={
-                                      loadingId === product.id ||
-                                      isInCart(product.id)
-                                    }
-                                  >
-                                    <i
-                                      className={
-                                        loadingId === product.id
-                                          ? "fas fa-spinner fa-spin"
-                                          : isInCart(product.id)
-                                          ? "fas fa-check"
-                                          : "fas fa-cart-plus"
-                                      }
-                                    ></i>
-                                    <span className="tooltiptext tooltip-right">
-                                      {loadingId === product.id
-                                        ? "Adding..."
-                                        : isInCart(product.id)
-                                        ? "Added"
-                                        : "Add To Cart"}
-                                    </span>
-                                  </button>
-                                  <button className="product-button tooltip">
-                                    <i className="far fa-heart"></i>
-                                    <span className="tooltiptext tooltip-right">Wishlist</span>
-                                  </button>
-                                  <button className="product-button tooltip">
-                                    <i className="fa fa-retweet"></i>
-                                    <span className="tooltiptext tooltip-right">Compare</span>
-                                  </button>
-                                </div>
-                                <div className="quick-view">
+                          return (
+                            <div key={product.id} className="product-item col-grid-3 top-space">
+                              <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
+
+                                <div className="product-thumb zoom-effect">
                                   <a
-                                    href="#quick-view-content-wrappr"
-                                    className="custom-button button-small quick-view-link"
+                                    className="thumbnail"
+                                    href={product.permalink}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      goToProduct(product.permalink);
+                                    }}
                                   >
-                                    <i className="far fa-eye"></i>Quick View
+                                    <img
+                                      alt={product.name}
+                                      src={product.images[0]?.src}
+                                    />
                                   </a>
+
+                                  <div className="pruduct-buttons">
+
+                                    <button
+                                      className="product-button tooltip"
+                                      onClick={() => handleAddToCart(product)}
+                                      disabled={
+                                        loadingId === product.id ||
+                                        isInCart(product.id) ||
+                                        isOutOfStock
+                                      }
+                                    >
+                                      <i
+                                        className={
+                                          isOutOfStock
+                                            ? "fas fa-times"
+                                            : loadingId === product.id
+                                            ? "fas fa-spinner fa-spin"
+                                            : isInCart(product.id)
+                                            ? "fas fa-check"
+                                            : "fas fa-cart-plus"
+                                        }
+                                      ></i>
+                                      <span className="tooltiptext tooltip-right">
+                                        {isOutOfStock
+                                          ? "Out of Stock"
+                                          : loadingId === product.id
+                                          ? "Adding..."
+                                          : isInCart(product.id)
+                                          ? "Added"
+                                          : "Add To Cart"}
+                                      </span>
+                                    </button>
+
+                                    <button className="product-button tooltip">
+                                      <i className="far fa-heart"></i>
+                                      <span className="tooltiptext tooltip-right">Wishlist</span>
+                                    </button>
+
+                                    <button className="product-button tooltip">
+                                      <i className="fa fa-retweet"></i>
+                                      <span className="tooltiptext tooltip-right">Compare</span>
+                                    </button>
+                                  </div>
+
+                                  <div className="quick-view">
+                                    <a
+                                      href="#quick-view-content-wrappr"
+                                      className="custom-button button-small quick-view-link"
+                                    >
+                                      <i className="far fa-eye"></i>Quick View
+                                    </a>
+                                  </div>
+
+                                  {isOutOfStock && (
+                                    <span className="ribbon-rotated onsale">
+                                      Out of Stock
+                                    </span>
+                                  )}
                                 </div>
 
-                                <span className="ribbon-rotated onsale">
-                                  -16%
-                                </span>
+                                <div className="product-item-details">
+                                  <h3 className="product-title">
+                                    <Link to={`/product/${getSlugFromPermalink(product.permalink)}`}>
+                                      {product.name}
+                                    </Link>
+                                  </h3>
+
+                                  <div
+                                    className="product-price-container"
+                                    dangerouslySetInnerHTML={{ __html: product.price_html }}
+                                  />
+                                </div>
+
                               </div>
-
-                              <div className="product-item-details">
-                                <h3 className="product-title">
-                                  <Link to={`/product/${getSlugFromPermalink(product.permalink)}`}>
-                                    {product.name}
-                                  </Link>
-                                </h3>
-
-                                <div
-                                  className="product-price-container"
-                                  dangerouslySetInnerHTML={{ __html: product.price_html }}
-                                />
-                              </div>
-
                             </div>
-                          </div>
-                        ))
+                          );
+                        })
                       : <p>No products found.</p>
                     }
-
                   </div>
 
                 </div>
@@ -296,6 +303,17 @@ const ShopPage = () => {
           </div>
         </div>
       </div>
+
+      {quickViewProduct && (
+        <QuickViewModal
+          product={quickViewProduct}
+          onClose={() => setQuickViewProduct(null)}
+          onAddToCart={(product) => {
+            handleAddToCart(product);
+            setQuickViewProduct(null);
+          }}
+        />
+      )}
     </>
   );
 };

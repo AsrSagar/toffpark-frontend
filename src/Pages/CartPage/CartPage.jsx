@@ -6,7 +6,7 @@ const CartPage = () => {
   const { cartItems, cartTotal, removeFromCart, updateQuantity } = useCart();
 
   const formatPrice = (price) => {
-    return Number(price).toFixed(2); // price already in correct format
+    return Number(price).toFixed(2);
   };
 
   return (
@@ -14,12 +14,11 @@ const CartPage = () => {
       <div id="custom-header">
         <div className="custom-header-content">
           <div className="container">
-            <h1 className="page-title">Cart</h1>
             <div id="breadcrumb">
-              <div aria-label="Breadcrumbs" className="breadcrumbs breadcrumb-trail">
+              <div className="breadcrumbs breadcrumb-trail">
                 <ul className="trail-items">
                   <li className="trail-item trail-begin">
-                    <a href="/" rel="home"><span>Home</span></a>
+                    <Link to="/"><span>Home</span></Link>
                   </li>
                   <li className="trail-item trail-end">
                     <span>Cart</span>
@@ -42,61 +41,68 @@ const CartPage = () => {
                     <table className="cart shop-table shop-table-responsive">
                       <thead>
                         <tr>
-                          <th className="product-name">Product Detail</th>
-                          <th className="product-price">Price</th>
-                          <th className="product-quantity">Quantity</th>
-                          <th className="product-subtotal">Total</th>
-                          <th className="product-remove"></th>
+                          <th>Product Detail</th>
+                          <th>Price</th>
+                          <th>Quantity</th>
+                          <th>Total</th>
+                          <th></th>
                         </tr>
                       </thead>
 
                       <tbody>
                         {cartItems.map((item) => {
                           const subtotal = item.price * item.qty;
+
                           return (
-                            <tr key={item.id} className="cart-item">
-                              <td className="product-name" data-title="Product">
-                                <a href="/" className="cart-product-thumb">
+                            <tr key={item.cartId} className="cart-item">
+                              <td className="product-name">
+                                <Link to="/" className="cart-product-thumb">
                                   <img src={item.image} alt={item.name} />
-                                </a>
+                                </Link>
+
                                 <div className="product-info">
                                   <h3>{item.name}</h3>
-                                  {/* Categories / Size / Color can be optional */}
+
+                                  {/* ✅ Show Variation Info */}
+                                  {item.size && (
+                                    <p className="variation-info">
+                                      <strong>Size:</strong> {item.size}
+                                    </p>
+                                  )}
                                 </div>
                               </td>
 
-                              <td className="product-price" data-title="Price">
-                                <span className="product-Price-amount amount">
-                                  ৳{formatPrice(item.price)}
-                                </span>
+                              <td>
+                                ৳{formatPrice(item.price)}
                               </td>
 
-                              <td className="product-quantity" data-title="Quantity">
+                              <td>
                                 <div className="quantity">
                                   <input
                                     type="number"
-                                    className="input-text"
                                     min="1"
                                     value={item.qty}
                                     onChange={(e) =>
-                                      updateQuantity(item.id, Number(e.target.value))
+                                      updateQuantity(
+                                        item.cartId,
+                                        Number(e.target.value)
+                                      )
                                     }
                                   />
                                 </div>
                               </td>
 
-                              <td className="product-subtotal" data-title="Total">
-                                <span className="product-Price-amount amount">
-                                  ৳{formatPrice(subtotal)}
-                                </span>
+                              <td>
+                                ৳{formatPrice(subtotal)}
                               </td>
 
-                              <td className="product-remove" data-title="Remove">
+                              <td>
                                 <button
                                   type="button"
                                   className="remove"
-                                  title="Remove this item"
-                                  onClick={() => removeFromCart(item.id)}
+                                  onClick={() =>
+                                    removeFromCart(item.cartId)
+                                  }
                                 >
                                   <i className="fa fa-times"></i>
                                 </button>
@@ -105,16 +111,13 @@ const CartPage = () => {
                           );
                         })}
 
-                        <tr>
-                          <td colSpan="5" className="actions">
-                            <div className="coupon">
-                              <label>Coupon:</label>
-                              <input type="text" name="coupon-code" placeholder="Coupon code" />
-                              <input type="submit" className="button" name="apply-coupon" value="Apply coupon" />
-                            </div>
-                            <input type="submit" className="custom button" name="update-cart" value="Update Cart" disabled />
-                          </td>
-                        </tr>
+                        {cartItems.length === 0 && (
+                          <tr>
+                            <td colSpan="5" style={{ textAlign: "center" }}>
+                              Your cart is empty
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </form>
@@ -122,19 +125,19 @@ const CartPage = () => {
                   <div className="cart-collaterals">
                     <div className="cart-totals calculated-shipping">
                       <h2>Cart Totals</h2>
-                      <table className="shop-table shop-table-responsive">
+
+                      <table className="shop-table">
                         <tbody>
-                          <tr className="cart-subtotal">
+                          <tr>
                             <th>Subtotal</th>
-                            <td data-title="Subtotal">
-                              <span className="product-Price-amount amount">৳{formatPrice(cartTotal)}</span>
-                            </td>
+                            <td>৳{formatPrice(cartTotal)}</td>
                           </tr>
-                          <tr className="order-total">
+
+                          <tr>
                             <th>Total</th>
-                            <td data-title="Total">
+                            <td>
                               <strong>
-                                <span className="product-Price-amount amount">৳{formatPrice(cartTotal)}</span>
+                                ৳{formatPrice(cartTotal)}
                               </strong>
                             </td>
                           </tr>
@@ -142,7 +145,10 @@ const CartPage = () => {
                       </table>
 
                       <div className="wc-proceed-to-checkout">
-                        <Link className="checkout-button custom-button" to="/checkout">
+                        <Link
+                          className="checkout-button custom-button"
+                          to="/checkout"
+                        >
                           Proceed to checkout
                         </Link>
                       </div>
