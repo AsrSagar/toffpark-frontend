@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useCart } from "../../context/CartContext";
+// import { useCart } from "../../context/CartContext";
 import config from "../../config";
 import './ProductCategoryPage.css';
+import QuickViewModal from "../../components/QuickViewModal/QuickViewModal";
+import { getProductById } from "../../api/products";
 
 const CategoryProducts = () => {
   const API_URL = config.API_URL;
   const location = useLocation();
   const navigate = useNavigate();
-  const { addToCart, setCartOpen, isInCart } = useCart();
-
-  const [loadingId, setLoadingId] = useState(null);
+  // const { addToCart, setCartOpen, isInCart } = useCart();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [quickLoading, setQuickLoading] = useState(false);
+  
 
   // ✅ Pagination & Sorting States
   const [currentPage, setCurrentPage] = useState(1);
@@ -21,6 +25,18 @@ const CategoryProducts = () => {
   const [sortOrder, setSortOrder] = useState("desc");
 
   const PER_PAGE = 12;
+
+  const handleQuickView = async (id) => {
+    setIsQuickViewOpen(true);
+    setQuickLoading(true);
+
+    const product = await getProductById(id);
+
+    console.log("Quick View Product:", product);
+
+    setSelectedProduct(product);
+    setQuickLoading(false);
+  };
 
   // Extract full category path
   const categoryPath = location.pathname
@@ -40,40 +56,6 @@ const CategoryProducts = () => {
   const goToProduct = (productLink) => {
     const slug = getSlugFromPermalink(productLink);
     navigate(`/product/${slug}`);
-  };
-
-  const handleAddToCart = (product) => {
-    if (isInCart(product.id)) return;
-    if (!product.is_in_stock || !product.is_purchasable) return;
-
-    setLoadingId(product.id);
-
-    const addProduct = async () => {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 600));
-
-        addToCart(product);
-        setCartOpen(true);
-
-        // ✅ AddToCart Event
-        // if (window.fbq) {
-        //   window.fbq("track", "AddToCart", {
-        //     content_ids: [product.id],
-        //     content_name: product.name,
-        //     value: product.prices?.price
-        //       ? parseFloat(product.prices.price) / 100
-        //       : 0,
-        //     currency: "BDT",
-        //   });
-        // }
-      } catch (error) {
-        console.error("Add to cart failed:", error);
-      } finally {
-        setLoadingId(null);
-      }
-    };
-
-    addProduct();
   };
 
   // ✅ Sorting Handler
@@ -157,6 +139,19 @@ const CategoryProducts = () => {
       return () => clearInterval(interval);
     }
   }, [slug, categoryName]);
+
+  if (quickLoading) {
+    return (
+      <div className="products-loading-state">
+        <div className="lds-ellipsis">
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -267,9 +262,8 @@ const CategoryProducts = () => {
                             >
                               <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
                                 <div className="product-thumb zoom-effect">
-
-                                  <a
-                                    href="/"
+                                  <Link
+                                    to={`/product/${getSlugFromPermalink(product.permalink)}`}
                                     className="thumbnail"
                                     onClick={(e) => {
                                       e.preventDefault();
@@ -280,59 +274,31 @@ const CategoryProducts = () => {
                                       alt={product.name}
                                       src={product.images[0]?.src}
                                     />
-                                  </a>
-
+                                  </Link>
                                   <div className="pruduct-buttons">
-                                    <button
-                                      className="product-button tooltip"
-                                      onClick={() => handleAddToCart(product)}
-                                      disabled={
-                                        loadingId === product.id ||
-                                        isInCart(product.id) ||
-                                        isOutOfStock
-                                      }
-                                    >
-                                      <i
-                                        className={
-                                          isOutOfStock
-                                            ? "fas fa-times"
-                                            : loadingId === product.id
-                                            ? "fas fa-spinner fa-spin"
-                                            : isInCart(product.id)
-                                            ? "fas fa-check"
-                                            : "fas fa-cart-plus"
-                                        }
-                                      ></i>
-                                      <span className="tooltiptext tooltip-right">
-                                        {isOutOfStock
-                                          ? "Out of Stock"
-                                          : loadingId === product.id
-                                          ? "Adding..."
-                                          : isInCart(product.id)
-                                          ? "Added"
-                                          : "Add To Cart"}
-                                      </span>
-                                    </button>
-                                    <button className="product-button tooltip">
-                                      <i className="far fa-heart"></i>
-                                      <span className="tooltiptext tooltip-right">Wishlist</span>
-                                    </button>
-
-                                    <button className="product-button tooltip">
-                                      <i className="fa fa-retweet"></i>
-                                      <span className="tooltiptext tooltip-right">Compare</span>
-                                    </button>
+                                    <div className="pruduct-buttons">
+                                      <div className="pruduct-buttons">
+                                        <button 
+                                        className="product-button tooltip"
+                                        onClick={() => {
+                                          handleQuickView(product.id);
+                                        }}
+                                        >
+                                        <i className="far fa-eye"></i>
+                                        <span className="tooltiptext tooltip-right">QUICK VIEW</span>
+                                      </button>
+                                      </div>
+                                    </div>
                                   </div>
 
                                   <div className="quick-view">
-                                    <a
-                                      href="#quick-view-content-wrappr"
+                                    <Link
+                                      to={`/product/${getSlugFromPermalink(product.permalink)}`}
                                       className="custom-button button-small quick-view-link"
                                     >
-                                      <i className="far fa-eye"></i>Quick View
-                                    </a>
+                                      VIEW PRODUCT
+                                    </Link>
                                   </div>
-
                                   {isOutOfStock && (
                                     <span className="ribbon-rotated onsale">
                                       Out of Stock
@@ -370,10 +336,17 @@ const CategoryProducts = () => {
                 </div>
               </main>
             </div>
-
           </div>
         </div>
       </div>
+      <QuickViewModal
+        isOpen={isQuickViewOpen}
+        onClose={() => {
+          setIsQuickViewOpen(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+      />
     </>
   );
 };

@@ -12,6 +12,11 @@ import BlogGridPage from "./Pages/Blog/BlogPageContent";
 import ContactPageContent from "./Pages/ContactPage/ContactPageConent";
 import BlogSinglePage from "./Pages/Blog/BlogSinglePage";
 import MiniCart from "./components/SideBar/MiniCart";
+import AboutPage from "./Pages/AboutPage/AboutPage";
+import PrivacyPolicy from "./Pages/PrivacyPolicy/PrivacyPolicy";
+import ReturnExchangePolicy from "./Pages/ReturnsRefunds/ReturnsRefunds";
+import ShippingPolicy from "./Pages/ShippingPolicy/ShippingPolicy";
+import OffersPage from "./Pages/Offers/Offers";
 
 // 🔥 THIS COMPONENT TRACKS PAGE VIEW ON EVERY ROUTE CHANGE
 function PixelTracker() {
@@ -42,6 +47,11 @@ function App() {
         <Route path="/contact" element={<ContactPageContent />} />
         <Route path="/product/:slug" element={<ProductDetailsPage />} />
         <Route path="product-category/*" element={<CategoryProducts />} />
+        <Route path="/about-us" element={<AboutPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/returns-refunds" element={<ReturnExchangePolicy />} />
+        <Route path="/delivery-policy" element={<ShippingPolicy />} />
+        <Route path="/offers" element={<OffersPage />} />
       </Routes>
       <Footer />  
     </>

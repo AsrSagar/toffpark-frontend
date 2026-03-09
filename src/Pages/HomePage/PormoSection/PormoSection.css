@@ -1,0 +1,21 @@
+.pormo-item {
+    background-color: #32425B;
+    text-align: center;
+    transition: background 0.3s, border 0.3s, border-radius 0.3s, box-shadow 0.3s;
+    margin: 10px 10px 10px 10px;
+    --e-column-margin-right: 10px;
+    --e-column-margin-left: 10px;
+    padding: 30px 30px 30px 30px;
+}
+.pormo-item h3 {
+    color: #fff;
+    margin-bottom: 0;
+}
+.section-pormo {
+    border-style: solid;
+    border-color: #FFFFFF;
+    transition: background 0.3s, border 0.3s, border-radius 0.3s, box-shadow 0.3s;
+    margin-top: 07px;
+    padding: 20px 0px 20px 0px !important;
+    background-color: #F5F2ED;
+}

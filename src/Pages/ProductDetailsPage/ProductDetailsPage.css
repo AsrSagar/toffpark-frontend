@@ -14,3 +14,132 @@
   left: 0;
   transform: rotate(-45deg);
 }
+.product-meta span {
+  width: 100%;
+  margin-left: -10px !important;
+}
+.product-meta span a{
+  margin-left: 10px;
+}
+.wc-custom-tabs {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+  display: flex;
+  border-bottom: 1px solid #ddd;
+}
+.wc-custom-tabs li {
+  margin-right: 20px;
+  cursor: pointer;
+  background: #ededed;
+  font-weight: normal;
+  color: #2b2b2b;
+  padding: 10px 30px;
+  border-radius: 7px 7px 0 0;
+}
+.wc-custom-tabs li.active {
+  font-weight: bold;
+  background: #333;
+  color: #fff;
+  padding: 10px 30px;
+  border-radius: 7px 7px 0 0;
+}
+.tab-content {
+  border: 1px solid #ddd;
+  display: block;
+  padding: 1em 1.4em;
+  background: none;
+}
+
+.filter-size-box {
+  position: relative;
+}
+
+.filter-size-box.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.size-cross {
+  position: absolute;
+  top: 5px;
+  right: 50%;
+  font-size: 28px;
+  color: red;
+  font-weight: bold;
+}
+
+.single-thumb-detail {
+  margin-bottom: 20px;
+}
+
+.single-thumb img {
+    width: 100%;
+}
+
+.thumb-item {
+    padding: 5px;
+    cursor: pointer;
+}
+
+.thumb-item img {
+    width: 100%;
+    opacity: 0.7;
+}
+
+.slick-current .thumb-item img {
+    opacity: 1;
+}
+
+
+/* CustomerForm.css */
+.customer-details {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.form-control {
+  width: 100%;
+}
+
+.input-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon input {
+  width: 100%;
+  padding: 10px 10px 10px 40px; /* space for icon */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.input-icon input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+.input-icon svg {
+  position: absolute;
+  left: 10px;
+  color: #555;
+  font-size: 16px;
+}
+@media only screen and (max-width: 900px) {
+  .product-single .single-cart input, .product-single .custom-button.button-small {
+    width: 100%;
+  }
+  .wc-custom-tabs {
+    display: block;
+  }
+}

@@ -22,7 +22,7 @@
   top: 0;
   right: -570px;
   padding: 0 10px 10px;
-  max-width: calc(100vw - 3rem);
+  width: 400px;
   height: 100%;
   background: #fff;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
@@ -152,4 +152,16 @@
 }
 .btn + .btn {
   margin-top: 5px;
+}
+
+@media only screen and (max-width: 900px) {
+  .mini-cart {
+    width: 300px !important;
+  }
+  .product-mini-cart-item {
+    display: block !important;
+  }
+  .cart-item-img {
+    margin-bottom: 5px;
+  }
 }

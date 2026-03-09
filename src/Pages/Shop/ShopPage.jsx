@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCart } from "../../context/CartContext";
 import config from "../../config";
 import QuickViewModal from "../../components/QuickViewModal/QuickViewModal";
+import { getProductById } from "../../api/products";
 
 const ShopPage = () => {
   const API_URL = config.API_URL;
@@ -10,14 +10,24 @@ const ShopPage = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [loadingId, setLoadingId] = useState(null);
   const [sortBy, setSortBy] = useState("popularity");
-  const [quickViewProduct, setQuickViewProduct] = useState(null);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [quickLoading, setQuickLoading] = useState(false);
 
   const perPage = 20;
 
-  const { addToCart, setCartOpen, isInCart } = useCart();
   const navigate = useNavigate();
+
+  const handleQuickView = async (id) => {
+    setIsQuickViewOpen(true);
+    setQuickLoading(true);
+
+    const product = await getProductById(id);
+
+    setSelectedProduct(product);
+    setQuickLoading(false);
+  };
 
   const getSlugFromPermalink = (permalink) => {
     if (!permalink) return "";
@@ -28,30 +38,6 @@ const ShopPage = () => {
     const slug = getSlugFromPermalink(permalink);
     if (!slug) return;
     navigate(`/product/${slug}`);
-  };
-
-  // Add to Cart + Out of Stock / Not Purchasable Check
-  const handleAddToCart = (product) => {
-    if (isInCart(product.id)) return;
-
-    // Block if out of stock or not purchasable
-    if (!product.is_in_stock || !product.is_purchasable) return;
-
-    setLoadingId(product.id);
-    addToCart(product);
-    setCartOpen(true);
-
-    // if (window.fbq) {
-    //   window.fbq("track", "AddToCart", {
-    //     content_ids: [product.id],
-    //     content_name: product.name,
-    //     content_type: "product",
-    //     value: product.prices?.price
-    //       ? parseFloat(product.prices.price) / 100
-    //       : 0,
-    //     currency: "BDT",
-    //   });
-    // }
   };
 
   // Fetch Products
@@ -131,6 +117,19 @@ const ShopPage = () => {
     });
   };
 
+  if (quickLoading) {
+    return (
+      <div className="products-loading-state">
+        <div className="lds-ellipsis">
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div id="custom-header">
@@ -202,9 +201,9 @@ const ShopPage = () => {
                               <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
 
                                 <div className="product-thumb zoom-effect">
-                                  <a
+                                  <Link
                                     className="thumbnail"
-                                    href={product.permalink}
+                                    to={`/product/${getSlugFromPermalink(product.permalink)}`}
                                     onClick={(e) => {
                                       e.preventDefault();
                                       goToProduct(product.permalink);
@@ -214,59 +213,28 @@ const ShopPage = () => {
                                       alt={product.name}
                                       src={product.images[0]?.src}
                                     />
-                                  </a>
+                                  </Link>
 
                                   <div className="pruduct-buttons">
-
-                                    <button
-                                      className="product-button tooltip"
-                                      onClick={() => handleAddToCart(product)}
-                                      disabled={
-                                        loadingId === product.id ||
-                                        isInCart(product.id) ||
-                                        isOutOfStock
-                                      }
-                                    >
-                                      <i
-                                        className={
-                                          isOutOfStock
-                                            ? "fas fa-times"
-                                            : loadingId === product.id
-                                            ? "fas fa-spinner fa-spin"
-                                            : isInCart(product.id)
-                                            ? "fas fa-check"
-                                            : "fas fa-cart-plus"
-                                        }
-                                      ></i>
-                                      <span className="tooltiptext tooltip-right">
-                                        {isOutOfStock
-                                          ? "Out of Stock"
-                                          : loadingId === product.id
-                                          ? "Adding..."
-                                          : isInCart(product.id)
-                                          ? "Added"
-                                          : "Add To Cart"}
-                                      </span>
-                                    </button>
-
-                                    <button className="product-button tooltip">
-                                      <i className="far fa-heart"></i>
-                                      <span className="tooltiptext tooltip-right">Wishlist</span>
-                                    </button>
-
-                                    <button className="product-button tooltip">
-                                      <i className="fa fa-retweet"></i>
-                                      <span className="tooltiptext tooltip-right">Compare</span>
-                                    </button>
+                                    <div className="pruduct-buttons">
+                                      <button 
+                                        className="product-button tooltip"
+                                        onClick={() => {
+                                          handleQuickView(product.id);
+                                        }}
+                                        >
+                                        <i className="far fa-eye"></i>
+                                        <span className="tooltiptext tooltip-right">QUICK VIEW</span>
+                                      </button>
+                                    </div>
                                   </div>
-
                                   <div className="quick-view">
-                                    <a
-                                      href="#quick-view-content-wrappr"
+                                    <Link
+                                      to={`/product/${getSlugFromPermalink(product.permalink)}`}
                                       className="custom-button button-small quick-view-link"
                                     >
-                                      <i className="far fa-eye"></i>Quick View
-                                    </a>
+                                      VIEW PRODUCT
+                                    </Link>
                                   </div>
 
                                   {isOutOfStock && (
@@ -303,17 +271,14 @@ const ShopPage = () => {
           </div>
         </div>
       </div>
-
-      {quickViewProduct && (
-        <QuickViewModal
-          product={quickViewProduct}
-          onClose={() => setQuickViewProduct(null)}
-          onAddToCart={(product) => {
-            handleAddToCart(product);
-            setQuickViewProduct(null);
-          }}
-        />
-      )}
+      <QuickViewModal
+        isOpen={isQuickViewOpen}
+        onClose={() => {
+          setIsQuickViewOpen(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+      />
     </>
   );
 };

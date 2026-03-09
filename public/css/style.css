@@ -1,5 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
 html {
-	font-family: sans-serif;
+	font-family: "Poppins", sans-serif;
 	-webkit-text-size-adjust: 100%;
 	-ms-text-size-adjust:     100%;
 }
@@ -7,7 +9,7 @@ html {
 body {
 	margin: 0;
 	word-wrap: break-word;
-		font-family: 'Roboto', sans-serif;
+	font-family: "Poppins", sans-serif;
 }
 
 article,
@@ -80,7 +82,7 @@ code,
 kbd,
 pre,
 samp {
-	font-family: monospace, monospace;
+	font-family: "Poppins", sans-serif;
 }
 
 button,
@@ -189,7 +191,7 @@ body, button, input, select, textarea {
 	background-repeat: no-repeat;
 	background-position: center top;
 	-webkit-font-smoothing: antialiased;
-	font-family: 'Roboto', sans-serif;
+	font-family: "Poppins", sans-serif;
 }
 h1 {
 	font-size:32px;
@@ -220,7 +222,7 @@ h1, h2, h3, h4, h5, h6 {
 	margin:0 0 10px;
 	background: none;
 	line-height: 1.6em;
-	font-family:'Montserrat', sans-serif;
+	font-family: "Poppins", sans-serif;
 	color: #222;
 	font-weight: 600;
 }
@@ -265,7 +267,7 @@ address {
 
 pre {
 	background: #eee;
-	font-family: "Courier 10 Pitch", Courier, monospace;
+	font-family: "Poppins", sans-serif;
 	font-size: 15px;
 	line-height: 1.6;
 	margin-bottom: 15px;
@@ -286,7 +288,7 @@ code,
 kbd,
 tt,
 var {
-	font-family: Monaco, Consolas, "Andale Mono", "DejaVu Sans Mono", monospace;
+	font-family: "Poppins", sans-serif;
 	font-size: 15px;
 }
 
@@ -1252,7 +1254,7 @@ div#mob-menu-quick,
     position: relative;
     z-index: 99;
     margin: 0 10px 0 0;
-    font-family: 'Roboto', sans-serif;
+    font-family: "Poppins", sans-serif;
     text-transform: uppercase;
 }
 
@@ -1827,7 +1829,7 @@ a.multi-language-current {
 	border: none;
 	margin: 6px 0;
 	border-top: 1px solid #f1f1f1;
-	font-family: 'Hind', sans-serif;
+	font-family: "Poppins", sans-serif;
 	font-size: 14px;
 }
 
@@ -2431,7 +2433,7 @@ display: inline-block;
 
 .dark-bg .main-navigation ul li > a {
     color: #fff;
-    font-family: Roboto;
+    font-family: "Poppins", sans-serif;
     font-weight: 500;
     font-size: 14px;
     letter-spacing: 0px;
@@ -3466,6 +3468,7 @@ article.hentry.post.blog-grid .entry-content-wrapper {
 
 .global-layout-left-sidebar #primary {
 	float: right;
+	width: 70%;
 }
 
 .three-columns-enabled #primary {
@@ -4806,7 +4809,7 @@ a.read-more-faq {
 	text-align: left;
 	position: relative;
 	font-weight: 700;
-	font-family: 'Montserrat', sans-serif;
+	font-family: "Poppins", sans-serif;
 }
 
 .faq-section h3.faq-content-title span.divider {
@@ -5993,8 +5996,9 @@ aside.section.section-quick-contact.background-img.overlay-enabled {
 }
 
 .tooltip-right {
-    top: 2px;
-    left: 125%;
+    top: 5px;
+    left: -300%;
+    right: 0;
 }
 
 .tooltip-right::after {
@@ -6002,6 +6006,7 @@ aside.section.section-quick-contact.background-img.overlay-enabled {
     position: absolute;
     top: 50%;
     right: 100%;
+    left: 97%;
     margin-top: -5px;
     border-width: 5px;
     border-style: solid;
@@ -6281,9 +6286,9 @@ section.error-404 .search-form input.search-field {
 
 .section-products .pruduct-buttons {
     position: absolute;
-    width: 90%;
-    text-align: center;
-    left: -20%;
+    width: 94%;
+    text-align: right;
+    left: 0;
     visibility: hidden;
     transition: all 500ms ease;
     -webkit-transition: all 500ms ease;
@@ -6291,6 +6296,8 @@ section.error-404 .search-form input.search-field {
     -o-transition: all 500ms ease;
     -ms-transition: all 500ms ease;
     bottom: 28%;
+    top: 0;
+    right: 100%;
 }
 
 .section-products .product-item-wrapper:hover .pruduct-buttons {
@@ -6333,11 +6340,11 @@ section.error-404 .search-form input.search-field {
     line-height: 1.5;
     font-size: 15px;
     margin: 10px;
-    display: block;
     height: 40px;
     width: 40px;
     border: none;
     box-shadow: 0 0 40px #2422222b;
+	border-radius: 50%;
 }
 
 .pruduct-buttons button:hover, .pruduct-buttons button:focus, .pruduct-buttons button:active {
@@ -6378,12 +6385,13 @@ section.error-404 .search-form input.search-field {
 }
 
 .section-products a.custom-button.button-small {
-    padding: 5px 15px;
+    padding: 10px 15px;
     text-transform: capitalize;
     width: 100%;
     background: #fff;
     color: #222;
     box-shadow: 0 0 40px #2422222b;
+    border-radius: 30px;
 }
 .section-products a.quick-view:hover {
     color: #ce1648;
@@ -6914,6 +6922,7 @@ select.orderby {
 
 .product-single  .product-price-container {
     margin-bottom: 15px;
+	font-size: 24px;
 }
 
 .product-single .single-cart input {
@@ -7459,13 +7468,14 @@ td.product-remove {
 
 .filter-by-size button {
     display: inline-block;
-    padding: 5px 0;
     border: 2px solid #e9e9e9;
     text-align: center;
     font-size: 14px;
     text-transform: uppercase;
     background: transparent;
     color: #000;
+    width: auto;
+    padding: 5px 10px;
 }
 
 .filter-by-size button.active,
@@ -7663,7 +7673,7 @@ a.filter-color-box.color-9 {
     padding: 9px 25px;
     margin-bottom: 0;
     font-weight: 500;
-    font-family: roboto;
+    font-family: "Poppins", sans-serif;
     text-transform: uppercase;
 }
 
@@ -7741,7 +7751,7 @@ a.filter-color-box.color-9 {
     padding: 10px;
     background-color: #ce1648;
     color: #fff;
-    font-family: roboto;
+    font-family: "Poppins", sans-serif;
     border-radius: 3px 3px 0 0;
     font-size: 17px;
     font-weight: 600;
@@ -7860,7 +7870,7 @@ button:disabled {
 
 /* ================= POPUP OVERLAY ================= */
 form.checkout {
-    font-family: 'Inter', Arial, sans-serif;
+    font-family: "Poppins", sans-serif;
 }
 
 .popup-custom-coupon,

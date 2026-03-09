@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
     return (
@@ -6,6 +7,29 @@ const Footer = () => {
             <div id="footer-widgets">
                 <div className="container">
                     <div className="inner-wrapper">
+                        <aside className="col-grid-3 footer-widget-area">
+                            <img src="/images/Toffpark-Logo-White.png" alt="Footer Logo" />
+                            <p>Toffpark strives to provide the largest variety of footwear, clothing, and accessories at the best possible prices.</p>
+                        </aside>
+                        <aside className="col-grid-3 footer-widget-area">
+                            <h3 className="widget-title">QUICK LINKS</h3>
+                            <ul>
+                                <li><Link to="/shop">Shop</Link></li>
+                                <li><Link to="/blog">Blog</Link></li>
+                                <li><Link to="/about-us">About Us</Link></li>
+                                <li><a href="/">My Account</a></li>
+                            </ul>
+                        </aside>
+                        <aside className="col-grid-3 footer-widget-area">
+                            <h3 className="widget-title">SUPPORT</h3>
+                            <ul>
+                                <li><Link to="/offers">Offers</Link></li>
+                                <li><Link to="/contact/">Contact Us</Link></li>
+                                <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+                                <li><Link to="/returns-refunds">Returns & Refunds</Link></li>
+                                <li><Link to="/delivery-policy">Delivery Policy</Link></li>
+                            </ul>
+                        </aside>
                         <aside className="col-grid-3 footer-widget-area">
                             <h3 className="widget-title">CONTACT</h3>
                             <div className="widget-quick-contact">
@@ -15,35 +39,8 @@ const Footer = () => {
                                 <p><i className="far fa-clock" aria-hidden="true"></i> 7 Days / 10:00 AM - 10:00 PM</p>
                             </div>
                         </aside>
-                        <aside className="col-grid-3 footer-widget-area">
-                            <h3 className="widget-title">MY ACCOUNT</h3>
-                            <ul>
-                                <li><a href="/">My Account</a></li>
-                                <li><a href="/">Shopping cart</a></li>
-                                <li><a href="/">Wishlist</a></li>
-                                <li><a href="/">Checkout</a></li>
-                                <li><a href="/">Contact</a></li>
-                            </ul>
-                        </aside>
-                        <aside className="col-grid-3 footer-widget-area">
-                            <h3 className="widget-title">INFORMATION</h3>
-                            <ul>
-                                <li><a href="/">About us</a></li>
-                                <li><a href="/">Order History</a></li>
-                                <li><a href="/">Returns</a></li>
-                                <li><a href="/">Custom Service</a></li>
-                                <li><a href="/">Terms &amp; Condition</a></li>
-                            </ul>
-                        </aside>
-                        <aside className="col-grid-3 footer-widget-area">
-                            <h3 className="widget-title">QUICK LINKS</h3>
-                            <ul>
-                                <li><a href="/">About us</a></li>
-                                <li><a href="/">Delivery Information</a></li>
-                                <li><a href="/">Terms &amp; Conditions</a></li>
-                                <li><a href="/">FAQ'S</a></li>
-                                <li><a href="/">Services</a></li>
-                            </ul>
+                        <aside className="col-grid-12">
+                            <img src="/images/Payment-Banner_Jul24_V1-02-2048x229.png" alt="Footer Logo" />
                         </aside>
                     </div>
                 </div>
@@ -52,11 +49,8 @@ const Footer = () => {
                 <div className="colophon-bottom">
                     <div className="container">
                         <div className="inner-wrapper">
-                            <div className="col-grid-6 copyright text-alignleft">
+                            <div className="col-grid-12 copyright text-aligncenter">
                                 <p>Copyright © 2025 Toffpark. All rights reserved.</p>
-                            </div>
-                            <div className="col-grid-6 copyright text-alignright">
-                                <p><span>We Accept: </span> <img src="/images/payment-getway.png" alt="payment" /></p>
                             </div>
                         </div>
                     </div>

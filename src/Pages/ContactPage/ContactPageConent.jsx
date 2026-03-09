@@ -46,7 +46,7 @@ const ContactPageContent = () => {
                           <div className="map-inner-wrapper">
                             <iframe
                               className="googlemap"
-                              src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3151.8351118085707!2d144.955652!3d-37.817330999999996!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6ad65d4c2b349649%3A0xb6899234e561db11!2sEnvato!5e0!3m2!1str!2s!4v1426175044731"
+                              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3650.5199788479126!2d90.35467709999999!3d23.800102000000003!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755bf0671bfe0ef%3A0x7362043fa816f7e2!2sToffpark!5e0!3m2!1sen!2sbd!4v1772737837787!5m2!1sen!2sbd"
                               width="700"
                               height="525"
                               loading="lazy"

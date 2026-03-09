@@ -1,0 +1,5 @@
+.return-policy li{
+    list-style-type: disc;
+    color: #000;
+    margin-left: 20px;
+}
