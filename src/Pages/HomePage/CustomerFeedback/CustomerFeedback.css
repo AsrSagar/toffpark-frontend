@@ -1,0 +1,95 @@
+.customer-feedback-section {
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.feedback-container {
+    max-width: 850px;
+    margin: auto;
+}
+
+.feedback-title {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #000;
+    margin-bottom: 15px;
+}
+
+.feedback-desc {
+    max-width: 600px;
+    margin: auto;
+    color: #555;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+}
+
+/* VIDEO CENTER */
+.video-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+/* VIDEO BOX */
+.video-box {
+    position: relative;
+    width: 100%;
+    max-width: 690px;
+    aspect-ratio: 16/9;
+    cursor: pointer;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.video-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* GLASS PLAY BUTTON */
+.play-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    width: 90px;
+    height: 90px;
+    
+    border-radius: 50%;
+    border: 5px solid rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.15);
+    
+    backdrop-filter: blur(6px);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: 0.3s ease;
+}
+
+.play-icon {
+    width: 0;
+    height: 0;
+    border-left: 26px solid white;
+    border-top: 16px solid transparent;
+    border-bottom: 16px solid transparent;
+    margin-left: 6px;
+}
+
+/* HOVER EFFECT */
+.video-box:hover .play-btn {
+    transform: translate(-50%, -50%) scale(1.1);
+    background: rgba(255,255,255,0.25);
+}
+
+/* IFRAME */
+.video-iframe {
+    width: 100%;
+    max-width: 690px;
+    aspect-ratio: 16/9;
+    border-radius: 8px;
+}

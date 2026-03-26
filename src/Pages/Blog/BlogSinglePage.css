@@ -1,0 +1,8 @@
+.blog-single {
+    width: 70% !important;
+}
+@media only screen and (max-width: 780px) {
+    .blog-single {
+        width: 100% !important;
+    }
+}

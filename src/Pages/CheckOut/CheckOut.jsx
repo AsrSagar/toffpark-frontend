@@ -3,6 +3,8 @@ import axios from "axios";
 import { useCart } from "../../context/CartContext";
 import ThankYouPopup from "../ThankYouPopup/ThankYouPopup";
 import config from "../../config";
+import "./CheckoutPage.css";
+import { useLocation } from "react-router-dom";
 
 // Function to get device type, UTM params, and session page views
 const getTrackingData = () => {
@@ -29,18 +31,14 @@ const getTrackingData = () => {
 const CheckoutPage = () => {
   const API_URL = config.API_URL;
   const { cartItems, cartTotal, clearCart } = useCart();
+  const location = useLocation();
+  const processedRef = useRef(false); // prevents infinite useEffect loop
 
   const [billing, setBilling] = useState({
     first_name: "",
-    last_name: "",
-    email: "",
-    country: "",
     address_1: "",
-    address_2: "",
-    city: "",
-    state: "",
-    postcode: "",
     phone: "",
+    order_note: "",
   });
 
   const [paymentMethod, setPaymentMethod] = useState("cod");
@@ -50,27 +48,16 @@ const CheckoutPage = () => {
   const [promoMessage, setPromoMessage] = useState("");
   const [promoLoading, setPromoLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [orderStatus, setOrderStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const [orderId, setOrderId] = useState(null);
 
-  // Delivery Charges
-  const deliveryCharges = {
-    inside_dhaka: 60,
-    outside_dhaka: 120,
-  };
+  const deliveryCharges = { inside_dhaka: 60, outside_dhaka: 120 };
   const deliveryFee = deliveryCharges[deliveryMethod] || 0;
-
-  // Final total (discount only applies to product total)
   const finalTotal = Number(cartTotal - discountAmount) + deliveryFee;
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(Number(price));
-  };
+  const formatPrice = (price) =>
+    new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(price));
 
   const handleBillingChange = (e) => {
     setBilling({ ...billing, [e.target.name]: e.target.value });
@@ -92,19 +79,17 @@ const CheckoutPage = () => {
 
       if (res.data.length > 0) {
         const coupon = res.data[0];
-
+        let discount = 0;
         if (coupon.discount_type === "percent") {
-          const discount = (cartTotal * parseFloat(coupon.amount)) / 100;
-          setDiscountAmount(discount);
+          discount = (cartTotal * parseFloat(coupon.amount)) / 100;
           setPromoMessage(`Promo code applied! ${coupon.amount}% discount: ৳${formatPrice(discount)}`);
         } else if (coupon.discount_type === "fixed_cart") {
-          const discount = parseFloat(coupon.amount);
-          setDiscountAmount(discount);
+          discount = parseFloat(coupon.amount);
           setPromoMessage(`Promo code applied! Fixed discount: ৳${formatPrice(discount)}`);
         } else {
-          setDiscountAmount(0);
           setPromoMessage("This promo code cannot be applied.");
         }
+        setDiscountAmount(discount);
       } else {
         setDiscountAmount(0);
         setPromoMessage("Invalid promo code");
@@ -117,79 +102,199 @@ const CheckoutPage = () => {
 
     setPromoLoading(false);
   };
-
-  // 🔥 META PIXEL - INITIATE CHECKOUT
-  const checkoutFired = useRef(false);
-  useEffect(() => {
-    if (window.fbq && cartItems.length > 0 && !checkoutFired.current) {
-
-      checkoutFired.current = true;
-
-      // window.fbq("track", "InitiateCheckout", {
-      //   value: Number(cartTotal),
-      //   currency: "BDT",
-      //   content_ids: cartItems.map(item => item.id),
-      //   content_type: "product"
-      // });
-    }
-  }, [cartItems, cartTotal]);
-
-  // Place Order
+  // ==========================
+  // PLACE ORDER
+  // ==========================
   const placeOrder = async (e) => {
     e.preventDefault();
 
-    if (!termsAccepted) {
-      alert("Please accept the terms & conditions");
-      return;
-    }
+    if (!termsAccepted) return alert("Please accept the terms & conditions");
+    if (cartItems.length === 0) return alert("Cart is empty or invalid product data");
 
     setLoading(true);
 
-    const line_items = cartItems.map((item) => {
-      return {
-        product_id: item.parent_id ? item.parent_id : item.id,
-        variation_id: item.variation_id ? item.variation_id : 0,
-        quantity: item.qty,
-      };
-    });
-
-    const orderData = {
-      payment_method: paymentMethod,
-      payment_method_title:
-        paymentMethod === "cod"
-          ? "Cash on Delivery"
-          : paymentMethod === "bacs"
-          ? "Direct Bank Transfer"
-          : "Cheque Payment",
-      set_paid: false,
-      billing,
-      shipping: billing,
-      line_items,
-      shipping_lines: [
-        {
-          method_id: deliveryMethod,
-          method_title: deliveryMethod === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka",
-          total: deliveryFee.toString(),
-        },
-      ],
-      coupon_lines:
-        discountAmount > 0
-          ? [{ code: promoCode }]
-          : [],
-    };
-
-    // Add tracking data
-    const trackingData = getTrackingData();
-    orderData.meta_data = [
-      ...(orderData.meta_data || []),
-      { key: "device_type", value: trackingData.deviceType },
-      { key: "utm_source", value: trackingData.utmSource },
-      { key: "utm_medium", value: trackingData.utmMedium },
-      { key: "utm_campaign", value: trackingData.utmCampaign },
-      { key: "page_views", value: trackingData.pageViews },
-    ];
+    const line_items = cartItems.map(item => ({
+      product_id: item.productId,
+      variation_id: item.variationId || undefined, // undefined instead of 0 to avoid WC error
+      quantity: item.qty,
+    }));
 
     try {
+      // --------------------------
+      // SSLCommerz Payment
+      // --------------------------
+      if (paymentMethod === "sslcommerz") {
+        // Create WooCommerce Order
+        const orderResponse = await axios.post(
+          `${API_URL}/wc/v3/orders`,
+          {
+            payment_method: "sslcommerz",
+            payment_method_title: "SSLCommerz",
+            set_paid: false,
+            billing,
+            shipping: billing,
+            line_items,
+            shipping_lines: [
+              {
+                method_id: deliveryMethod,
+                method_title: deliveryMethod === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka",
+                total: deliveryFee.toString(),
+              },
+            ],
+            coupon_lines: discountAmount > 0 ? [{ code: promoCode }] : [],
+          },
+          {
+            auth: {
+              username: "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
+              password: "cs_2029a263378e25918c8886931b530f0ab82ff9e1",
+            },
+          }
+        );
+
+        const orderID = orderResponse.data.id;
+
+        // Call SSL Sandbox API
+        const sslResponse = await axios.post(
+          "https://dev.toffpark.com/wp-json/sslcommerz/v1/create-payment",
+          {
+            order_id: orderID,
+            amount: finalTotal,
+            name: `${billing.first_name} ${billing.last_name}`,
+            email: billing.email,
+            phone: billing.phone,
+            address: billing.address_1,
+          }
+        );
+
+        if (sslResponse.data?.GatewayPageURL) {
+          window.location.href = sslResponse.data.GatewayPageURL;
+        } else {
+          console.log("SSL ERROR:", sslResponse.data);
+          alert("SSL Payment initiation failed");
+        }
+
+        setLoading(false);
+        return;
+      }
+      // --------------------------
+      // --------------------------
+      // --------------------------
+      // bKash Payment Logic
+      // --------------------------
+      if (paymentMethod === "bkash") {
+        setLoading(true);
+        try {
+          const orderResponse = await axios.post(
+            `${API_URL}/wc/v3/orders`,
+            {
+              payment_method: "bkash-for-woocommerce", 
+              payment_method_title: "bKash",
+              set_paid: false,
+              billing: {
+                ...billing,
+                last_name: "", 
+              },
+              shipping: billing,
+              line_items: cartItems.map((item) => ({
+                product_id: item.productId,
+                variation_id: item.variationId || undefined,
+                quantity: item.qty,
+              })),
+              shipping_lines: [
+                {
+                  method_id: deliveryMethod,
+                  method_title: deliveryMethod === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka",
+                  total: deliveryFee.toString(),
+                },
+              ],
+              coupon_lines: discountAmount > 0 ? [{ code: promoCode }] : [],
+            },
+            {
+              auth: {
+                username: "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
+                password: "cs_2029a263378e25918c8886931b530f0ab82ff9e1",
+              },
+            }
+          );
+
+          const orderID = orderResponse.data.id;
+
+          const bkashRes = await axios.post(
+            "https://dev.toffpark.com/wp-json/bkash/v1/create-payment",
+            {
+              order_id: orderID,
+            }
+          );
+
+          if (bkashRes.data?.status === "success" && bkashRes.data?.bkashURL) {
+            window.location.href = bkashRes.data.bkashURL;
+          } else {
+            console.log("bKash Error Details:", bkashRes.data);
+            alert("bKash Error: " + (bkashRes.data?.message || "Payment URL generation failed."));
+          }
+        } catch (error) {
+          console.error("BKASH FULL ERROR:", error.response?.data || error.message);
+          alert("System Error: bKash পেমেন্ট শুরু করা যাচ্ছে না। দয়া করে আবার চেষ্টা করুন।");
+        }
+        setLoading(false);
+        return;
+      }
+      // --------------------------
+      // COD / BANK TRANSFER
+      // --------------------------
+      const orderData = {
+        payment_method: paymentMethod,
+        payment_method_title:
+          paymentMethod === "cod"
+            ? "Cash on Delivery"
+            : paymentMethod === "bkash"
+            ? "bKash"
+            : "Card Payment",
+        set_paid: false,
+        billing: {
+          first_name: billing.first_name,
+          last_name: "", // optional
+          phone: billing.phone,
+          address_1: billing.address_1,
+          address_2: "",
+          city: "",
+          state: "",
+          postcode: "",
+          country: "",
+        },
+        shipping: {
+          first_name: billing.first_name,
+          last_name: "",
+          address_1: billing.address_1,
+          address_2: "",
+          city: "",
+          state: "",
+          postcode: "",
+          country: "",
+        },
+        customer_note: billing.order_note,
+        line_items: cartItems.map((item) => ({
+          product_id: item.productId,
+          variation_id: item.variationId || undefined,
+          quantity: item.qty,
+        })),
+        shipping_lines: [
+          {
+            method_id: deliveryMethod,
+            method_title: deliveryMethod === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka",
+            total: deliveryFee.toString(),
+          },
+        ],
+        coupon_lines: discountAmount > 0 ? [{ code: promoCode }] : [],
+        meta_data: [
+          { key: "device_type", value: getTrackingData().deviceType },
+          { key: "utm_source", value: getTrackingData().utmSource },
+          { key: "utm_medium", value: getTrackingData().utmMedium },
+          { key: "utm_campaign", value: getTrackingData().utmCampaign },
+          { key: "page_views", value: getTrackingData().pageViews },
+        ],
+      };
+
       const response = await axios.post(`${API_URL}/wc/v3/orders`, orderData, {
         auth: {
           username: "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
@@ -199,33 +304,38 @@ const CheckoutPage = () => {
 
       const orderID = response.data.id;
       setOrderId(orderID);
-      try {
-        if (window.fbq) {
-          window.fbq(
-            "track",
-            "Purchase",
-            {
-              value: Number(finalTotal),
-              currency: "BDT",
-              content_ids: cartItems.map(item => item.id),
-              content_type: "product"
-            },
-            { eventID: orderID }
-          );
-        }
-      } catch (pixelError) {
-        console.error("FB Pixel error:", pixelError);
-      }
+
       clearCart();
       setShowThankYou(true);
-      setOrderStatus("");
     } catch (error) {
-      console.error(error.response?.data || error.message);
-      setOrderStatus("Failed to place order. Check console for details.");
+      console.error("ORDER ERROR:", error.response?.data || error.message);
+      alert("Order failed. Check console for details.");
     }
 
     setLoading(false);
   };
+
+  // Payment success query params handling
+  useEffect(() => {
+    if (processedRef.current) return; // prevent re-run
+
+    const params = new URLSearchParams(location.search);
+    const paymentStatus = params.get("payment");
+    const order = params.get("order_id");
+
+    if (paymentStatus === "success") {
+      processedRef.current = true;
+      setOrderId(order);
+      setShowThankYou(true);
+      clearCart();
+      window.history.replaceState({}, document.title, "/checkout");
+    }
+    if (paymentStatus === "fail") {
+      alert("Payment Failed");
+      processedRef.current = true;
+      window.history.replaceState({}, document.title, "/checkout");
+    }
+  }, [location.search, clearCart]);
 
   return (
     <div>
@@ -234,16 +344,14 @@ const CheckoutPage = () => {
         <div className="custom-header-content">
           <div className="container">
             <div id="breadcrumb">
-              <div aria-label="Breadcrumbs" className="breadcrumbs breadcrumb-trail">
-                <ul className="trail-items">
-                  <li className="trail-item trail-begin">
-                    <a href="/" rel="home"><span>Home</span></a>
-                  </li>
-                  <li className="trail-item trail-end">
-                    <span>Checkout</span>
-                  </li>
-                </ul>
-              </div>
+              <ul className="trail-items">
+                <li className="trail-item trail-begin">
+                  <a href="/" rel="home"><span>Home</span></a>
+                </li>
+                <li className="trail-item trail-end">
+                  <span>Checkout</span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -258,87 +366,73 @@ const CheckoutPage = () => {
                 <div className="section-checkout">
                   <form className="checkout product-checkout" onSubmit={placeOrder}>
                     <div className="col2-set" id="customer_details">
-                      {/* Billing */}
                       <div className="col-1">
-                        <div className="product-billing-fields">
-                          <h3>Billing Details</h3>
-                          <div className="product-billing-fields_field-wrapper">
-                            <div className="form-row form-row-first">
-                              <label>First Name *</label>
-                              <input type="text" name="first_name" value={billing.first_name} onChange={handleBillingChange} required />
-                            </div>
-                            <div className="form-row form-row-last">
-                              <label>Last Name *</label>
-                              <input type="text" name="last_name" value={billing.last_name} onChange={handleBillingChange} required />
-                            </div>
-                            <div className="form-row form-row-wide">
-                              <label>Email *</label>
-                              <input type="email" name="email" value={billing.email} onChange={handleBillingChange} required />
-                            </div>
-                            <div className="form-row form-row-wide">
-                              <label>Address *</label>
-                              <input type="text" name="address_1" value={billing.address_1} onChange={handleBillingChange} required />
-                            </div>
-                            <div className="form-row form-row-first">
-                              <label>City *</label>
-                              <input type="text" name="city" value={billing.city} onChange={handleBillingChange} required />
-                            </div>
-                            <div className="form-row form-row-last">
-                              <label>State *</label>
-                              <input type="text" name="state" value={billing.state} onChange={handleBillingChange} required />
-                            </div>
-                            <div className="form-row form-row-first">
-                              <label>Postcode *</label>
-                              <input type="text" name="postcode" value={billing.postcode} onChange={handleBillingChange} required />
-                            </div>
-                            <div className="form-row form-row-last">
-                              <label>Phone *</label>
-                              <input type="text" name="phone" value={billing.phone} onChange={handleBillingChange} required />
-                            </div>
+                        <h3>Billing Details</h3>
+                        <div className="product-billing-fields_field-wrapper">
+                          <div className="form-row">
+                            <label>Name *</label>
+                            <input
+                              type="text"
+                              name="first_name"
+                              value={billing.first_name}
+                              onChange={handleBillingChange}
+                              required
+                            />
+                          </div>
+
+                          <div className="form-row">
+                            <label>Phone *</label>
+                            <input
+                              type="text"
+                              name="phone"
+                              value={billing.phone}
+                              onChange={handleBillingChange}
+                              required
+                            />
+                          </div>
+
+                          <div className="form-row">
+                            <label>Address *</label>
+                            <input
+                              type="text"
+                              name="address_1"
+                              value={billing.address_1}
+                              onChange={handleBillingChange}
+                              required
+                            />
+                          </div>
+
+                          <div className="form-row">
+                            <label>Order Note</label>
+                            <textarea
+                              name="order_note"
+                              value={billing.order_note}
+                              onChange={handleBillingChange}
+                            />
                           </div>
                         </div>
                       </div>
-
-                      {/* Order Review */}
+                      {/* Order Review & Payment */}
                       <div className="col-2">
                         <h3>Your Order</h3>
                         <table className="shop-table product-checkout-review-order-table">
                           <tbody>
                             {cartItems.map((item) => (
-                              <tr key={item.id}>
+                              <tr key={item.productId}>
                                 <td>{item.name} × {item.qty}</td>
                                 <td>৳{formatPrice(item.price * item.qty)}</td>
                               </tr>
                             ))}
-                            <tr>
-                              <td>Cart Sub-total</td>
-                              <td>৳{formatPrice(cartTotal)}</td>
-                            </tr>
-                            {discountAmount > 0 && (
-                              <tr>
-                                <td>Discount</td>
-                                <td>-৳{formatPrice(discountAmount)}</td>
-                              </tr>
-                            )}
-                            <tr>
-                              <td>Delivery Charge</td>
-                              <td>৳{formatPrice(deliveryFee)}</td>
-                            </tr>
-                            <tr>
-                              <th>Order Total</th>
-                              <th>৳{formatPrice(finalTotal)}</th>
-                            </tr>
+                            <tr><td>Cart Sub-total</td><td>৳{formatPrice(cartTotal)}</td></tr>
+                            {discountAmount > 0 && <tr><td>Discount</td><td>-৳{formatPrice(discountAmount)}</td></tr>}
+                            <tr><td>Delivery Charge</td><td>৳{formatPrice(deliveryFee)}</td></tr>
+                            <tr><th>Order Total</th><th>৳{formatPrice(finalTotal)}</th></tr>
                           </tbody>
                         </table>
 
                         {/* Promo Code */}
                         <div className="form-row">
-                          <input
-                            type="text"
-                            placeholder="Promo Code"
-                            value={promoCode}
-                            onChange={(e) => setPromoCode(e.target.value)}
-                          />
+                          <input type="text" placeholder="Promo Code" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} />
                           <button type="button" onClick={applyPromoCode} disabled={promoLoading}>
                             {promoLoading ? "Applying..." : "Apply"}
                           </button>
@@ -348,52 +442,64 @@ const CheckoutPage = () => {
                         {/* Delivery Method */}
                         <div className="product-checkout-payment">
                           <h3>Delivery Method</h3>
-                          <ul className="wc-payment-methods methods">
+                          <ul>
                             <li>
-                              <input
-                                type="radio"
-                                value="inside_dhaka"
-                                checked={deliveryMethod === "inside_dhaka"}
-                                onChange={(e) => setDeliveryMethod(e.target.value)}
-                              />
+                              <input type="radio" value="inside_dhaka" checked={deliveryMethod === "inside_dhaka"} onChange={(e) => setDeliveryMethod(e.target.value)} />
                               <label>Inside Dhaka (৳60)</label>
                             </li>
                             <li>
-                              <input
-                                type="radio"
-                                value="outside_dhaka"
-                                checked={deliveryMethod === "outside_dhaka"}
-                                onChange={(e) => setDeliveryMethod(e.target.value)}
-                              />
+                              <input type="radio" value="outside_dhaka" checked={deliveryMethod === "outside_dhaka"} onChange={(e) => setDeliveryMethod(e.target.value)} />
                               <label>Outside Dhaka (৳120)</label>
                             </li>
                           </ul>
                         </div>
 
-                        {/* Payment Methods */}
-                        <div id="payment" className="product-checkout-payment">
-                          <h3>Payment Methods</h3>
-                          <label>
-                            <input type="radio" value="cod" checked={paymentMethod === "cod"} onChange={(e) => setPaymentMethod(e.target.value)} />
-                            Cash on Delivery
-                          </label>
-
-                          <div className="form-row">
-                            <input
-                              type="checkbox"
-                              checked={termsAccepted}
-                              onChange={(e) => setTermsAccepted(e.target.checked)}
-                            />
-                            <label>I accept terms & conditions *</label>
+                        {/* Payment Method */}
+                        <div id="payment" className="custom-payment">
+                          <h3>Payment Method</h3>
+                          <div className="payment-box">
+                            {["cod", "bkash", "nagad", "sslcommerz"].map((method) => (
+                              <label key={method} className={`payment-row ${paymentMethod === method ? "active" : ""}`}>
+                                <div className="left">
+                                  <input type="radio" name="payment" value={method} checked={paymentMethod === method} onChange={(e) => setPaymentMethod(e.target.value)} />
+                                  <span>{method === "cod" ? "Cash On Delivery" : method === "bkash" ? "bKash" : method === "nagad" ? "Nagad" : "Card Payment"}</span>
+                                  {method === "bkash" && <img src="/images/bkash.png" alt="bkash" />}
+                                  {method === "nagad" && <img src="/images/nagad.png" alt="nagad" />}
+                                  {method === "sslcommerz" && <img src="/images/sslcz-verified.png" alt="sslcommerz" />}
+                                </div>
+                              </label>
+                            ))}
                           </div>
-
-                          <div className="form-row place-order">
-                            <button type="submit" className="button alt" disabled={loading}>
-                              {loading ? "Placing Order..." : "Place Order"}
-                            </button>
+                          {
+                            paymentMethod === "bkash" && (
+                              <div className="payment-desc">
+                                Pay securely by bKash through M-Commerce.
+                              </div>
+                            )
+                          }
+                          {
+                            paymentMethod === "sslcommerz" && (
+                              <div className="payment-desc">
+                                Pay securely by Credit/Debit card, Internet banking or Mobile banking through SSLCommerz.
+                              </div>
+                            )
+                          }
+                          {
+                            paymentMethod === "nagad" && (
+                              <div className="payment-desc">
+                                Pay securely by Nagad through M-Commerce.
+                              </div>
+                            )
+                          }
+                          <div className="terms">
+                            <label>
+                              <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} />
+                              By clicking Place Order, you agree to our delivery policy and returns & refunds policy.
+                            </label>
                           </div>
-
-                          {orderStatus && <p>{orderStatus}</p>}
+                          <button type="submit" className="place-order-btn" disabled={loading}>
+                            {loading ? "Placing Order..." : "Place Order"}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -404,14 +510,10 @@ const CheckoutPage = () => {
           </div>
         </div>
       </div>
-
-      <ThankYouPopup
+     <ThankYouPopup
         show={showThankYou}
         orderId={orderId}
-        onClose={() => {
-          setShowThankYou(false);
-          window.location.href = "/";
-        }}
+        onClose={() => setShowThankYou(false)}
       />
     </div>
   );

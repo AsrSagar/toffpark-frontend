@@ -1,10 +1,28 @@
 import React, { useState } from "react";
 import axios from "axios";
 import ThankYouPopup from "../../Pages/ThankYouPopup/ThankYouPopup";
+import "./BuyNowPopupCheckout.css";
 
-const BuyNowPopupCheckout = ({ product,selectedVariation, API_URL}) => {
+const BuyNowPopupCheckout = ({
+  product,
+  selectedVariation,
+  API_URL,
+  fbtProducts = [],
+  fbtSelected = {},
+  fbtSelectedSize = {}
+}) => {
   const [showModal, setShowModal] = useState(false);
-  const [qty, setQty] = useState(product.qty || 1);
+  const [qty] = useState(product.qty || 1);
+
+  // FBT products quantity state
+  const [fbtQtys] = useState(
+    fbtProducts.reduce((acc, p) => {
+      acc[p.id] = 1;
+      return acc;
+    }, {})
+  );
+
+  const [paymentMethod, setPaymentMethod] = useState("cod");
   const [loading, setLoading] = useState(false);
   const [orderStatus, setOrderStatus] = useState("");
   const [showThankYou, setShowThankYou] = useState(false);
@@ -13,31 +31,6 @@ const BuyNowPopupCheckout = ({ product,selectedVariation, API_URL}) => {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [promoMessage, setPromoMessage] = useState("");
   const [promoLoading, setPromoLoading] = useState(false);
-  // const [checkoutInitiated, setCheckoutInitiated] = useState(false);
-
-  const handleBuyNowClick = () => {
-
-    // 🔴 If product is variable and no variation selected
-    if (product.type === "variable" && !selectedVariation) {
-      alert("Please select a size before continuing.");
-      return;
-    }
-
-    // ===== Facebook Pixel AddToCart Tracking =====
-    // if (window.fbq) {
-    //   window.fbq("track", "AddToCart", {
-    //     value: product.price,
-    //     currency: "BDT",
-    //     content_ids: [product.id],
-    //     content_name: product.name,
-    //     content_type: "product",
-    //   });
-
-    //   console.log("FB Pixel AddToCart event sent:", product.name);
-    // }
-
-    setShowModal(true);
-  };
 
   const [billing, setBilling] = useState({
     name: "",
@@ -56,52 +49,46 @@ const BuyNowPopupCheckout = ({ product,selectedVariation, API_URL}) => {
     outside_dhaka: 120,
   };
 
-  const increaseQty = () => setQty(qty + 1);
-  const decreaseQty = () => setQty(qty > 1 ? qty - 1 : 1);
-
-  const handleBillingChange = (e) => {
+  const handleBillingChange = (e) =>
     setBilling({ ...billing, [e.target.name]: e.target.value });
 
-    // ===== Facebook Pixel InitiateCheckout Tracking =====
-    // if (!checkoutInitiated && window.fbq) {
-    //   window.fbq("track", "InitiateCheckout", {
-    //     value: subtotal,
-    //     currency: "BDT",
-    //     content_ids: [product.id],
-    //     content_name: product.name,
-    //     content_type: "product",
-    //   });
-
-    //   console.log("FB Pixel InitiateCheckout event sent:", product.name);
-    //   setCheckoutInitiated(true); 
-    // }
-  };
-  const handleShippingChange = (e) => {
-    const method = e.target.value;
-    setShipping({ method, cost: shippingRates[method] });
-  };
+  const handleShippingChange = (e) =>
+    setShipping({ method: e.target.value, cost: shippingRates[e.target.value] });
 
   const variationId = selectedVariation?.id || null;
-
   const size =
     selectedVariation?.attributes?.find(
       (attr) =>
-        attr.name.toLowerCase() === "size" ||
-        attr.slug === "pa_size"
+        attr.name.toLowerCase() === "size" || attr.slug === "pa_size"
     )?.option || null;
 
-  const finalPrice =
-    selectedVariation?.price
-      ? Number(selectedVariation.price)
-      : product.price;
+  const finalPrice = selectedVariation?.price ? Number(selectedVariation.price) : product.price;
+  const checkprice = (selectedVariation?.prices?.price || 0) / 100 || product.price;
 
-  const subtotal = finalPrice * qty;
+  // Subtotal = main product + fbt products
+  const subtotal =
+    (Number(finalPrice) || checkprice) * qty +
+    fbtProducts.reduce((acc, p) => {
+      if (fbtSelected[p.id]) {
+        return acc + (p.price || 0) * (fbtQtys[p.id] || 1);
+      }
+      return acc;
+    }, 0);
+
   const total = subtotal - discountAmount + shipping.cost;
 
-  // Apply Promo Code
+  // Open popup on Buy Now
+  const handleBuyNowClick = () => {
+    if (product.type === "variable" && !selectedVariation) {
+      alert("Please select a size before continuing.");
+      return;
+    }
+    setShowModal(true);
+  };
+
+  // Apply promo code
   const applyPromoCode = async () => {
     if (!promoCode) return;
-
     setPromoLoading(true);
     setPromoMessage("");
 
@@ -115,19 +102,18 @@ const BuyNowPopupCheckout = ({ product,selectedVariation, API_URL}) => {
 
       if (res.data.length > 0) {
         const coupon = res.data[0];
+        let discount = 0;
 
         if (coupon.discount_type === "percent") {
-          const discount = (subtotal * parseFloat(coupon.amount)) / 100; // only product total
-          setDiscountAmount(discount);
+          discount = (subtotal * parseFloat(coupon.amount)) / 100;
           setPromoMessage(`Promo code applied! ${coupon.amount}% discount: ৳${discount.toFixed(2)}`);
         } else if (coupon.discount_type === "fixed_cart") {
-          const discount = parseFloat(coupon.amount);
-          setDiscountAmount(discount);
+          discount = parseFloat(coupon.amount);
           setPromoMessage(`Promo code applied! Fixed discount: ৳${discount.toFixed(2)}`);
         } else {
-          setDiscountAmount(0);
           setPromoMessage("This promo code cannot be applied.");
         }
+        setDiscountAmount(discount);
       } else {
         setDiscountAmount(0);
         setPromoMessage("Invalid promo code");
@@ -137,62 +123,91 @@ const BuyNowPopupCheckout = ({ product,selectedVariation, API_URL}) => {
       setDiscountAmount(0);
       setPromoMessage("Error validating promo code");
     }
-
     setPromoLoading(false);
   };
+
+  const clearPromoCode = () => {
+    setPromoCode("");
+    setDiscountAmount(0);
+    setPromoMessage("");
+  };
+
+  // Place order
   const placeOrder = async () => {
     if (!billing.name || !billing.phone || !billing.address) {
       alert("Please fill Name, Phone, and Address!");
       return;
     }
-
     setLoading(true);
     setOrderStatus("");
 
-    const orderData = {
-      payment_method: "cod",
-      payment_method_title: "Cash on Delivery",
-      set_paid: false,
-      billing: {
-        first_name: billing.name,
-        phone: billing.phone,
-        address_1: billing.address,
-      },
-      shipping: {
-        first_name: billing.name,
-        address_1: billing.address,
-      },
-      line_items: [
-        variationId
-          ? {
-              product_id: product.id,
-              variation_id: variationId,
-              quantity: qty,
-            }
-          : {
-              product_id: product.id,
-              quantity: qty,
-            },
-      ],
-      shipping_lines: [
-        {
-          method_id: "flat_rate",
-          method_title: shipping.method === "inside_dhaka" ? "ঢাকার ভিতরে" : "ঢাকার বাহিরে",
-          total: shipping.cost.toString(),
-        },
-      ],
-      coupon_lines:
-        discountAmount > 0
-          ? [
-              {
-                code: promoCode,
-              },
-            ]
-          : [],
-      customer_note: billing.note,
-    };
-
     try {
+      const lineItems = [
+        variationId ? { product_id: product.id, variation_id: variationId, quantity: qty } : { product_id: product.id, quantity: qty }
+      ];
+
+      // Add FBT products to line items
+      for (const p of fbtProducts) {
+        if (!fbtSelected[p.id]) continue;
+
+        if (p.type !== "variable") {
+          lineItems.push({ product_id: p.id, quantity: fbtQtys[p.id] || 1 });
+          continue;
+        }
+
+        const selectedSize = fbtSelectedSize[p.id];
+        if (!selectedSize) {
+          alert(`Please select size for ${p.name}`);
+          setLoading(false);
+          return;
+        }
+
+        const variationRes = await axios.get(`${API_URL}/wc/v3/products/${p.id}/variations`, {
+          auth: {
+            username: "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
+            password: "cs_2029a263378e25918c8886931b530f0ab82ff9e1",
+          },
+        });
+
+        const matchedVariation = variationRes.data.find((v) =>
+          v.attributes.some((attr) => attr.option.toLowerCase() === selectedSize.toLowerCase())
+        );
+
+        if (!matchedVariation) {
+          alert(`Selected size not available for ${p.name}`);
+          setLoading(false);
+          return;
+        }
+
+        lineItems.push({ product_id: p.id, variation_id: matchedVariation.id, quantity: fbtQtys[p.id] || 1 });
+      }
+
+      // Order data
+      const orderData = {
+        payment_method: paymentMethod,
+        payment_method_title: paymentMethod === "cod" ? "Cash on Delivery" : paymentMethod === "bkash" ? "bKash" : paymentMethod === "nagad" ? "Nagad" : "Card Payment",
+        set_paid: false,
+        billing: {
+          first_name: billing.name,
+          phone: billing.phone,
+          address_1: billing.address,
+        },
+        shipping: {
+          first_name: billing.name,
+          address_1: billing.address,
+        },
+        line_items: lineItems,
+        shipping_lines: [
+          {
+            method_id: "flat_rate",
+            method_title: shipping.method === "inside_dhaka" ? "ঢাকার ভিতরে" : "ঢাকার বাহিরে",
+            total: shipping.cost.toString(),
+          },
+        ],
+        coupon_lines: discountAmount > 0 ? [{ code: promoCode }] : [],
+        customer_note: billing.note,
+      };
+
       const response = await axios.post(`${API_URL}/wc/v3/orders`, orderData, {
         auth: {
           username: "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
@@ -200,26 +215,13 @@ const BuyNowPopupCheckout = ({ product,selectedVariation, API_URL}) => {
         },
       });
 
-      const orderId = response.data.id;
-      setOrderId(orderId);
+      setOrderId(response.data.id);
       setShowThankYou(true);
       setShowModal(false);
       setOrderStatus(`Order placed successfully! Order ID: ${response.data.id}`);
-      // ===== Facebook Pixel Purchase Tracking =====
-      // if (window.fbq) {
-      //   window.fbq("track", "Purchase", {
-      //     value: total.toFixed(2),      
-      //     currency: "BDT",              
-      //     content_ids: [variationId || product.id],
-      //     content_name: product.name,   
-      //     content_type: "product",
-      //   });
-      //   console.log("FB Pixel Purchase event sent:", product.name, total.toFixed(2));
-      // }
     } catch (error) {
       console.error(error.response?.data || error.message);
-      setOrderStatus("Failed to place order. Check console.");
-      alert("Failed to place order. Check console.");
+      alert("Failed to place order.");
     }
 
     setLoading(false);
@@ -227,134 +229,172 @@ const BuyNowPopupCheckout = ({ product,selectedVariation, API_URL}) => {
 
   return (
     <>
-      <button
-        type="button"
-        className="custom-button button-small"
-        onClick={handleBuyNowClick}
-      >
+      <button type="button" className="custom-button button-small" onClick={handleBuyNowClick}>
         Buy Now
       </button>
 
-      {/* Checkout Modal */}
       {showModal && (
         <div className="fixed-place-order">
           <div className="popup-checkout-content">
-            <span className="popup-close" onClick={() => setShowModal(false)}>×</span>
+            <div className="popup-form">
+              <span className="popup-close" onClick={() => setShowModal(false)}>×</span>
 
-            {/* Product Info */}
-            <table className="popup-cart-table">
-              <thead>
-                <tr>
-                  <th style={{ width: "20%" }}>Image</th>
-                  <th style={{ width: "45%" }}>Product</th>
-                  <th style={{ width: "15%" }}>Qty</th>
-                  <th style={{ width: "15%" }}>Total</th>
-                  <th style={{ width: "5%" }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><img src={product.images[0]?.src} width="40" height="40" alt={product.name} /></td>
-                  <td>
-                    {product.name}
-                    {size && ` (Size: ${size})`} × {qty}
-                  </td>
-                  <td>
-                    <div className="popup-qty-wrap">
-                      <button type="button" onClick={decreaseQty}>-</button>
-                      <span>{qty}</span>
-                      <button type="button" onClick={increaseQty}>+</button>
-                    </div>
-                  </td>
-                  <td>৳ {subtotal}</td>
-                  <td><button className="pop-dlt-btn" type="button" onClick={() => setShowModal(false)}><i className="fa fa-trash-alt"></i></button></td>
-                </tr>
-              </tbody>
-            </table>
+              {/* Billing Form */}
+              <div className="form-control">
+                <label>Name *</label>
+                <div className="input-wrapper">
+                  <span className="icon">👤</span>
+                  <input type="text" name="name" placeholder="Name" value={billing.name} onChange={handleBillingChange} />
+                </div>
+              </div>
+              <div className="form-control">
+                <label>Phone *</label>
+                <div className="input-wrapper">
+                  <span className="icon">📞</span>
+                  <input type="tel" name="phone" placeholder="Phone" value={billing.phone} onChange={handleBillingChange} />
+                </div>
+              </div>
+              <div className="form-control">
+                <label>Address</label>
+                <div className="input-wrapper">
+                  <span className="icon">📍</span>
+                  <input type="text" name="address" placeholder="Address" value={billing.address} onChange={handleBillingChange} />
+                </div>
+              </div>
+              <div className="form-control">
+                <label>Note (optional)</label>
+                <div className="input-wrapper">
+                  <span className="icon">📝</span>
+                  <input type="text" name="note" placeholder="Note" value={billing.note} onChange={handleBillingChange} />
+                </div>
+              </div>
 
-            {/* Billing Form */}
-            <div className="customer-details">
-              <h3>Billing Details</h3>
-              <input type="text" name="name" placeholder="Full Name *" value={billing.name} onChange={handleBillingChange} />
-              <input type="tel" name="phone" placeholder="Phone *" value={billing.phone} onChange={handleBillingChange} />
-              <input type="text" name="address" placeholder="Address *" value={billing.address} onChange={handleBillingChange} />
-              <textarea name="note" placeholder="Order Note" rows={2} value={billing.note} onChange={handleBillingChange}></textarea>
-            </div>
-
-            {/* Promo Code */}
-            <div className="promo-code">
-              <input
-                type="text"
-                placeholder="Promo Code"
-                value={promoCode}
-                onChange={(e) => setPromoCode(e.target.value)}
-              />
-              <button type="button" onClick={applyPromoCode} disabled={promoLoading}>
-                {promoLoading ? "Applying..." : "Apply"}
-              </button>
-              {promoMessage && <p>{promoMessage}</p>}
-            </div>
-
-            {/* Shipping */}
-            <div className="shipping-methods">
-              <h3>Shipping Method</h3>
-              <label>
-                <input type="radio" name="shipping" value="inside_dhaka" checked={shipping.method === "inside_dhaka"} onChange={handleShippingChange} />
-                ঢাকার ভিতরে – ৳ 70
-              </label>
-              <label>
-                <input type="radio" name="shipping" value="outside_dhaka" checked={shipping.method === "outside_dhaka"} onChange={handleShippingChange} />
-                ঢাকার বাহিরে – ৳ 120
-              </label>
-            </div>
-
-            {/* Order Summary */}
-            <div className="checkout-order-review">
-              <h3>Your Order</h3>
-              <table className="shop_table">
+              {/* Cart Table */}
+              <table className="popup-cart-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "20%" }}>Image</th>
+                    <th style={{ width: "45%" }}>Product</th>
+                    <th style={{ width: "15%" }}>Total</th>
+                  </tr>
+                </thead>
                 <tbody>
                   <tr>
-                    <td>{product.name} × {qty}</td>
-                    <td>৳ {subtotal}</td>
+                    <td><img src={product.images[0]?.src} alt={product.name} width="70" /></td>
+                    <td>{product.name}{size && ` (Size: ${size})`} × {qty}</td>
+                    <td>৳{(Number(finalPrice) || checkprice) * qty}</td>
                   </tr>
-                  {discountAmount > 0 && (
-                    <tr>
-                      <td>Discount</td>
-                      <td>-৳ {discountAmount.toFixed(2)}</td>
-                    </tr>
-                  )}
+                  {fbtProducts.map((p) => {
+                    if (!fbtSelected[p.id]) return null;
+                    return (
+                      <tr key={p.id}>
+                        <td><img src={p.images[0]?.src} width="70" alt={p.name} /></td>
+                        <td>{p.name}{fbtSelectedSize[p.id] && ` (Size: ${fbtSelectedSize[p.id]})`}</td>
+                        <td>৳{(p.price || 0) * fbtQtys[p.id]}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
-                <tfoot>
-                  <tr>
-                    <th>Subtotal</th>
-                    <td>৳ {subtotal}</td>
-                  </tr>
-                  <tr>
-                    <th>Shipping</th>
-                    <td>৳ {shipping.cost}</td>
-                  </tr>
-                  <tr className="order-total">
-                    <th>Total</th>
-                    <td><strong>৳ {total.toFixed(2)}</strong></td>
-                  </tr>
-                </tfoot>
               </table>
+
+              <div className="promo-code">
+                <input
+                  type="text"
+                  placeholder="Promo Code"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                />
+
+                <button
+                  type="button"
+                  onClick={applyPromoCode}
+                  disabled={promoLoading}
+                >
+                  {promoLoading ? "Applying..." : "Apply"}
+                </button>
+
+                {discountAmount > 0 && (
+                  <button
+                    type="button"
+                    className="clear-promo-btn"
+                    onClick={clearPromoCode}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <div className="promo-message">
+                {promoMessage && <p>{promoMessage}</p>}
+              </div>
+              <div className="shipping-methods">
+                <h3>Shipping Method</h3>
+                <label className={shipping.method === "inside_dhaka" ? "active" : ""}>
+                  <input 
+                    type="radio" 
+                    name="shipping" 
+                    value="inside_dhaka" 
+                    checked={shipping.method === "inside_dhaka"} 
+                    onChange={handleShippingChange} 
+                  />
+                  <span>ঢাকার ভিতরে – ৳70</span>
+                </label>
+                
+                <label className={shipping.method === "outside_dhaka" ? "active" : ""}>
+                  <input 
+                    type="radio" 
+                    name="shipping" 
+                    value="outside_dhaka" 
+                    checked={shipping.method === "outside_dhaka"} 
+                    onChange={handleShippingChange} 
+                  />
+                  <span>ঢাকার বাহিরে – ৳120</span>
+                </label>
+              </div>
+
+              {/* Order Summary */}
+              <div className="checkout-order-review">
+                <h3>Your Order</h3>
+                <table className="shop_table">
+                  <tbody>
+                    {discountAmount > 0 && (
+                      <tr>
+                        <td>Discount</td>
+                        <td>-৳{discountAmount.toFixed(2)}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr><th>Subtotal</th><td>৳{subtotal}</td></tr>
+                    <tr><th>Shipping</th><td>৳{shipping.cost}</td></tr>
+                    <tr className="order-total"><th>Total</th><td><strong>৳{total.toFixed(2)}</strong></td></tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* Payment Method */}
+              <div className="payment">
+                <h3>Payment Method</h3>
+                {["cod", "bkash", "nagad", "sslcommerz"].map((method) => (
+                  <label key={method} className={paymentMethod === method ? "active" : ""}>
+                    <input type="radio" name="payment" value={method} checked={paymentMethod === method} onChange={(e) => setPaymentMethod(e.target.value)} />
+                    <span>
+                      {method === "cod" ? "Cash On Delivery" :
+                      method === "bkash" ? "bKash" :
+                      method === "nagad" ? "Nagad" :
+                      "Card Payment"}
+                    </span>
+                    {method === "bkash" && <img src="/images/bkash.png" alt="bkash" />}
+                    {method === "nagad" && <img src="/images/nagad.png" alt="nagad" />}
+                    {method === "sslcommerz" && <img src="/images/sslcz-verified.png" alt="sslcommerz" />}
+                  </label>
+                ))}
+              </div>
+
+              <button type="button" className="place-order-btn" onClick={placeOrder} disabled={loading}>
+                {loading ? "Placing Order..." : "Place Order"}
+              </button>
+              {orderStatus && <p>{orderStatus}</p>}
             </div>
-
-            {/* Payment */}
-            <div className="payment">
-              <label>
-                <input type="radio" name="payment_method" checked readOnly />
-                Cash on delivery
-              </label>
-              <p className="payment-desc">Pay with cash upon delivery.</p>
-            </div>
-
-            <button type="button" className="place-order-btn" onClick={placeOrder} disabled={loading}>
-              {loading ? "Placing Order..." : "Place Order"}
-            </button>
-
-            {orderStatus && <p>{orderStatus}</p>}
           </div>
         </div>
       )}
@@ -364,7 +404,7 @@ const BuyNowPopupCheckout = ({ product,selectedVariation, API_URL}) => {
         orderId={orderId}
         onClose={() => {
           setShowThankYou(false);
-          window.location.href = "/"; 
+          window.location.href = "/";
         }}
       />
     </>

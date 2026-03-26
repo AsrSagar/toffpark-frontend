@@ -18,21 +18,12 @@ const FeaturedProducts = () => {
                                         </a>
                                         <div className="pruduct-buttons">
                                             <button className="product-button tooltip">
-                                                <i className="fas fa-cart-plus"></i>
-                                                <span className="tooltiptext tooltip-right">Add To Cart</span>
-                                            </button>
-                                            <button className="product-button tooltip">
-                                                <i className="far fa-heart"></i>
-                                                <span className="tooltiptext tooltip-right">Wishlist</span>
-                                            </button>
-                                            <button className="product-button tooltip">
-                                                <i className="fa fa-retweet"></i>
-                                                <span className="tooltiptext tooltip-right">Compair</span>
+                                                <i className="far fa-eye"></i>
                                             </button>
                                         </div>
                                         <div className="quick-view">
                                             <a href="/quick-view-content-wrappr" className="custom-button button-small quick-view-link">
-                                                <i className="far fa-eye"></i> Quick View
+                                                <i className="fas fa-cart-plus"></i> QUICK ADD
                                             </a>
                                         </div>
                                         <span className="ribbon-rotated onsale">-16%</span>
@@ -65,21 +56,12 @@ const FeaturedProducts = () => {
                                         </a>
                                         <div className="pruduct-buttons">
                                             <button className="product-button tooltip">
-                                                <i className="fas fa-cart-plus"></i>
-                                                <span className="tooltiptext tooltip-right">Add To Cart</span>
-                                            </button>
-                                            <button className="product-button tooltip">
-                                                <i className="far fa-heart"></i>
-                                                <span className="tooltiptext tooltip-right">Wishlist</span>
-                                            </button>
-                                            <button className="product-button tooltip">
-                                                <i className="fa fa-retweet"></i>
-                                                <span className="tooltiptext tooltip-right">Compair</span>
+                                                <i className="far fa-eye"></i>
                                             </button>
                                         </div>
                                         <div className="quick-view">
                                             <a href="/quick-view-content-wrappr" className="custom-button button-small quick-view-link">
-                                                <i className="far fa-eye"></i> Quick View
+                                                <i className="fas fa-cart-plus"></i> QUICK ADD
                                             </a>
                                         </div>
                                         <span className="ribbon-rotated onsale">-16%</span>
@@ -112,21 +94,12 @@ const FeaturedProducts = () => {
                                         </a>
                                         <div className="pruduct-buttons">
                                             <button className="product-button tooltip">
-                                                <i className="fas fa-cart-plus"></i>
-                                                <span className="tooltiptext tooltip-right">Add To Cart</span>
-                                            </button>
-                                            <button className="product-button tooltip">
-                                                <i className="far fa-heart"></i>
-                                                <span className="tooltiptext tooltip-right">Wishlist</span>
-                                            </button>
-                                            <button className="product-button tooltip">
-                                                <i className="fa fa-retweet"></i>
-                                                <span className="tooltiptext tooltip-right">Compair</span>
+                                                <i className="far fa-eye"></i>
                                             </button>
                                         </div>
                                         <div className="quick-view">
                                             <a href="/quick-view-content-wrappr" className="custom-button button-small quick-view-link">
-                                                <i className="far fa-eye"></i> Quick View
+                                                <i className="fas fa-cart-plus"></i> QUICK ADD
                                             </a>
                                         </div>
                                         <span className="ribbon-rotated onsale">-16%</span>
@@ -159,21 +132,12 @@ const FeaturedProducts = () => {
                                         </a>
                                         <div className="pruduct-buttons">
                                             <button className="product-button tooltip">
-                                                <i className="fas fa-cart-plus"></i>
-                                                <span className="tooltiptext tooltip-right">Add To Cart</span>
-                                            </button>
-                                            <button className="product-button tooltip">
-                                                <i className="far fa-heart"></i>
-                                                <span className="tooltiptext tooltip-right">Wishlist</span>
-                                            </button>
-                                            <button className="product-button tooltip">
-                                                <i className="fa fa-retweet"></i>
-                                                <span className="tooltiptext tooltip-right">Compair</span>
+                                                <i className="far fa-eye"></i>
                                             </button>
                                         </div>
                                         <div className="quick-view">
                                             <a href="/quick-view-content-wrappr" className="custom-button button-small quick-view-link">
-                                                <i className="far fa-eye"></i> Quick View
+                                                <i className="fas fa-cart-plus"></i> QUICK ADD
                                             </a>
                                         </div>
                                         <span className="ribbon-rotated onsale">-16%</span>

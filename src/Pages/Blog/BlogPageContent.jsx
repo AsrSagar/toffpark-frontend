@@ -7,6 +7,7 @@ const BlogGridPage = () => {
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -20,6 +21,7 @@ const BlogGridPage = () => {
       } catch (error) {
         console.log(error);
       }
+      setLoading(false);
     };
 
     fetchPosts();
@@ -34,6 +36,15 @@ const BlogGridPage = () => {
       month: date.toLocaleString("default", { month: "short" }),
     };
   };
+
+  if (loading) {
+    return (
+      <div className="full-page-loader">
+        <div className="spinner"></div>
+        <p>Loading Products...</p>
+      </div>
+    );
+  }
 
   return (
     <>

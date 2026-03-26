@@ -1,18 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useCart } from "../../context/CartContext";
+// import { useCart } from "../../context/CartContext";
 import config from "../../config";
 import './ProductCategoryPage.css';
+import QuickViewModal from "../../components/QuickViewModal/QuickViewModal";
+import { getProductById } from "../../api/products";
+import SalesPopup from "../../components/SalesPopup/SalesPopup";
 
 const CategoryProducts = () => {
   const API_URL = config.API_URL;
   const location = useLocation();
   const navigate = useNavigate();
-  const { addToCart, setCartOpen, isInCart } = useCart();
-
-  const [loadingId, setLoadingId] = useState(null);
+  // const { addToCart, setCartOpen, isInCart } = useCart();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [quickLoading, setQuickLoading] = useState(false);
+  
 
   // ✅ Pagination & Sorting States
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,7 +25,25 @@ const CategoryProducts = () => {
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
 
-  const PER_PAGE = 12;
+  const PER_PAGE = 18;
+
+  const handleQuickView = async (id) => {
+    setQuickLoading(id); 
+    
+    try {
+      const [product] = await Promise.all([
+        getProductById(id),
+        new Promise((resolve) => setTimeout(resolve, 1000)) // Artificial delay
+      ]);
+
+      setSelectedProduct(product);
+      setIsQuickViewOpen(true); // Ekhon modal open hobe
+    } catch (error) {
+      console.error("Error loading product:", error);
+    } finally {
+      setQuickLoading(null); 
+    }
+  };
 
   // Extract full category path
   const categoryPath = location.pathname
@@ -42,38 +65,9 @@ const CategoryProducts = () => {
     navigate(`/product/${slug}`);
   };
 
-  const handleAddToCart = (product) => {
-    if (isInCart(product.id)) return;
-    if (!product.is_in_stock || !product.is_purchasable) return;
-
-    setLoadingId(product.id);
-
-    const addProduct = async () => {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 600));
-
-        addToCart(product);
-        setCartOpen(true);
-
-        // ✅ AddToCart Event
-        // if (window.fbq) {
-        //   window.fbq("track", "AddToCart", {
-        //     content_ids: [product.id],
-        //     content_name: product.name,
-        //     value: product.prices?.price
-        //       ? parseFloat(product.prices.price) / 100
-        //       : 0,
-        //     currency: "BDT",
-        //   });
-        // }
-      } catch (error) {
-        console.error("Add to cart failed:", error);
-      } finally {
-        setLoadingId(null);
-      }
-    };
-
-    addProduct();
+  const handleCardClick = (permalink) => {
+    const slug = getSlugFromPermalink(permalink);
+    if (slug) navigate(`/product/${slug}`);
   };
 
   // ✅ Sorting Handler
@@ -158,6 +152,15 @@ const CategoryProducts = () => {
     }
   }, [slug, categoryName]);
 
+  if (loading) {
+    return (
+      <div className="full-page-loader">
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div id="custom-header">
@@ -185,7 +188,6 @@ const CategoryProducts = () => {
           </div>
         </div>
       </div>
-
       <div id="content" className="site-content global-layout-right-sidebar">
         <div className="container">
           <div className="inner-wrapper">
@@ -265,11 +267,14 @@ const CategoryProducts = () => {
                               key={product.id}
                               className="product-item col-grid-3 top-space"
                             >
-                              <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
+                              <div 
+                                className="product-item-wrapper zoom-effect-hover-container box-shadow-block"
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => handleCardClick(product.permalink)}
+                              >
                                 <div className="product-thumb zoom-effect">
-
-                                  <a
-                                    href="/"
+                                  <Link
+                                    to={`/product/${getSlugFromPermalink(product.permalink)}`}
                                     className="thumbnail"
                                     onClick={(e) => {
                                       e.preventDefault();
@@ -280,66 +285,48 @@ const CategoryProducts = () => {
                                       alt={product.name}
                                       src={product.images[0]?.src}
                                     />
-                                  </a>
-
+                                  </Link>
                                   <div className="pruduct-buttons">
-                                    <button
-                                      className="product-button tooltip"
-                                      onClick={() => handleAddToCart(product)}
-                                      disabled={
-                                        loadingId === product.id ||
-                                        isInCart(product.id) ||
-                                        isOutOfStock
-                                      }
-                                    >
-                                      <i
-                                        className={
-                                          isOutOfStock
-                                            ? "fas fa-times"
-                                            : loadingId === product.id
-                                            ? "fas fa-spinner fa-spin"
-                                            : isInCart(product.id)
-                                            ? "fas fa-check"
-                                            : "fas fa-cart-plus"
-                                        }
-                                      ></i>
-                                      <span className="tooltiptext tooltip-right">
-                                        {isOutOfStock
-                                          ? "Out of Stock"
-                                          : loadingId === product.id
-                                          ? "Adding..."
-                                          : isInCart(product.id)
-                                          ? "Added"
-                                          : "Add To Cart"}
-                                      </span>
-                                    </button>
-                                    <button className="product-button tooltip">
-                                      <i className="far fa-heart"></i>
-                                      <span className="tooltiptext tooltip-right">Wishlist</span>
-                                    </button>
-
-                                    <button className="product-button tooltip">
-                                      <i className="fa fa-retweet"></i>
-                                      <span className="tooltiptext tooltip-right">Compare</span>
-                                    </button>
+                                    <div className="pruduct-buttons">
+                                      <div className="pruduct-buttons">
+                                        <button 
+                                          className="product-button tooltip"
+                                          disabled={quickLoading === product.id}
+                                          onClick={(e) => {
+                                            e.stopPropagation(); // 2. Eta card-er click event-ke thamay dibe
+                                            handleQuickView(product.id);
+                                          }}
+                                        >
+                                          {quickLoading === product.id ? (
+                                            <i className="fas fa-spinner fa-spin"></i> 
+                                          ) : (
+                                            <i className="far fa-eye"></i> 
+                                          )}
+                                          <span className="tooltiptext tooltip-right">
+                                            {quickLoading === product.id ? "LOADING..." : "QUICK VIEW"}
+                                          </span>
+                                        </button>
+                                      </div>
+                                    </div>
                                   </div>
 
                                   <div className="quick-view">
-                                    <a
-                                      href="#quick-view-content-wrappr"
+                                    <button
                                       className="custom-button button-small quick-view-link"
+                                      onClick={(e) => {
+                                        e.stopPropagation(); // 4. Etao card-er click event-ke thamay dibe
+                                        goToProduct(product.permalink);
+                                      }}
                                     >
-                                      <i className="far fa-eye"></i>Quick View
-                                    </a>
+                                      VIEW PRODUCT
+                                    </button>
                                   </div>
-
                                   {isOutOfStock && (
                                     <span className="ribbon-rotated onsale">
                                       Out of Stock
                                     </span>
                                   )}
                                 </div>
-
                                 <div className="product-item-details">
                                   <h3 className="product-title">
                                     <Link
@@ -348,7 +335,6 @@ const CategoryProducts = () => {
                                       {product.name}
                                     </Link>
                                   </h3>
-
                                   <div
                                     className="product-price-container"
                                     dangerouslySetInnerHTML={{
@@ -356,7 +342,6 @@ const CategoryProducts = () => {
                                     }}
                                   />
                                 </div>
-
                               </div>
                             </div>
                             )
@@ -364,16 +349,23 @@ const CategoryProducts = () => {
                           )}
                         </div>
                       )}
-
                     </div>
                   </div>
                 </div>
               </main>
             </div>
-
           </div>
         </div>
       </div>
+      <QuickViewModal
+        isOpen={isQuickViewOpen}
+        onClose={() => {
+          setIsQuickViewOpen(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+      />
+      <SalesPopup />
     </>
   );
 };

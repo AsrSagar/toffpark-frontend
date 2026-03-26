@@ -1,0 +1,41 @@
+.quantity-wrapper {
+  display: flex;
+  align-items: center;
+  max-width: 120px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  overflow: hidden;
+  font-family: sans-serif;
+  margin-bottom: 10px;
+}
+
+.qty-btn {
+  background: #f0f0f0;
+  border: none;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.qty-btn:hover {
+  background: #e0e0e0;
+}
+
+.qty-input {
+  width: 50px;
+  text-align: center;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  height: 32px;
+}
+
+.qty-btn.plus {
+  background: #f8f8f8;
+}
+.qty-btn.minus {
+  background: #f8f8f8;
+}

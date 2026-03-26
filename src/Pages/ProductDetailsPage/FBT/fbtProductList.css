@@ -1,0 +1,210 @@
+/* ===== Wrapper ===== */
+.fbt-wrapper {
+  margin-top: 60px;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 10px;
+}
+
+.fbt-wrapper h3 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #111;
+}
+
+/* ===== Slider spacing ===== */
+.fbt-slide {
+  padding: 10px 5px;
+  cursor: pointer;
+}
+
+/* ===== Card ===== */
+.fbt-item {
+  background: #fff;
+  border: 1px solid #eee;
+  transition: all 0.3s ease;
+  text-align: center;
+  padding: 0 0 10px 0;
+}
+
+.fbt-item:hover {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  transform: translateY(-4px);
+}
+
+/* ===== Image ===== */
+.fbt-item img {
+  width: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  padding: 10px;
+  transition: 0.3s ease;
+}
+
+.fbt-item:hover img {
+  transform: scale(1.04);
+}
+
+/* ===== Checkbox + Price ===== */
+.fbt-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-weight: 600;
+  font-size: 15px;
+  color: #222;
+  cursor: pointer;
+}
+
+.fbt-checkbox input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* ===== Product Name ===== */
+.fbt-name {
+  font-size: 14px;
+  color: #444;
+  margin-top: 10px;
+  min-height: 42px;
+  line-height: 1.4;
+  padding: 0 10px;
+}
+
+/* ===== Select ===== */
+.fbt-select-wrapper {
+  margin-top: 12px;
+  padding: 0 10px;
+}
+
+.fbt-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.fbt-select:focus {
+  border-color: #000;
+  background: #fff;
+  outline: none;
+}
+
+/* ===== Quantity ===== */
+.fbt-qty-wrapper {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+  border: 0px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 0 10px;
+}
+
+.qty-btn {
+  flex: 1 1;
+  border: none;
+  background: #f5f5f5;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 10px 0;
+  transition: 0.2s ease;
+  color: #222;
+}
+
+.qty-btn:hover {
+  background: #111;
+  color: #fff;
+}
+
+.fbt-qty-input {
+  width: 50px;
+  border: none;
+  text-align: center;
+  font-size: 14px;
+}
+
+.fbt-qty-input::-webkit-outer-spin-button,
+.fbt-qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.fbt-qty-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* ===== Footer ===== */
+.fbt-footer {
+  margin-top: 40px;
+  padding-top: 25px;
+  border-top: 1px solid #e5e5e5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.fbt-footer p {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111;
+  margin: 0;
+}
+
+/* ===== Button ===== */
+.fbt-add-btn {
+  padding: 14px 24px;
+  border-radius: 12px;
+  border: none;
+  background: #111;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.fbt-add-btn:hover {
+  background: #333;
+}
+
+.fbt-add-btn.disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* ===== Slick Arrows Styling ===== */
+.slick-prev,
+.slick-next {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  z-index: 5;
+}
+
+.slick-prev:hover,
+.slick-next:hover {
+  background: #111;
+}
+
+.slick-prev:before,
+.slick-next:before {
+  color: #111;
+  font-size: 18px;
+}
+
+.slick-prev:hover:before,
+.slick-next:hover:before {
+  color: #fff;
+}

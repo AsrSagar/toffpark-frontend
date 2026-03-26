@@ -1,0 +1,49 @@
+.section-product-categorys .slick-prev,
+.section-product-categorys .slick-next {
+    width: 45px;
+    height: 45px;
+    z-index: 99;
+    background: #f9f9f9;
+    border-radius: 50%;
+}
+.section-product-categorys .slick-prev:hover {
+    width: 45px;
+    height: 45px;
+    z-index: 99;
+    background: #d8c9c9;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+.section-product-categorys .slick-next:hover {
+    width: 45px;
+    height: 45px;
+    z-index: 99;
+    background: #d8c9c9;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+/* REMOVE THEME TEXT */
+.section-product-categorys .slick-prev:before,
+.section-product-categorys .slick-next:before {
+    content: '' !important;
+}
+
+/* SHOW FA ICON */
+.section-product-categorys .slick-prev i,
+.section-product-categorys .slick-next i {
+    font-size: 20px !important;
+    color: #000 !important;
+    line-height: 45px;
+    display: block;
+    text-align: center;
+}
+
+/* POSITION SAME LIKE WP */
+.section-product-categorys .slick-prev {
+    left: -20px;
+}
+
+.section-product-categorys .slick-next {
+    right: -20px;
+}

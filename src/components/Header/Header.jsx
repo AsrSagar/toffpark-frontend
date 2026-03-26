@@ -1,94 +1,148 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import NavBar from "./NavBar";
+import axios from "axios";
+import config from "../../config";
 
 const Header = () => {
+  const [menuItems, setMenuItems] = useState([]);
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [activeMenu, setActiveMenu] = useState(null); // top-level open
+  const [activeSubMenu, setActiveSubMenu] = useState(null); // nested submenu open
+
+  // Toggle mobile menu
+  const toggleMenu = () => setMobileMenu(!mobileMenu);
+  const closeMenu = () => setMobileMenu(false);
+
+  // Toggle submenu accordion
+  const toggleSubMenu = (id, level = "top") => {
+    if (level === "top") {
+      setActiveMenu(activeMenu === id ? null : id);
+    } else {
+      setActiveSubMenu(activeSubMenu === id ? null : id);
+    }
+  };
+
+  // Fetch menu items from API
+  useEffect(() => {
+    axios
+      .get(`${config.API_URL}/reactpress/v1/menu/main-menu`)
+      .then((res) => setMenuItems(res.data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  // Close menu if clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        !e.target.closest(".mobile-menu") &&
+        !e.target.closest("#mobile-trigger")
+      ) {
+        setMobileMenu(false);
+      }
+    };
+    if (mobileMenu) {
+      document.addEventListener("click", handleClickOutside);
+    }
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [mobileMenu]);
+
+  // Map WP URL to React route
+  const mapWpUrlToReact = (url) => url.replace(config.SITE_URL, "/");
+
+  // Recursive render for dynamic mobile submenu
+  const renderMobileSubMenu = (items, level = "top") => {
+    if (!items || items.length === 0) return null;
+
+    return (
+      <ul className={`sub-menu ${level === "top" ? "top-level" : ""}`}>
+        {items.map((item) => {
+          const hasChildren = item.children && item.children.length > 0;
+          const isActive = level === "top" ? activeMenu === item.id : activeSubMenu === item.id;
+
+          return (
+            <li key={item.id} className={`menu-item ${hasChildren ? "menu-item-has-children" : ""}`}>
+              {hasChildren ? (
+                <div
+                  className="menu-parent-title"
+                  onClick={() => toggleSubMenu(item.id, level)}
+                >
+                  {item.title}
+                  <span className="submenu-icon">{isActive ? "-" : "+"}</span>
+                </div>
+              ) : (
+                <Link
+                  to={mapWpUrlToReact(item.url)}
+                  onClick={closeMenu}
+                >
+                  {item.title}
+                </Link>
+              )}
+
+              {hasChildren && isActive && renderMobileSubMenu(item.children, "sub")}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
+
   return (
-    <div id="page" className="site">
-      <a href="/" id="mobile-trigger" type="button">
-        <i className="fa fa-list" aria-hidden="true"></i>
-      </a>
+    <header className="site-header">
+      {/* Overlay */}
+      {mobileMenu && <div className="mobile-overlay" onClick={closeMenu}></div>}
 
-      <div id="mob-menu">
-        <ul>
-          <li className="current-menu-item menu-item-has-children">
-            <a href="/">Home</a>
-            <ul className="sub-menu">
-              <li><a href="/home-v1">Home v1</a></li>
-              <li><a href="/home-v2">Home v2</a></li>
-              <li><a href="/home-v3">Home v3</a></li>
-              <li><a href="/home-v4">Home v4</a></li>
-              <li><a href="/home-v5">Home v5</a></li>
-              <li><a href="/home-v6">Home v6</a></li>
-            </ul>
-          </li>
-
-          <li className="menu-item-has-children">
-            <button type="button">Categories</button>
-
-            <ul className="sub-menu">
-              <li className="menu-item-has-children">
-                <button type="button">Dresses</button>
-                <ul className="sub-menu">
-                  <li><a href="/casual-dresses">Casual dresses</a></li>
-                  <li><a href="/evening">Evening</a></li>
-                  <li><a href="/party">Party</a></li>
-                  <li><a href="/printed">Printed</a></li>
-                  <li><a href="/winter">Winter</a></li>
-                </ul>
-              </li>
-
-              <li className="menu-item-has-children">
-                <button type="button">Tops category</button>
-                <ul className="sub-menu">
-                  <li><a href="/blouses">Blouses</a></li>
-                  <li><a href="/evening-tops">Evening tops</a></li>
-                  <li><a href="/work">Work</a></li>
-                  <li><a href="/winter-tops">Winter</a></li>
-                  <li><a href="/summer">Summer</a></li>
-                </ul>
-              </li>
-
-              <li className="menu-item-has-children">
-                <button type="button">Lingerie</button>
-                <ul className="sub-menu">
-                  <li><a href="/bras">Bras</a></li>
-                  <li><a href="/knickers">Knickers</a></li>
-                  <li><a href="/nightwear">Nightwear</a></li>
-                  <li><a href="/summerwear">Summerwear</a></li>
-                  <li><a href="/men-fashion">Men Fashion</a></li>
-                </ul>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </div>
-      <div id="tophead">
-        <div className="container">
-          <div className="top-head-left">
-            <div className="top-head-col quick-contact pull-left">
-              <ul>
-                <li className="quick-call">
-                  <a href="tel:+8801811877477">Call Us +8801811877477</a>
-                </li>
-              </ul>
-            </div>
+      {/* MOBILE MENU */}
+      <div className={`mobile-menu ${mobileMenu ? "open" : ""}`}>
+        <div className="site-branding pull-left">
+          <div id="site-identity">
+            <h1 className="site-title">
+              <Link to="/" rel="home">
+                <img
+                  src="https://toffpark.com/wp-content/uploads/2021/08/Toffpark-Logo-Black-1.png"
+                  alt="logo"
+                  className="site-logo"
+                />
+              </Link>
+            </h1>
           </div>
+        </div>
+        <div className="mobile-menu-header">
+          <button className="close-menu" onClick={closeMenu}>
+            ✕
+          </button>
+        </div>
 
-          <div className="top-head-right pull-right">
-            <a href="/" className="header-link" type="button">
-              <i className="fas fa-phone"></i>
-            </a>
-            <a href="/" className="header-link" type="button">
-              <i className="fas fa-th-large"></i>
-            </a>
-            <a href="/" className="header-link my-account" type="button">
-              <i className="fa fa-user"></i>
-            </a>
+        {/* Render Dynamic Mobile Menu */}
+        {renderMobileSubMenu(menuItems)}
+      </div>
+
+      {/* Top Header with Mobile Trigger */}
+      <div className="top-header">
+        <div className="container flex-between">
+          <div className="mobile-trigger-wrapper">
+            <button
+              id="mobile-trigger"
+              onClick={toggleMenu}
+              className={`toggle-menu ${mobileMenu ? "open" : ""}`}
+            >
+              <i className={`fa ${mobileMenu ? "fa-times" : "fa-bars"}`}></i>
+            </button>
+          </div>
+          <div className="contact-info">
+            <a href="tel:+8801811877477">Call Us +8801811877477</a>
+          </div>
+          <div className="header-icons">
+            <a href="/" className="icon"><i className="fas fa-phone"></i></a>
+            <a href="/" className="icon"><i className="fas fa-th-large"></i></a>
+            <a href="/" className="icon"><i className="fa fa-user"></i></a>
           </div>
         </div>
       </div>
-      <NavBar />
-    </div>
+
+      {/* Desktop NavBar */}
+      <NavBar menuItems={menuItems} />
+    </header>
   );
 };
 
