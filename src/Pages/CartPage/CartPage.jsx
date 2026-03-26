@@ -41,7 +41,8 @@ const CartPage = () => {
                     <table className="cart shop-table shop-table-responsive">
                       <thead>
                         <tr>
-                          <th>Product Detail</th>
+                          <th>Image</th>
+                          <th>Name</th>
                           <th>Price</th>
                           <th>Quantity</th>
                           <th>Total</th>
@@ -55,15 +56,14 @@ const CartPage = () => {
 
                           return (
                             <tr key={item.cartId} className="cart-item">
-                              <td className="product-name">
+                              <td className="product-image">
                                 <Link to="/" className="cart-product-thumb">
                                   <img src={item.image} alt={item.name} />
                                 </Link>
-
+                              </td>
+                              <td>
                                 <div className="product-info">
                                   <h3>{item.name}</h3>
-
-                                  {/* ✅ Show Variation Info */}
                                   {item.size && (
                                     <p className="variation-info">
                                       <strong>Size:</strong> {item.size}
@@ -71,11 +71,9 @@ const CartPage = () => {
                                   )}
                                 </div>
                               </td>
-
                               <td>
                                 ৳{formatPrice(item.price)}
                               </td>
-
                               <td>
                                 <div className="quantity">
                                   <input
@@ -91,11 +89,9 @@ const CartPage = () => {
                                   />
                                 </div>
                               </td>
-
                               <td>
                                 ৳{formatPrice(subtotal)}
                               </td>
-
                               <td>
                                 <button
                                   type="button"

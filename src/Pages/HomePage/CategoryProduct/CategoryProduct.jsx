@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { wcApi } from "../../../api/woocommerce";
 import { getProductById } from "../../../api/products";
 import QuickViewModal from "../../../components/QuickViewModal/QuickViewModal";
@@ -12,6 +12,8 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
     const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [quickLoading, setQuickLoading] = useState(false);
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -35,31 +37,40 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
     }, [categorySlug]);
 
     const handleQuickView = async (id) => {
-        setIsQuickViewOpen(true);
-        setQuickLoading(true);
+        setQuickLoading(id); 
+        
+        try {
+            const [product] = await Promise.all([
+            getProductById(id),
+            new Promise((resolve) => setTimeout(resolve, 1000)) // Artificial delay
+            ]);
 
-        const product = await getProductById(id);
+            setSelectedProduct(product);
+            setIsQuickViewOpen(true); 
+        } catch (error) {
+            console.error("Error loading product:", error);
+        } finally {
+            setQuickLoading(null); 
+        }
+    };
 
-        console.log("Quick View Product:", product);
+    const getSlugFromPermalink = (permalink) => {
+        if (!permalink) return "";
+        return permalink.split("/").filter(Boolean).pop();
+    };
 
-        setSelectedProduct(product);
-        setQuickLoading(false);
+    const goToProduct = (permalink) => {
+        const slug = getSlugFromPermalink(permalink);
+        if (!slug) return;
+        navigate(`/product/${slug}`);
+    };
+
+    const handleCardClick = (permalink) => {
+        const slug = getSlugFromPermalink(permalink);
+        if (slug) navigate(`/product/${slug}`);
     };
 
     if (loading || products.length === 0) return null;
-
-    if (quickLoading) {
-        return (
-        <div className="products-loading-state">
-            <div className="lds-ellipsis">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            </div>
-        </div>
-        );
-    }
 
     return (
         <aside className="section category-products">
@@ -73,8 +84,11 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
 
                             {products.map((product) => (
                                 <div key={product.id} className="product-item col-grid-3">
-                                    <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
-
+                                    <div 
+                                        className="product-item-wrapper zoom-effect-hover-container box-shadow-block"
+                                        style={{ cursor: 'pointer' }}
+                                        onClick={() => handleCardClick(product.permalink)}
+                                    >
                                         <div className="product-thumb zoom-effect">
                                             <Link className="thumbnail" to={`/product/${product.slug}`}>
                                                 <img
@@ -82,26 +96,35 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
                                                     src={product.images?.[0]?.src}
                                                 />
                                             </Link>
-
                                             <div className="pruduct-buttons">
                                                 <button 
                                                     className="product-button tooltip"
-                                                    onClick={() => {
-                                                        handleQuickView(product.id);
+                                                    disabled={quickLoading === product.id}
+                                                    onClick={(e) => {
+                                                    e.stopPropagation(); // 2. Eta card-er click event-ke thamay dibe
+                                                    handleQuickView(product.id);
                                                     }}
                                                 >
-                                                    <i className="far fa-eye"></i>
-                                                    <span className="tooltiptext tooltip-right">QUICK VIEW</span>
+                                                    {quickLoading === product.id ? (
+                                                    <i className="fas fa-spinner fa-spin"></i> 
+                                                    ) : (
+                                                    <i className="far fa-eye"></i> 
+                                                    )}
+                                                    <span className="tooltiptext tooltip-right">
+                                                    {quickLoading === product.id ? "LOADING..." : "QUICK VIEW"}
+                                                    </span>
                                                 </button>
                                             </div>
-
                                             <div className="quick-view">
-                                                <Link
-                                                    to={`/product/${product.slug}`}
+                                                <button
                                                     className="custom-button button-small quick-view-link"
-                                                >
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // 4. Etao card-er click event-ke thamay dibe
+                                                        goToProduct(product.permalink);
+                                                    }}
+                                                    >
                                                     VIEW PRODUCT
-                                                </Link>
+                                                </button>
                                             </div>
 
                                             {product.on_sale && (

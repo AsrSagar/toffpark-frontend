@@ -177,62 +177,68 @@ const CheckoutPage = () => {
         return;
       }
       // --------------------------
-      // bKash Payment
+      // --------------------------
+      // --------------------------
+      // bKash Payment Logic
       // --------------------------
       if (paymentMethod === "bkash") {
-
-        // 1️⃣ Create Woo Order
-        const orderResponse = await axios.post(
-          `${API_URL}/wc/v3/orders`,
-          {
-            payment_method: "bkash",
-            payment_method_title: "bKash",
-            set_paid: false,
-            billing,
-            shipping: billing,
-            line_items,
-            shipping_lines: [
-              {
-                method_id: deliveryMethod,
-                method_title:
-                  deliveryMethod === "inside_dhaka"
-                    ? "Inside Dhaka"
-                    : "Outside Dhaka",
-                total: deliveryFee.toString(),
+        setLoading(true);
+        try {
+          const orderResponse = await axios.post(
+            `${API_URL}/wc/v3/orders`,
+            {
+              payment_method: "bkash-for-woocommerce", 
+              payment_method_title: "bKash",
+              set_paid: false,
+              billing: {
+                ...billing,
+                last_name: "", 
               },
-            ],
-            coupon_lines: discountAmount > 0 ? [{ code: promoCode }] : [],
-          },
-          {
-            auth: {
-              username: "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
-              password: "cs_2029a263378e25918c8886931b530f0ab82ff9e1",
+              shipping: billing,
+              line_items: cartItems.map((item) => ({
+                product_id: item.productId,
+                variation_id: item.variationId || undefined,
+                quantity: item.qty,
+              })),
+              shipping_lines: [
+                {
+                  method_id: deliveryMethod,
+                  method_title: deliveryMethod === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka",
+                  total: deliveryFee.toString(),
+                },
+              ],
+              coupon_lines: discountAmount > 0 ? [{ code: promoCode }] : [],
             },
+            {
+              auth: {
+                username: "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
+                password: "cs_2029a263378e25918c8886931b530f0ab82ff9e1",
+              },
+            }
+          );
+
+          const orderID = orderResponse.data.id;
+
+          const bkashRes = await axios.post(
+            "https://dev.toffpark.com/wp-json/bkash/v1/create-payment",
+            {
+              order_id: orderID,
+            }
+          );
+
+          if (bkashRes.data?.status === "success" && bkashRes.data?.bkashURL) {
+            window.location.href = bkashRes.data.bkashURL;
+          } else {
+            console.log("bKash Error Details:", bkashRes.data);
+            alert("bKash Error: " + (bkashRes.data?.message || "Payment URL generation failed."));
           }
-        );
-
-        const orderID = orderResponse.data.id;
-
-        // 2️⃣ Call WordPress bKash API
-        const bkashResponse = await axios.post(
-          "https://dev.toffpark.com/wp-json/bkash/v1/create-payment",
-          {
-            order_id: orderID,
-            amount: finalTotal,
-          }
-        );
-
-        if (bkashResponse.data?.bkashURL) {
-          window.location.href = bkashResponse.data.bkashURL;
-        } else {
-          console.log("BKASH ERROR:", bkashResponse.data);
-          alert("bKash payment failed");
+        } catch (error) {
+          console.error("BKASH FULL ERROR:", error.response?.data || error.message);
+          alert("System Error: bKash পেমেন্ট শুরু করা যাচ্ছে না। দয়া করে আবার চেষ্টা করুন।");
         }
-
         setLoading(false);
         return;
       }
-
       // --------------------------
       // COD / BANK TRANSFER
       // --------------------------
@@ -464,17 +470,33 @@ const CheckoutPage = () => {
                               </label>
                             ))}
                           </div>
-                          {paymentMethod === "sslcommerz" && (
-                            <div className="payment-desc">
-                              Pay securely by Credit/Debit card, Internet banking or Mobile banking through SSLCommerz.
-                            </div>
-                          )}
-
+                          {
+                            paymentMethod === "bkash" && (
+                              <div className="payment-desc">
+                                Pay securely by bKash through M-Commerce.
+                              </div>
+                            )
+                          }
+                          {
+                            paymentMethod === "sslcommerz" && (
+                              <div className="payment-desc">
+                                Pay securely by Credit/Debit card, Internet banking or Mobile banking through SSLCommerz.
+                              </div>
+                            )
+                          }
+                          {
+                            paymentMethod === "nagad" && (
+                              <div className="payment-desc">
+                                Pay securely by Nagad through M-Commerce.
+                              </div>
+                            )
+                          }
                           <div className="terms">
-                            <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} />
-                            <label>I accept terms & conditions *</label>
+                            <label>
+                              <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} />
+                              By clicking Place Order, you agree to our delivery policy and returns & refunds policy.
+                            </label>
                           </div>
-
                           <button type="submit" className="place-order-btn" disabled={loading}>
                             {loading ? "Placing Order..." : "Place Order"}
                           </button>

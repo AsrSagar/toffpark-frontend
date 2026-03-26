@@ -93,6 +93,7 @@
   align-items: center;
   vertical-align: middle;
   margin-bottom: 0;
+  cursor: pointer;
 }
 .place-order-btn {
   width: 100%;

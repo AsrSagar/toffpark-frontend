@@ -10,6 +10,7 @@ import "slick-carousel/slick/slick-theme.css";
 import FrequentlyBoughtTogether from "./FBT/fbtProductList";
 import RecentlyViewedProducts from "./RecentlyViewedProducts/RecentlyViewedProducts";
 import "./ProductDetailsPage.css";
+import SalesPopup from "../../components/SalesPopup/SalesPopup";
 
 
 const ProductDetailsPage = () => {
@@ -32,6 +33,10 @@ const ProductDetailsPage = () => {
     const [fbtSelectedSize, setFbtSelectedSize] = useState({});
 
     const API_URL = config.API_URL;
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [slug]);
 
     useEffect(() => {
         let isMounted = true;
@@ -166,6 +171,15 @@ const ProductDetailsPage = () => {
     };
     
     const sizeAttribute = product?.attributes?.find(attr => attr.slug === "pa_size" || attr.name.toLowerCase() === "size");
+
+    if (loading) {
+        return (
+        <div className="full-page-loader">
+            <div className="spinner"></div>
+            <p>Loading...</p>
+        </div>
+        );
+    }
 
     return (
         <>
@@ -432,6 +446,7 @@ const ProductDetailsPage = () => {
                 </div>
             </div>
             )}
+            <SalesPopup />
         </>
     );
 };

@@ -5,6 +5,7 @@ import config from "../../config";
 import './ProductCategoryPage.css';
 import QuickViewModal from "../../components/QuickViewModal/QuickViewModal";
 import { getProductById } from "../../api/products";
+import SalesPopup from "../../components/SalesPopup/SalesPopup";
 
 const CategoryProducts = () => {
   const API_URL = config.API_URL;
@@ -24,18 +25,24 @@ const CategoryProducts = () => {
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
 
-  const PER_PAGE = 12;
+  const PER_PAGE = 18;
 
   const handleQuickView = async (id) => {
-    setIsQuickViewOpen(true);
-    setQuickLoading(true);
+    setQuickLoading(id); 
+    
+    try {
+      const [product] = await Promise.all([
+        getProductById(id),
+        new Promise((resolve) => setTimeout(resolve, 1000)) // Artificial delay
+      ]);
 
-    const product = await getProductById(id);
-
-    console.log("Quick View Product:", product);
-
-    setSelectedProduct(product);
-    setQuickLoading(false);
+      setSelectedProduct(product);
+      setIsQuickViewOpen(true); // Ekhon modal open hobe
+    } catch (error) {
+      console.error("Error loading product:", error);
+    } finally {
+      setQuickLoading(null); 
+    }
   };
 
   // Extract full category path
@@ -56,6 +63,11 @@ const CategoryProducts = () => {
   const goToProduct = (productLink) => {
     const slug = getSlugFromPermalink(productLink);
     navigate(`/product/${slug}`);
+  };
+
+  const handleCardClick = (permalink) => {
+    const slug = getSlugFromPermalink(permalink);
+    if (slug) navigate(`/product/${slug}`);
   };
 
   // ✅ Sorting Handler
@@ -140,15 +152,11 @@ const CategoryProducts = () => {
     }
   }, [slug, categoryName]);
 
-  if (quickLoading) {
+  if (loading) {
     return (
-      <div className="products-loading-state">
-        <div className="lds-ellipsis">
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
+      <div className="full-page-loader">
+        <div className="spinner"></div>
+        <p>Loading...</p>
       </div>
     );
   }
@@ -180,7 +188,6 @@ const CategoryProducts = () => {
           </div>
         </div>
       </div>
-
       <div id="content" className="site-content global-layout-right-sidebar">
         <div className="container">
           <div className="inner-wrapper">
@@ -260,7 +267,11 @@ const CategoryProducts = () => {
                               key={product.id}
                               className="product-item col-grid-3 top-space"
                             >
-                              <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
+                              <div 
+                                className="product-item-wrapper zoom-effect-hover-container box-shadow-block"
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => handleCardClick(product.permalink)}
+                              >
                                 <div className="product-thumb zoom-effect">
                                   <Link
                                     to={`/product/${getSlugFromPermalink(product.permalink)}`}
@@ -279,25 +290,36 @@ const CategoryProducts = () => {
                                     <div className="pruduct-buttons">
                                       <div className="pruduct-buttons">
                                         <button 
-                                        className="product-button tooltip"
-                                        onClick={() => {
-                                          handleQuickView(product.id);
-                                        }}
+                                          className="product-button tooltip"
+                                          disabled={quickLoading === product.id}
+                                          onClick={(e) => {
+                                            e.stopPropagation(); // 2. Eta card-er click event-ke thamay dibe
+                                            handleQuickView(product.id);
+                                          }}
                                         >
-                                        <i className="far fa-eye"></i>
-                                        <span className="tooltiptext tooltip-right">QUICK VIEW</span>
-                                      </button>
+                                          {quickLoading === product.id ? (
+                                            <i className="fas fa-spinner fa-spin"></i> 
+                                          ) : (
+                                            <i className="far fa-eye"></i> 
+                                          )}
+                                          <span className="tooltiptext tooltip-right">
+                                            {quickLoading === product.id ? "LOADING..." : "QUICK VIEW"}
+                                          </span>
+                                        </button>
                                       </div>
                                     </div>
                                   </div>
 
                                   <div className="quick-view">
-                                    <Link
-                                      to={`/product/${getSlugFromPermalink(product.permalink)}`}
+                                    <button
                                       className="custom-button button-small quick-view-link"
+                                      onClick={(e) => {
+                                        e.stopPropagation(); // 4. Etao card-er click event-ke thamay dibe
+                                        goToProduct(product.permalink);
+                                      }}
                                     >
                                       VIEW PRODUCT
-                                    </Link>
+                                    </button>
                                   </div>
                                   {isOutOfStock && (
                                     <span className="ribbon-rotated onsale">
@@ -305,7 +327,6 @@ const CategoryProducts = () => {
                                     </span>
                                   )}
                                 </div>
-
                                 <div className="product-item-details">
                                   <h3 className="product-title">
                                     <Link
@@ -314,7 +335,6 @@ const CategoryProducts = () => {
                                       {product.name}
                                     </Link>
                                   </h3>
-
                                   <div
                                     className="product-price-container"
                                     dangerouslySetInnerHTML={{
@@ -322,7 +342,6 @@ const CategoryProducts = () => {
                                     }}
                                   />
                                 </div>
-
                               </div>
                             </div>
                             )
@@ -330,7 +349,6 @@ const CategoryProducts = () => {
                           )}
                         </div>
                       )}
-
                     </div>
                   </div>
                 </div>
@@ -347,6 +365,7 @@ const CategoryProducts = () => {
         }}
         product={selectedProduct}
       />
+      <SalesPopup />
     </>
   );
 };

@@ -33,9 +33,6 @@ const BlogSinglePage = () => {
     fetchPost();
   }, [slug]);
 
-  if (loading) {
-    return <div className="container">Loading...</div>;
-  }
 
   if (!post) {
     return <div className="container">Post Not Found</div>;
@@ -48,6 +45,15 @@ const BlogSinglePage = () => {
   const dateObj = new Date(post.date);
   const day = dateObj.getDate();
   const month = dateObj.toLocaleString("default", { month: "short" });
+
+  if (loading) {
+    return (
+      <div className="full-page-loader">
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <>

@@ -6766,6 +6766,7 @@ select.orderby {
     font-size: 14px;
     background: #fff;
     border: 1px solid #f1f1f1;
+	cursor: pointer;
 }
 
 .pagination.filter-row-box .nav-links .current,
@@ -7194,7 +7195,6 @@ table.cart .product-info {
 table.cart .product-info h3 {
     font-size: 17px;
     margin-bottom: 5px;
-    width: 400px;
     display: block;
 }
 

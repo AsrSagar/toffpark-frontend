@@ -126,6 +126,12 @@ const BuyNowPopupCheckout = ({
     setPromoLoading(false);
   };
 
+  const clearPromoCode = () => {
+    setPromoCode("");
+    setDiscountAmount(0);
+    setPromoMessage("");
+  };
+
   // Place order
   const placeOrder = async () => {
     if (!billing.name || !billing.phone || !billing.address) {
@@ -291,23 +297,57 @@ const BuyNowPopupCheckout = ({
                 </tbody>
               </table>
 
-              {/* Promo Code */}
               <div className="promo-code">
-                <input type="text" placeholder="Promo Code" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} />
-                <button type="button" onClick={applyPromoCode} disabled={promoLoading}>{promoLoading ? "Applying..." : "Apply"}</button>
+                <input
+                  type="text"
+                  placeholder="Promo Code"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                />
+
+                <button
+                  type="button"
+                  onClick={applyPromoCode}
+                  disabled={promoLoading}
+                >
+                  {promoLoading ? "Applying..." : "Apply"}
+                </button>
+
+                {discountAmount > 0 && (
+                  <button
+                    type="button"
+                    className="clear-promo-btn"
+                    onClick={clearPromoCode}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <div className="promo-message">
                 {promoMessage && <p>{promoMessage}</p>}
               </div>
-
-              {/* Shipping Methods */}
               <div className="shipping-methods">
                 <h3>Shipping Method</h3>
-                <label>
-                  <input type="radio" name="shipping" value="inside_dhaka" checked={shipping.method === "inside_dhaka"} onChange={handleShippingChange} />
-                  ঢাকার ভিতরে – ৳70
+                <label className={shipping.method === "inside_dhaka" ? "active" : ""}>
+                  <input 
+                    type="radio" 
+                    name="shipping" 
+                    value="inside_dhaka" 
+                    checked={shipping.method === "inside_dhaka"} 
+                    onChange={handleShippingChange} 
+                  />
+                  <span>ঢাকার ভিতরে – ৳70</span>
                 </label>
-                <label>
-                  <input type="radio" name="shipping" value="outside_dhaka" checked={shipping.method === "outside_dhaka"} onChange={handleShippingChange} />
-                  ঢাকার বাহিরে – ৳120
+                
+                <label className={shipping.method === "outside_dhaka" ? "active" : ""}>
+                  <input 
+                    type="radio" 
+                    name="shipping" 
+                    value="outside_dhaka" 
+                    checked={shipping.method === "outside_dhaka"} 
+                    onChange={handleShippingChange} 
+                  />
+                  <span>ঢাকার বাহিরে – ৳120</span>
                 </label>
               </div>
 

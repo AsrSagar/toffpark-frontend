@@ -1,11 +1,31 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import HeroSection from "./HeroSection/HeroSection";
 import PormoSection from "./PormoSection/PormoSection";
 import AdsBanner from "./AdsBanner/AdsBanner";
 import CustomerFeedback from "./CustomerFeedback/CustomerFeedback";
 import CategoryProduct from "./CategoryProduct/CategoryProduct";
 import HomeContent from "./HomeContent/HomeContent";
+import SalesPopup from "../../components/SalesPopup/SalesPopup";
 const Home = () => {
+
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setLoading(false);
+        }, 1500); 
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="full-page-loader">
+                <div className="spinner"></div>
+                <p>Loading...</p>
+            </div>
+        );
+    }
     return (
         <>
         <div id="content" className="site-content global-layout-no-sidebar">
@@ -33,6 +53,7 @@ const Home = () => {
                 </div>
             </div>
         </div>
+        <SalesPopup />
         </>
     );
 };

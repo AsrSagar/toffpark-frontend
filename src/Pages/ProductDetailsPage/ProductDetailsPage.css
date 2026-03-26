@@ -67,6 +67,7 @@
   font-size: 28px;
   color: red;
   font-weight: bold;
+  left: 20%;
 }
 
 .single-thumb-detail {
@@ -135,11 +136,20 @@
   color: #555;
   font-size: 16px;
 }
+.promo-message p{
+  color: red;
+  font-weight: bold;
+}
 @media only screen and (max-width: 900px) {
   .product-single .single-cart input, .product-single .custom-button.button-small {
     width: 100%;
   }
   .wc-custom-tabs {
     display: block;
+  }
+  .slick-slide img {
+    display: block;
+    width: 70px !important;
+    height: 70px !important;
   }
 }

@@ -222,11 +222,6 @@ position:relative;
   }
 }
 /* Optional: hide desktop menu on mobile */
-@media (max-width: 768px) {
-  .desktop-menu {
-    display: none;
-  }
-}
 @media only screen and (max-width: 900px) {
   .flex-between {
       display: flex !important;
@@ -251,15 +246,31 @@ position:relative;
   .toggle-menu.open i{
       color: #000;
   }
-  .mobile-product-search button{
-    background-color: #000;
-    color: #fff;
+  .mobile-product-search button {
+    background-color: transparent;
+    color: #000;
     cursor: pointer;
+    padding: 0;
+    margin-top: 8px;
+    font-size: 18px;
+    margin-right: -15px;
   }
   span.submenu-icon {
     float: right;
   }
   .menu-parent-title {
     color: #222;
+  }
+  .close-menu {
+    font-size: 20px;
+    margin-top: -5px;
+  }
+}
+@media (max-width: 768px) {
+  .desktop-menu {
+    display: none;
+  }
+  img.site-logo {
+    width: 200px;
   }
 }
