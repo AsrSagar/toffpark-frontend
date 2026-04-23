@@ -1,19 +1,33 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { wcApi } from "../../../api/woocommerce";
-import { getProductById } from "../../../api/products";
 import QuickViewModal from "../../../components/QuickViewModal/QuickViewModal";
 import "./CategoryProduct.css";
+import { getProductById } from "../../../api/products";
 
 const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collections" }) => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
-
     const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [quickLoading, setQuickLoading] = useState(false);
-
     const navigate = useNavigate();
+
+    const handleQuickView = async (id) => {
+        setQuickLoading(id);
+        try {
+            const [product] = await Promise.all([
+                getProductById(id),
+                new Promise((resolve) => setTimeout(resolve, 1000))
+            ]);
+            setSelectedProduct(product);
+            setIsQuickViewOpen(true);
+        } catch (error) {
+            console.error("Error loading product:", error);
+        } finally {
+            setQuickLoading(null);
+        }
+    };
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -24,7 +38,6 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
                         per_page: 12,
                     },
                 });
-
                 setProducts(res.data);
             } catch (error) {
                 console.error("Category products error:", error);
@@ -32,37 +45,12 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
                 setLoading(false);
             }
         };
-
         fetchProducts();
     }, [categorySlug]);
-
-    const handleQuickView = async (id) => {
-        setQuickLoading(id); 
-        
-        try {
-            const [product] = await Promise.all([
-            getProductById(id),
-            new Promise((resolve) => setTimeout(resolve, 1000)) // Artificial delay
-            ]);
-
-            setSelectedProduct(product);
-            setIsQuickViewOpen(true); 
-        } catch (error) {
-            console.error("Error loading product:", error);
-        } finally {
-            setQuickLoading(null); 
-        }
-    };
 
     const getSlugFromPermalink = (permalink) => {
         if (!permalink) return "";
         return permalink.split("/").filter(Boolean).pop();
-    };
-
-    const goToProduct = (permalink) => {
-        const slug = getSlugFromPermalink(permalink);
-        if (!slug) return;
-        navigate(`/product/${slug}`);
     };
 
     const handleCardClick = (permalink) => {
@@ -74,106 +62,94 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
 
     return (
         <aside className="section category-products">
-            <div className="section-products">
-                <div className="container">
-                    <div className="section-title-wrap">
-                        <h2 className="section-title">{categoryTitle}</h2>
+            <div className="container">
+                {/* Title Section */}
+                <div className="underline-title-section-title-wrap">
+                    <div className="title-left">
+                        <h2>{categoryTitle}</h2>
+                        <div className="title-underline"></div>
                     </div>
-                    <div className="inner-wrapper">
-                        <div className="products-inner-wrapper">
+                    <Link to={`/product-category/${categorySlug}`} className="view-all-link">
+                        VIEW ALL ITEMS <i className="fas fa-arrow-right"></i>
+                    </Link>
+                </div>
+                
+                <div className="products-grid-container">
+                    {products.map((product) => {
+                        const regularPrice = parseFloat(product.prices.regular_price || 0);
+                        const salePrice = parseFloat(product.prices.sale_price || 0);
+                        const isSale = product.on_sale && salePrice > 0 && regularPrice > salePrice;
+                        const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
+                        const isOutOfStock = product.stock_status === "outofstock";
 
-                            {products.map((product) => (
-                                <div key={product.id} className="product-item col-grid-3">
-                                    <div 
-                                        className="product-item-wrapper zoom-effect-hover-container box-shadow-block"
-                                        style={{ cursor: 'pointer' }}
-                                        onClick={() => handleCardClick(product.permalink)}
-                                    >
-                                        <div className="product-thumb zoom-effect">
-                                            <Link className="thumbnail" to={`/product/${product.slug}`}>
-                                                <img
-                                                    alt={product.name}
-                                                    src={product.images?.[0]?.src}
-                                                />
-                                            </Link>
-                                            <div className="pruduct-buttons">
-                                                <button 
-                                                    className="product-button tooltip"
-                                                    disabled={quickLoading === product.id}
-                                                    onClick={(e) => {
-                                                    e.stopPropagation(); // 2. Eta card-er click event-ke thamay dibe
-                                                    handleQuickView(product.id);
-                                                    }}
-                                                >
-                                                    {quickLoading === product.id ? (
-                                                    <i className="fas fa-spinner fa-spin"></i> 
-                                                    ) : (
-                                                    <i className="far fa-eye"></i> 
-                                                    )}
-                                                    <span className="tooltiptext tooltip-right">
-                                                    {quickLoading === product.id ? "LOADING..." : "QUICK VIEW"}
-                                                    </span>
-                                                </button>
+                        return (
+                            <div key={product.id} className="custom-product-card">
+                                <div 
+                                    className="product-card-inner" 
+                                    onClick={() => handleCardClick(product.permalink)}
+                                >
+                                    {/* Thumbnail */}
+                                    <div className="product-image-box">
+                                        {isSale && savePercent > 0 && (
+                                            <div className="badge-wrap">
+                                                <span className="ribbon-offered">{savePercent}% Off</span>
+                                                <span className="ribbon-save">Offered items</span>
                                             </div>
-                                            <div className="quick-view">
-                                                <button
-                                                    className="custom-button button-small quick-view-link"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation(); // 4. Etao card-er click event-ke thamay dibe
-                                                        goToProduct(product.permalink);
-                                                    }}
-                                                    >
-                                                    VIEW PRODUCT
-                                                </button>
-                                            </div>
+                                        )}
+                                        <img alt={product.name} src={product.images[0]?.src || ""} />
+                                        {isOutOfStock && <span className="ribbon-out-stock">Out of Stock</span>}
+                                    </div>
 
-                                            {product.on_sale && (
-                                                <span className="ribbon-rotated onsale">
-                                                    -
-                                                    {Math.round(
-                                                        ((product.regular_price - product.sale_price) /
-                                                            product.regular_price) *
-                                                            100
-                                                    )}
-                                                    %
-                                                </span>
+                                    {/* Details */}
+                                    <div className="product-info">
+                                        <h3 className="product-title">
+                                            {product.name.length > 45 ? product.name.substring(0, 45) + "..." : product.name}
+                                        </h3>
+                                        
+                                        <div className="product-price">
+                                            {isSale ? (
+                                                <>
+                                                    <span className="price-new">৳{(salePrice / 100).toFixed(0)}</span>
+                                                    <del className="price-old">৳{(regularPrice / 100).toFixed(0)}</del>
+                                                    <div className="save-tag">Save ৳{((regularPrice - salePrice) / 100).toFixed(0)}</div>
+                                                </>
+                                            ) : (
+                                                <span className="price-new">৳{(regularPrice / 100).toFixed(0)}</span>
                                             )}
                                         </div>
 
-                                        <div className="product-item-details">
-                                            <h3 className="product-title">
-                                                <Link to={`/product/${product.slug}`}>
-                                                    {product.name}
-                                                </Link>
-                                            </h3>
-
-                                            <div
-                                                className="product-price-container"
-                                                dangerouslySetInnerHTML={{
-                                                    __html: product.price_html,
+                                        {/* Buttons */}
+                                        <div className="card-button-group">
+                                            <button 
+                                                className="btn-cart-action"
+                                                disabled={quickLoading === product.id}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleQuickView(product.id);
                                                 }}
-                                            />
+                                            >
+                                                {quickLoading === product.id ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-shopping-cart"></i>} CART
+                                            </button>
+                                            <button 
+                                                className="btn-buy-action" 
+                                                onClick={(e) => { e.stopPropagation(); handleCardClick(product.permalink); }}
+                                            >
+                                                BUY NOW
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
-                            ))}
-
-                        </div>
-
-                        <div className="more-wrapper clear-fix">
-                            <Link to={`/product-category/${categorySlug}`} className="custom-button">
-                                Explore More
-                            </Link>
-                        </div>
-
-                    </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
+
             <QuickViewModal
                 isOpen={isQuickViewOpen}
                 onClose={() => {
-                setIsQuickViewOpen(false);
-                setSelectedProduct(null);
+                    setIsQuickViewOpen(false);
+                    setSelectedProduct(null);
                 }}
                 product={selectedProduct}
             />

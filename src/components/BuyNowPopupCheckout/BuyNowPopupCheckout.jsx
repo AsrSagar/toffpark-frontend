@@ -229,7 +229,7 @@ const BuyNowPopupCheckout = ({
 
   return (
     <>
-      <button type="button" className="custom-button button-small" onClick={handleBuyNowClick}>
+      <button type="button" className="custom-button button-small single-buy-now-btn" onClick={handleBuyNowClick}>
         Buy Now
       </button>
 

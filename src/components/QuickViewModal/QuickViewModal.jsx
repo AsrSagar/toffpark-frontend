@@ -1,322 +1,374 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import Slider from "react-slick";
+import React, { useEffect, useState, useRef } from "react";
 import { useCart } from "../../context/CartContext";
-import { wcApi } from "../../api/woocommerce";
-import BuyNowPopupCheckout from "../BuyNowPopupCheckout/BuyNowPopupCheckout";
-import config from "../../config";
+import { wcApiV3 } from "../../api/woocommerce";
+import { AnimatePresence, motion } from "framer-motion";
 
 const QuickViewModal = ({ isOpen, onClose, product }) => {
-
-    const { addToCart, setCartOpen, isInCart } = useCart();
-
-    const [activeIndex, setActiveIndex] = useState(0);
-    const [quantity, setQuantity] = useState(1);
+    const { addToCart, isInCart } = useCart();
     const [variations, setVariations] = useState([]);
     const [selectedVariation, setSelectedVariation] = useState(null);
     const [selectedSize, setSelectedSize] = useState(null);
     const [loadingId, setLoadingId] = useState(null);
-
-    const API_URL = config.API_URL;
+    const mainImageRef = useRef(null); // Ref for the starting position
+    const [isFlying, setIsFlying] = useState(false);
+    const [flyCoords, setFlyCoords] = useState({ startX: 0, startY: 0, endX: 0, endY: 0 });
 
     useEffect(() => {
         if (!product) return;
-
-        setActiveIndex(0);
-        setQuantity(1);
         setSelectedSize(null);
         setSelectedVariation(null);
 
         const fetchVariations = async () => {
             if (product.type === "variable") {
                 try {
-                    const res = await wcApi.get(
-                        `/products/${product.id}/variations`
-                    );
+                    const res = await wcApiV3.get(`/products/${product.id}/variations`);
                     setVariations(res.data);
                 } catch (err) {
                     console.error("Variation fetch error:", err);
                 }
             }
         };
-
         fetchVariations();
     }, [product]);
 
     if (!isOpen || !product) return null;
 
-    const images =
-        product.images && product.images.length > 0
-            ? product.images.map((img) => img.src)
-            : ["/images/shop/product-1.jpg"];
-
+    const productImage = product.images?.[0]?.src || "/images/shop/product-1.jpg";
     const isOutOfStock = product?.stock_status !== "instock";
-
     const sizeAttribute = product?.attributes?.find(attr => attr.slug === "pa_size" || attr.name.toLowerCase() === "size");
 
     const isSizeAvailable = (size) => {
         const matched = variations.find((v) =>
-            v.attributes.some(
-                (attr) =>
-                    attr.option.toLowerCase() === size.toLowerCase()
-            )
+            v.attributes.some((attr) => attr.option.toLowerCase() === size.toLowerCase())
         );
-
-        if (!matched) return false;
-        if (matched.stock_status !== "instock") return false;
-
-        return true;
+        return matched && matched.stock_status === "instock";
     };
 
     const handleSizeSelect = (size) => {
-        setSelectedSize(size);
-
         const matchedVariation = variations.find((v) =>
-            v.attributes.some(
-                (attr) =>
-                    attr.option.toLowerCase() === size.toLowerCase()
-            )
+            v.attributes.some((attr) => attr.option.toLowerCase() === size.toLowerCase())
         );
-
-        if (!matchedVariation) {
-            alert("Selected size is not available.");
-            return;
+        if (matchedVariation && matchedVariation.stock_status === "instock") {
+            setSelectedSize(size);
+            setSelectedVariation(matchedVariation);
         }
-
-        setSelectedVariation(matchedVariation);
     };
 
     const handleAddToCart = async () => {
         if (isOutOfStock) return;
-
         if (product.type === "variable" && !selectedVariation) {
             alert("Please select a size");
             return;
         }
 
-        const checkId =
-            product.type === "variable"
-                ? selectedVariation?.id
-                : product.id;
-
+        const checkId = product.type === "variable" ? selectedVariation?.id : product.id;
         if (!isInCart(checkId)) {
             setLoadingId(checkId);
-
             try {
-                const itemToAdd =
-                    product.type === "variable"
-                        ? selectedVariation
-                        : product;
-
-                addToCart(product, quantity, itemToAdd);
-                setCartOpen(true);
+                addToCart(product, 1, product.type === "variable" ? selectedVariation : product);
             } finally {
                 setLoadingId(null);
             }
         }
     };
 
-    const cartId =
-        product.type === "variable"
-            ? selectedVariation?.id
-            : product.id;
+    const handleAddWithAnimation = async (e) => {
+        e.preventDefault();
+        
+        const cartIcon = document.getElementById('cart-icon');
+        const productImage = mainImageRef.current;
+
+        if (cartIcon && productImage) {
+            const startRect = productImage.getBoundingClientRect();
+            const endRect = cartIcon.getBoundingClientRect();
+
+            setFlyCoords({
+                startX: startRect.left,
+                startY: startRect.top,
+                endX: endRect.left + (endRect.width / 2), 
+                endY: endRect.top + (endRect.height / 2)
+            });
+
+            setIsFlying(true);
+            
+            setTimeout(() => {
+                setIsFlying(false);
+                cartIcon.classList.add('cart-icon-bounce');
+                setTimeout(() => cartIcon.classList.remove('cart-icon-bounce'), 400);
+            }, 800); 
+        }
+
+        await handleAddToCart();
+    };
+
+    const cartId = product.type === "variable" ? selectedVariation?.id : product.id;
 
     return (
-        <div
-            onClick={onClose}
-            style={{
-                position: "fixed",
-                inset: 0,
-                background: "rgba(0,0,0,0.8)",
-                zIndex: 999,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                overflowY: "auto",
-            }}
-        >
-        <div
-            className="quick-view-content mfp-close-btn-in white-popup-block"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-            position: "relative",
-            background: "#fff",
-            maxWidth: "1000px",
-            width: "95%",
-            }}
-        >
-            <button onClick={onClose} className="mfp-close">
-            ✕
-            </button>
-            <div className="product-single">
-                <div className="inner-wrapper">
-                    <div className="col-grid-6">
-                        <div className="single-thumb-detail clear-fix">
-                            <div className="single-main-thumb clear-fix">
-                                <div className="single-thumb">
-                                    <img
-                                        alt={product.name}
-                                        src={images[activeIndex]}
-                                        style={{ 
-                                            width: "100%",
-                                            padding: "0px 3px 10px 2px",
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="pager-thumbnail section-carousel-enabled">
-                            <Slider
-                                dots={false}
-                                arrows={true}
-                                slidesToShow={4}
-                                slidesToScroll={1}
-                                infinite={false}
-                                focusOnSelect={true}
-                                centerMode={false}
-                                swipeToSlide={true}
-                            >
-                                {images.map((img, index) => (
-                                <div key={index} onClick={() => setActiveIndex(index)}>
-                                    <img
-                                    alt={`thumb-${index}`}
-                                    src={img}
-                                    style={{
-                                        width: "100px",
-                                        height: "100px",
-                                        objectFit: "cover",
-                                        opacity: activeIndex === index ? 1 : 0.7,
-                                        cursor: "pointer",
-                                        margin: "0 auto",
-                                    }}
-                                    />
-                                </div>
-                                ))}
-                            </Slider>
-                            </div>
-                        </div>
+        <>
+        <div onClick={onClose} style={styles.overlay}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={styles.modal}>
+                <div style={styles.header}>
+                    <span style={{ fontWeight: '600' }}>Select Options</span>
+                    <button 
+                        onClick={onClose} 
+                        className="modal-close-btn" // ক্লাস যোগ করুন
+                        style={styles.closeBtn}
+                    >
+                        ✕
+                    </button>
+                </div>
+                <div style={styles.body}>
+                    <div style={styles.imageContainer}>
+                        <img 
+                            src={productImage} 
+                            alt={product.name} 
+                            style={styles.image} 
+                            ref={mainImageRef}
+                        />
                     </div>
 
-                    <div className="col-grid-6">
-                        <div className="summary entry-summary">
-                            <div className="product-item-details">
-                                <h2 className="product-title">
-                                    <a href={`/product/${product.slug}`}>
-                                    {product.name}
-                                    </a>
-                                </h2>
-                                <div
-                                    className="product-price-container"
-                                    dangerouslySetInnerHTML={{ __html: product.price_html }}
-                                />
-                            </div>
+                    <h3 style={styles.title}>{product.name}</h3>
+                    <button 
+                        type="button" 
+                        onClick={(e) => {
+                            e.preventDefault();
+                        }} 
+                        style={styles.sizeGuideBtn}
+                    >
+                        Size Guide
+                    </button>
+                    {sizeAttribute && (
+                        <p style={styles.label}>Choose Size</p>
+                    )}
 
-                            <div
-                                className="item-content"
-                                dangerouslySetInnerHTML={{
-                                    __html: product.short_description || "",
-                                }}
-                            />
+                    <div style={styles.sizeGroup}>
+                        {sizeAttribute?.options.map((size) => {
+                            const available = isSizeAvailable(size);
+                            const isSelected = selectedSize === size;
 
-                            {selectedSize && (
-                            <div style={{ marginBottom: "10px", fontWeight: "500" }}>
-                                SIZE: {selectedSize}
-                            </div>
-                            )}
-
-                            {sizeAttribute && (
-                            <div className="quick-filter filter-by-size">
-                                <div className="filter-size-container">
-                                    {sizeAttribute.options.map((size) => {
-                                        const available = isSizeAvailable(size);
-                                        return (
-                                            <button
-                                                type="button"
-                                                key={size}
-                                                disabled={!available}
-                                                className={`filter-size-box 
-                                                    ${selectedSize === size ? "active" : ""} 
-                                                    ${!available ? "disabled" : ""}`}
-                                                onClick={() => available && handleSizeSelect(size)}
-                                            >
-                                                {size}
-                                                {!available && <span className="size-cross">✕</span>}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                            )}
-
-                            <form
-                                className="single-cart"
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    handleAddToCart();
-                                }}
-                            >
-                                <input
-                                    type="number"
-                                    className="input-text"
-                                    min="1"
-                                    value={quantity}
-                                    onChange={(e) => setQuantity(Number(e.target.value))}
-                                />
+                            return (
                                 <button
-                                    className="custom-button button-small"
-                                    disabled={
-                                        loadingId === cartId ||
-                                        isInCart(cartId) ||
-                                        isOutOfStock
-                                    }
+                                    key={size}
+                                    type="button"
+                                    onClick={() => available && handleSizeSelect(size)}
+                                    className="size-variation-btn"
+                                    style={{
+                                        ...styles.sizeBox,
+                                        borderColor: isSelected ? "#1a2233" : "#e5e5e5",
+                                        backgroundColor: "#fff",
+                                        cursor: available ? "pointer" : "not-allowed",
+                                        color: available ? "#1a2233" : "#cccccc",
+                                    }}
                                 >
-                                    {isOutOfStock
-                                        ? "Out of Stock"
-                                        : loadingId === cartId
-                                        ? "Adding..."
-                                        : isInCart(cartId)
-                                        ? "Added"
-                                        : "Add To Cart"}
+                                    {size}
+                                    {!available && <span style={styles.crossIcon}>✕</span>}
                                 </button>
-
-                                {product && !isOutOfStock && (
-                                    <BuyNowPopupCheckout
-                                        product={product}
-                                        API_URL={API_URL}
-                                        selectedVariation={selectedVariation}
-                                    />
-                                )}
-                            </form>
-
-                            <div className="share-on">
-                                <h4>SHARE PRODUCT:</h4>
-                                <div className="social-links text-alignleft">
-                                    <ul>
-                                        <li><a href="https://facebook.com" target="_blank" rel="noreferrer">Facebook</a></li>
-                                        <li><a href="https://twitter.com" target="_blank" rel="noreferrer">Twitter</a></li>
-                                        <li><a href="https://linkedin.com" target="_blank" rel="noreferrer">LinkedIn</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <div className="entry-meta product-meta">
-                                <span><strong>SKU :</strong> {product.sku || "N/A"}</span>
-                                <span><strong>CATEGORY :</strong> {product.categories &&
-                                        product.categories.map((category, index) => (
-                                            <span key={index}>
-                                            <Link to={`/product-category/${category.slug}`}>
-                                                {category.name}
-                                            </Link>
-                                            {index < product.categories.length - 1 && ", "}
-                                            </span>
-                                    ))}</span>
-                            </div>
-                        </div>
+                            );
+                        })}
                     </div>
+                    <div className="product-price-container" style={{ marginBottom: "10px" }}>
+                        <label style={styles.PriceLabel}>Price:</label>
+                        <span style={styles.UnitPrice}>৳{product.price}</span>
+                    </div>
+                    <button
+                        onClick={handleAddWithAnimation}
+                        disabled={loadingId === cartId || isInCart(cartId) || isOutOfStock}
+                        style={{
+                            ...styles.addBtn,
+                            backgroundColor: isOutOfStock ? "#ccc" : "#1a2233"
+                        }}
+                    >
+                        {isOutOfStock ? "Out of Stock" : loadingId === cartId ? "Adding..." : isInCart(cartId) ? "Added to Cart" : "ADD TO CART"}
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
+        <AnimatePresence>
+            {isFlying && (
+                <motion.img
+                    src={productImage}
+                    initial={{ 
+                        position: "fixed",
+                        top: flyCoords.startY,
+                        left: flyCoords.startX,
+                        width: mainImageRef.current?.offsetWidth || "400px", 
+                        height: mainImageRef.current?.offsetHeight || "auto",
+                        zIndex: 99999,
+                        borderRadius: "10px",
+                        opacity: 0.8,
+                        scale: 1
+                    }}
+                    animate={{ 
+                        top: flyCoords.endY, 
+                        left: flyCoords.endX, 
+                        width: "40px", 
+                        height: "40px",
+                        opacity: 0.5,
+                        scale: 0.1,
+                        rotate: 45 
+                    }}
+                    exit={{ opacity: 0 }}
+                    transition={{ 
+                        duration: 0.8,
+                        ease: [0.45, 0, 0.55, 1], 
+                    }}
+                    style={{ 
+                        pointerEvents: "none", 
+                        objectFit: "cover",
+                        boxShadow: "0 10px 25px rgba(0,0,0,0.2)" 
+                    }}
+                />
+            )}
+        </AnimatePresence>
+        </>
+ 
     );
+};
+
+const styles = {
+    overlay: {
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.7)",
+        zIndex: 99,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "20px"
+    },
+    modal: {
+        background: "#fff",
+        width: "100%",
+        maxWidth: "420px",
+        borderRadius: "4px",
+        overflow: "hidden",
+    },
+    header: {
+        background: "#2d3448",
+        color: "#fff",
+        padding: "15px 20px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    closeBtn: {
+        border: "none",
+        cursor: "pointer",
+        zIndex: 20,
+        color: "white",
+        opacity: 0.9,
+        boxShadow: "none", // 'shas' কে boxShadow এ পরিবর্তন করা হয়েছে
+        fontSize: "14px",   // font-size -> fontSize
+        fontWeight: 400,    // Number হিসেবে রাখা যায়
+        padding: 0,
+        margin: 0,
+        width: "28px",
+        height: "28px",
+        background: "rgba(0, 0, 0, 0.25)",
+        borderRadius: "50%", // border-radius -> borderRadius
+        transition: "all 0.15s ease",
+        display: "flex",
+        alignItems: "center",     // align-items -> alignItems
+        justifyContent: "center", // justify-content -> justifyContent
+        lineHeight: 1,            // line-height -> lineHeight
+    },
+    body: {
+        padding: "20px",
+        textAlign: "center"
+    },
+    imageContainer: {
+        marginBottom: "15px"
+    },
+    image: {
+        width: "180px",
+        height: "auto",
+        margin: "0 auto",
+        borderRadius: "5px"
+    },
+    title: {
+        fontSize: "15px",
+        margin: "10px 0",
+        color: "#444"
+    },
+    sizeGuide: {
+        fontSize: "12px",
+        color: "#888",
+        textDecoration: "underline",
+        display: "block",
+        marginBottom: "15px"
+    },
+    label: {
+        fontSize: "14px",
+        fontWeight: "700",
+        marginBottom: "10px"
+    },
+    // ... আপনার অন্যান্য স্টাইল
+    sizeGroup: {
+        display: "flex",
+        justifyContent: "center", 
+        flexWrap: "wrap",        
+        gap: "10px",             
+        marginBottom: "10px",
+        marginTop: "10px",
+        maxWidth: "100%",        
+        padding: "0 10px"        
+    },
+    sizeBox: {
+        border: "1px solid", 
+        minWidth: "48px",       
+        height: "auto",         
+        minHeight: "38px",      
+        padding: "8px 12px",    
+        display: "flex",
+        flexDirection: "column", 
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "12px",       
+        fontWeight: "500",
+        transition: "all 0.2s ease-in-out",
+        position: "relative",
+        background: "#fff",
+        textAlign: "center",   
+        lineHeight: "1.4",     
+    },
+    crossIcon: {
+        position: "absolute",
+        color: "rgba(255, 0, 0, 0.6)",
+        fontSize: "16px",
+        fontWeight: "bold"
+    },
+    // ... বাকি স্টাইল
+    addBtn: {
+        width: "100%",
+        padding: "15px",
+        color: "#fff",
+        border: "none",
+        fontSize: "14px",
+        fontWeight: "bold",
+        cursor: "pointer",
+        letterSpacing: "1px"
+    },
+    sizeGuideBtn: {
+        fontSize: "12px",
+        color: "#888",
+        textDecoration: "underline",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        display: "block",
+        margin: "0 auto 15px auto", // মাঝখানে রাখার জন্য
+        padding: 0
+    },
+    PriceLabel: {
+        fontSize: "16px",
+        fontWeight: "700", 
+        color: "#000"       
+    },
+    UnitPrice: {
+        fontSize: "16px",
+        fontWeight: "700",
+        color: "#000"
+    }   
 };
 
 export default QuickViewModal;

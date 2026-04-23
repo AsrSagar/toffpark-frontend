@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import HeroSection from "./HeroSection/HeroSection";
-import PormoSection from "./PormoSection/PormoSection";
 import AdsBanner from "./AdsBanner/AdsBanner";
 import CustomerFeedback from "./CustomerFeedback/CustomerFeedback";
 import CategoryProduct from "./CategoryProduct/CategoryProduct";
 import HomeContent from "./HomeContent/HomeContent";
 import SalesPopup from "../../components/SalesPopup/SalesPopup";
+import PopularCategory from "./PopularCategory/PopularCategory";
+import TestimonialSlider from "./TestimonialSlider/TestimonialSlider";
 const Home = () => {
 
     const [loading, setLoading] = useState(true);
@@ -34,9 +35,9 @@ const Home = () => {
                     <div id="primary" className="content-area">
                         <main id="main" className="site-main" >
                             <HeroSection />
-                            <PormoSection />
-                            <CustomerFeedback />
+                            <PopularCategory />
                             <CategoryProduct categorySlug="112" categoryTitle="Kids Collections"/>
+                            <CustomerFeedback />
                             <CategoryProduct categorySlug="84"  categoryTitle="Most-wanted Shoes"/>
                             <AdsBanner />
                             <CategoryProduct categorySlug="83" categoryTitle="Casual Shoes"/>
@@ -48,6 +49,7 @@ const Home = () => {
                             <CategoryProduct categorySlug="89" categoryTitle="TOFFPARK Wallets"/>
                             <CategoryProduct categorySlug="93" categoryTitle="Socks"/>
                             <HomeContent />
+                            <TestimonialSlider />
                         </main>
                     </div>
                 </div>

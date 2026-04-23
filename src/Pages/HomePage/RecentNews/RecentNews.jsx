@@ -11,7 +11,7 @@ const RecentNews = () => {
                     </div>
                     <div className="inner-wrapper">
                     <div className="col-grid-4 latest-posts-item">
-                        <div className="latest-posts-wrapper box-shadow-block">
+                        <div className="latest-posts-wrapper">
                         <div className="latest-posts-thumb thumb-overlay">
                             <a href="/"><img alt="Recent Post" src="images/latest-posts/latest-post-1.jpg" /></a>
                             <div className="overlay-box">
@@ -41,7 +41,7 @@ const RecentNews = () => {
                     </div>
 
                     <div className="col-grid-4 latest-posts-item">
-                        <div className="latest-posts-wrapper box-shadow-block">
+                        <div className="latest-posts-wrapper">
                         <div className="latest-posts-thumb thumb-overlay">
                             <a href="/"><img alt="Recent Post" src="images/latest-posts/latest-post-2.jpg" /></a>
                             <div className="overlay-box">
@@ -71,7 +71,7 @@ const RecentNews = () => {
                     </div>
 
                     <div className="col-grid-4 latest-posts-item">
-                        <div className="latest-posts-wrapper box-shadow-block">
+                        <div className="latest-posts-wrapper">
                         <div className="latest-posts-thumb thumb-overlay">
                             <a href="/"><img alt="Recent Post" src="images/latest-posts/latest-post-3.jpg" /></a>
                             <div className="overlay-box">

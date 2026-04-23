@@ -1,0 +1,8 @@
+.payment-images {
+    background: #fff;
+}
+.bottom-fotter-widget-area{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}

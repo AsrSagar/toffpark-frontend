@@ -71,7 +71,8 @@
 }
 
 .single-thumb-detail {
-  margin-bottom: 20px;
+  width: 100%;
+  display: inline-block;
 }
 
 .single-thumb img {
@@ -140,6 +141,222 @@
   color: red;
   font-weight: bold;
 }
+
+.cart-icon {
+  animation: bounce 0.8s ease-in-out infinite; 
+}
+.cart-icon:hover {
+  transition: transform 0.3s ease;
+  transform: translateY(-3px);
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); } 
+}
+
+/* Komate hole emon korun */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #eee;
+  border-radius: 50px;
+  width: 120px;
+  height: 45px;
+  margin-bottom: 15px;
+}
+
+.qty-btn {
+  background: none;
+  border: none;
+  width: 40px;
+  height: 100%;
+  cursor: pointer;
+  font-size: 18px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.qty-minus{
+  border-radius: 50% 0 0 50%;
+}
+.qty-plus{
+  border-radius: 0 50% 50% 0;
+}
+.qty-minus:hover {
+  border-radius: 50% 0 0 50%;
+  background-color: #000;
+  color: #fff;
+}
+.qty-plus:hover {
+  border-radius: 0 50% 50% 0;
+  background-color: #000;
+  color: #fff;
+}
+
+.input-text {
+  width: 40px;
+  border: none;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 500;
+  outline: none;
+}
+
+/* Chrome, Safari, Edge theke default arrows remove korar jonno */
+.input-text::-webkit-outer-spin-button,
+.input-text::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.custom-button.button-small {
+    width: 100%;
+    background: transparent;
+    padding: 12px;
+    border-radius: 25px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    cursor: pointer;
+    border: 1px solid #bababa;
+    color: #000;
+}
+
+.product-info-wrapper {
+    max-width: 600px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #444;
+    line-height: 1.5;
+}
+
+
+
+.accordion-header {
+    background-color: #fcfcfc;
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+}
+.terms-box {
+  width: 33.33%;
+}
+.check-icon {
+  color: #28a745;
+  font-weight: bold;
+  font-size: 24px;
+  width: 100%;
+  display: block;
+  text-align: center;
+  margin-bottom: 5px;
+}
+.accordion-header strong {
+  font-size: 13px;
+  color: #222;
+  text-align: center;
+  width: 100%;
+  display: block;
+}
+/* Policy Icons Summary */
+.policy-summary {
+    display: flex;
+    gap: 15px;
+    padding: 12px 15px;
+    background: #fff;
+    font-size: 13px;
+    color: #28a745;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Detailed Content inside Accordion */
+.policy-details {
+    padding: 20px 15px;
+    font-size: 14px;
+}
+
+.policy-details h4 {
+    margin: 15px 0 5px 0;
+    font-size: 15px;
+    color: #222;
+}
+
+.policy-details p {
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.policy-details ul {
+    color: #666;
+}
+
+.view-policy-link {
+    display: block;
+    text-align: center;
+    color: #007bff;
+    text-decoration: underline;
+    margin-top: 15px;
+    font-size: 13px;
+}
+
+/* Bottom Description Text */
+.product-description-text {
+    font-size: 14px;
+    color: #555;
+}
+
+.product-description-text p {
+    margin-bottom: 15px;
+}
+
+.policy-accordion {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.policy-accordion {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.arrow-down {
+    margin-left: auto;
+    transition: transform 0.3s ease; /* এরো ঘোরার এনিমেশন */
+}
+
+.arrow-down.rotate {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    padding: 15px;
+    border-top: 1px solid #ddd;
+    animation: slideDown 0.3s ease-out; /* কন্টেন্ট আসার এনিমেশন */
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.policy-summary {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    font-size: 13px;
+    color: #555;
+}
 @media only screen and (max-width: 900px) {
   .product-single .single-cart input, .product-single .custom-button.button-small {
     width: 100%;
@@ -151,5 +368,10 @@
     display: block;
     width: 70px !important;
     height: 70px !important;
+  }
+  .category-image img {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
   }
 }

@@ -92,7 +92,7 @@ const BlogGridPage = () => {
                         key={post.id}
                         className="hentry post col-grid-4"
                       >
-                        <div className="entry-content-wrapper box-shadow-block">
+                        <div className="entry-content-wrapper">
                           <div className="entry-thumb aligncenter thumb-overlay">
                             <Link to={`/blog/${post.slug}`}>
                               {image && (

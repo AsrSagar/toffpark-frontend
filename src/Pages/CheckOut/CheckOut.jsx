@@ -4,7 +4,7 @@ import { useCart } from "../../context/CartContext";
 import ThankYouPopup from "../ThankYouPopup/ThankYouPopup";
 import config from "../../config";
 import "./CheckoutPage.css";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 // Function to get device type, UTM params, and session page views
 const getTrackingData = () => {
@@ -51,7 +51,6 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const [orderId, setOrderId] = useState(null);
-
   const deliveryCharges = { inside_dhaka: 60, outside_dhaka: 120 };
   const deliveryFee = deliveryCharges[deliveryMethod] || 0;
   const finalTotal = Number(cartTotal - discountAmount) + deliveryFee;
@@ -101,6 +100,13 @@ const CheckoutPage = () => {
     }
 
     setPromoLoading(false);
+  };
+
+  // Promo code remove korar function
+  const removePromoCode = () => {
+    setPromoCode("");
+    setDiscountAmount(0);
+    setPromoMessage("");
   };
   // ==========================
   // PLACE ORDER
@@ -367,25 +373,38 @@ const CheckoutPage = () => {
                   <form className="checkout product-checkout" onSubmit={placeOrder}>
                     <div className="col2-set" id="customer_details">
                       <div className="col-1">
-                        <h3>Billing Details</h3>
                         <div className="product-billing-fields_field-wrapper">
+                          <h3>Contact & Shipping Details:</h3>
                           <div className="form-row">
-                            <label>Name *</label>
+                            <label>Full Name *</label>
                             <input
                               type="text"
                               name="first_name"
                               value={billing.first_name}
+                              placeholder="Your full name"
+                              onChange={handleBillingChange}
+                              required
+                            />
+                          </div>
+                          <div className="form-row">
+                            <label>Phone Number *</label>
+                            <input
+                              type="text"
+                              name="phone"
+                              placeholder="Your phone number"
+                              value={billing.phone}
                               onChange={handleBillingChange}
                               required
                             />
                           </div>
 
                           <div className="form-row">
-                            <label>Phone *</label>
+                            <label>Email Address </label>
                             <input
-                              type="text"
-                              name="phone"
-                              value={billing.phone}
+                              type="email"
+                              name="email"
+                              value={billing.email}
+                              placeholder="Your email address"
                               onChange={handleBillingChange}
                               required
                             />
@@ -401,7 +420,6 @@ const CheckoutPage = () => {
                               required
                             />
                           </div>
-
                           <div className="form-row">
                             <label>Order Note</label>
                             <textarea
@@ -414,91 +432,191 @@ const CheckoutPage = () => {
                       </div>
                       {/* Order Review & Payment */}
                       <div className="col-2">
-                        <h3>Your Order</h3>
-                        <table className="shop-table product-checkout-review-order-table">
-                          <tbody>
+                        <div className="order-summary-card">
+                          <div className="summary-header">
+                            <h3>Order Summary</h3>
+                            <Link to="/cart" className="mobile-edit-link">Modify</Link>
+                          </div>
+
+                          <div className="order-items">
                             {cartItems.map((item) => (
-                              <tr key={item.productId}>
-                                <td>{item.name} × {item.qty}</td>
-                                <td>৳{formatPrice(item.price * item.qty)}</td>
-                              </tr>
-                            ))}
-                            <tr><td>Cart Sub-total</td><td>৳{formatPrice(cartTotal)}</td></tr>
-                            {discountAmount > 0 && <tr><td>Discount</td><td>-৳{formatPrice(discountAmount)}</td></tr>}
-                            <tr><td>Delivery Charge</td><td>৳{formatPrice(deliveryFee)}</td></tr>
-                            <tr><th>Order Total</th><th>৳{formatPrice(finalTotal)}</th></tr>
-                          </tbody>
-                        </table>
-
-                        {/* Promo Code */}
-                        <div className="form-row">
-                          <input type="text" placeholder="Promo Code" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} />
-                          <button type="button" onClick={applyPromoCode} disabled={promoLoading}>
-                            {promoLoading ? "Applying..." : "Apply"}
-                          </button>
-                          {promoMessage && <p>{promoMessage}</p>}
-                        </div>
-
-                        {/* Delivery Method */}
-                        <div className="product-checkout-payment">
-                          <h3>Delivery Method</h3>
-                          <ul>
-                            <li>
-                              <input type="radio" value="inside_dhaka" checked={deliveryMethod === "inside_dhaka"} onChange={(e) => setDeliveryMethod(e.target.value)} />
-                              <label>Inside Dhaka (৳60)</label>
-                            </li>
-                            <li>
-                              <input type="radio" value="outside_dhaka" checked={deliveryMethod === "outside_dhaka"} onChange={(e) => setDeliveryMethod(e.target.value)} />
-                              <label>Outside Dhaka (৳120)</label>
-                            </li>
-                          </ul>
-                        </div>
-
-                        {/* Payment Method */}
-                        <div id="payment" className="custom-payment">
-                          <h3>Payment Method</h3>
-                          <div className="payment-box">
-                            {["cod", "bkash", "nagad", "sslcommerz"].map((method) => (
-                              <label key={method} className={`payment-row ${paymentMethod === method ? "active" : ""}`}>
-                                <div className="left">
-                                  <input type="radio" name="payment" value={method} checked={paymentMethod === method} onChange={(e) => setPaymentMethod(e.target.value)} />
-                                  <span>{method === "cod" ? "Cash On Delivery" : method === "bkash" ? "bKash" : method === "nagad" ? "Nagad" : "Card Payment"}</span>
-                                  {method === "bkash" && <img src="/images/bkash.png" alt="bkash" />}
-                                  {method === "nagad" && <img src="/images/nagad.png" alt="nagad" />}
-                                  {method === "sslcommerz" && <img src="/images/sslcz-verified.png" alt="sslcommerz" />}
+                              <div key={item.productId} className="item-row">
+                                <div className="item-thumb">
+                                  <img src={item.image} alt={item.name} />
                                 </div>
-                              </label>
+                                <div className="item-info">
+                                  <h4>{item.name}</h4>
+                                  <p>Size: {item.size} • Qty: {item.qty}</p>
+                                </div>
+                                <div className="item-pricing">
+                                  <span className="new-price">৳{item.price.toFixed(0)}</span>
+                                </div>
+                              </div>
                             ))}
                           </div>
-                          {
-                            paymentMethod === "bkash" && (
-                              <div className="payment-desc">
-                                Pay securely by bKash through M-Commerce.
+
+                          <div className="pricing-details">
+                            <div className="calc-row">
+                              <span>Subtotal</span>
+                              <span>৳{cartTotal.toFixed(0)}</span>
+                            </div>
+                            
+                            {/* Discount Amount show korbe jodi discount thake */}
+                            {discountAmount > 0 && (
+                              <div className="calc-row discount-row">
+                                <span>Discount ({promoCode})</span>
+                                <span className="discount-text">- ৳{discountAmount.toFixed(0)}</span>
                               </div>
-                            )
-                          }
-                          {
-                            paymentMethod === "sslcommerz" && (
-                              <div className="payment-desc">
-                                Pay securely by Credit/Debit card, Internet banking or Mobile banking through SSLCommerz.
+                            )}
+
+                            <div className="calc-row">
+                              <span>Shipping ({deliveryMethod === "inside_dhaka" ? "Dhaka" : "Outside Dhaka"})</span>
+                              <span>৳{deliveryFee.toFixed(0)}</span>
+                            </div>
+                            <div className="total-row">
+                              <strong>Total</strong>
+                              <strong>৳{finalTotal.toFixed(0)}</strong>
+                            </div>
+                          </div>
+
+                          {/* Promo Section-e clear button jog kora hoyeche */}
+                          <div className="promo-section">
+                            <input 
+                              type="text" 
+                              placeholder="Enter coupon code" 
+                              value={promoCode} 
+                              disabled={discountAmount > 0} // Discount apply thakle input lock thakbe
+                              onChange={(e) => setPromoCode(e.target.value)} 
+                            />
+                            {discountAmount > 0 ? (
+                              <button type="button" className="remove-promo-btn" onClick={removePromoCode}>Remove</button>
+                            ) : (
+                              <button type="button" onClick={applyPromoCode} disabled={promoLoading}>
+                                {promoLoading ? "..." : "Apply"}
+                              </button>
+                            )}
+                          </div>
+                          {promoMessage && (
+                            <p className={`promo-note ${discountAmount > 0 ? "success-msg" : "error-msg"}`}>
+                              {promoMessage}
+                            </p>
+                          )}
+
+                          {/* <div className="delivery-badge">
+                            <span className="truck-icon">🚚</span>
+                            <p>Delivery <strong>within 2-3 Days</strong> after confirmation</p>
+                          </div> */}
+                        </div>
+                        {/* Delivery Method Section */}
+                        <div className="payment-method-section">
+                          <h3>Shipping Options</h3>
+                          <div className="payment-options">
+                            {/* Inside Dhaka */}
+                            <label className={`payment-card ${deliveryMethod === 'inside_dhaka' ? 'selected' : ''}`}>
+                              <input 
+                                type="radio" 
+                                name="delivery_method"
+                                value="inside_dhaka" 
+                                checked={deliveryMethod === 'inside_dhaka'} 
+                                onChange={(e) => setDeliveryMethod(e.target.value)} 
+                              />
+                              <div className="payment-content">
+                                <div className="payment-main">
+                                  <span className="radio-circle"></span>
+                                  <div className="text-group">
+                                    <span className="method-title">Inside Dhaka City</span>
+                                  </div>
+                                </div>
+                                <span className="price-tag">Tk 80.00</span>
                               </div>
-                            )
-                          }
-                          {
-                            paymentMethod === "nagad" && (
-                              <div className="payment-desc">
-                                Pay securely by Nagad through M-Commerce.
+                            </label>
+
+                            {/* Outside Dhaka */}
+                            <label className={`payment-card ${deliveryMethod === 'outside_dhaka' ? 'selected' : ''}`}>
+                              <input 
+                                type="radio" 
+                                name="delivery_method"
+                                value="outside_dhaka" 
+                                checked={deliveryMethod === 'outside_dhaka'} 
+                                onChange={(e) => setDeliveryMethod(e.target.value)} 
+                              />
+                              <div className="payment-content">
+                                <div className="payment-main">
+                                  <span className="radio-circle"></span>
+                                  <div className="text-group">
+                                    <span className="method-title">Outside Dhaka City</span>
+                                  </div>
+                                </div>
+                                <span className="price-tag">Tk 150.00</span>
                               </div>
-                            )
-                          }
-                          <div className="terms">
-                            <label>
-                              <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} />
-                              By clicking Place Order, you agree to our delivery policy and returns & refunds policy.
                             </label>
                           </div>
-                          <button type="submit" className="place-order-btn" disabled={loading}>
-                            {loading ? "Placing Order..." : "Place Order"}
+                        </div>
+
+                        <div className="payment-method-section">
+                          <h3>Payment Method</h3>
+                          <div className="payment-options">
+                            {/* Cash on Delivery */}
+                            <label className={`payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
+                              <input type="radio" value="cod" checked={paymentMethod === 'cod'} onChange={(e) => setPaymentMethod(e.target.value)} />
+                              <div className="payment-content">
+                                <div className="payment-main">
+                                  <span className="radio-circle"></span>
+                                  {/* <img src="/images/icons/cod-icon.png" alt="COD" className="method-icon" /> */}
+                                  <div className="text-group">
+                                    <span className="method-title">Cash on Delivery <small className="badge popular">POPULAR</small></span>
+                                    <span className="method-subtitle">Pay when you receive your order</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </label>
+                            <label className={`payment-card ${paymentMethod === 'sslcommerz' ? 'selected' : ''}`}>
+                              <input type="radio" value="sslcommerz" checked={paymentMethod === 'sslcommerz'} onChange={(e) => setPaymentMethod(e.target.value)} />
+                              <div className="payment-content">
+                                <div className="payment-main">
+                                  <span className="radio-circle"></span>
+                                  {/* <img src="/images/icons/card-icon.png" alt="Card" className="method-icon" /> */}
+                                  <div className="text-group">
+                                    <span className="method-title">Card Payment <small className="badge secure">SECURE</small></span>
+                                    <span className="method-subtitle">Visa, Mastercard, Amex</span>
+                                  </div>
+                                </div>
+                                <img src="/images/sslcz-verified.png" alt="SSLCommerz" className="provider-logo" />
+                              </div>
+                            </label>
+                            <label className={`payment-card ${paymentMethod === 'bkash' ? 'selected' : ''}`}>
+                              <input type="radio" value="bkash" checked={paymentMethod === 'bkash'} onChange={(e) => setPaymentMethod(e.target.value)} />
+                              <div className="payment-content">
+                                <div className="payment-main">
+                                  <span className="radio-circle"></span>
+                                  {/* <img src="/images/bkash-logo.png" alt="bKash" className="method-icon" /> */}
+                                  <div className="text-group">
+                                    <span className="method-title">bKash</span>
+                                    <span className="method-subtitle">Pay with bKash mobile wallet</span>
+                                  </div>
+                                </div>
+                                <img src="/images/bkash.png" alt="bKash Logo" className="provider-logo" />
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+                        <div className="checkout-footer">
+                          
+                          <div className="terms-container">
+                            <div className="terms-wrapper">
+                            <input 
+                              type="checkbox" 
+                              id="terms" 
+                              checked={termsAccepted} // isChecked-er poriborte
+                              onChange={(e) => setTermsAccepted(e.target.checked)} // setIsChecked-er poriborte
+                            />
+                            <label htmlFor="terms" className="terms-label">
+                              I agree to the <span className="link">Terms & Conditions</span>, <span className="link">Refund Policy</span> and <span className="link">Privacy Policy</span>
+                            </label>
+                          </div>
+                          </div>
+                          <button type="submit" className="confirm-btn" disabled={loading}>
+                            <span className="lock-icon">🔒</span> {loading ? "Processing..." : `Confirm Order ৳${finalTotal}`}
                           </button>
                         </div>
                       </div>

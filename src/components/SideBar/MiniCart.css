@@ -94,27 +94,33 @@
   margin-top: 5px;
 }
 .qty-controls button {
-    padding: 2px 8px;
-    border: 1px solid #ccc;
-    background: #f8f8f8;
-    cursor: pointer;
-    color: #000;
+  padding: 2px 8px;
+  background: transparent;
+  cursor: pointer;
+  color: #000;
 }
 .qty-controls button:hover {
-    background: #000;
-    color: #fff;
+  background: #000;
+  color: #fff;
 }
 .qty-controls span {
   margin: 0 5px;
   font-size: 13px;
 }
-
+.quantity-selector input {
+  background-color: transparent;
+  width: 50px;
+  margin-right: 0px;
+  max-width: 50px;
+}
 /* Remove button */
 .mini-remove-btn {
-  font-size: 14px;
+  font-size: 18px;
   border: none !important;
   background: transparent !important;
   color: #9b9b9b !important;
+  margin-top: -15px;
+  margin-left: 10px;
 }
 .mini-remove-btn:hover {
   background: none;
@@ -153,6 +159,288 @@
 .btn + .btn {
   margin-top: 5px;
 }
+
+
+.floating-cart {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 70px;
+  background-color: #fff;
+  border-radius: 5px 0 0 5px;
+  cursor: pointer;
+  z-index: 9999;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+.cart-icon-box {
+  background-color: #000;
+  border-radius: 5px 0 0 0;
+  padding: 10px 5px;
+  color: white;
+}
+
+.cart-icon {
+  display: block;
+  font-size: 20px;
+  margin-bottom: 3px;
+}
+
+.item-count {
+  font-size: 12px;
+  font-weight: bold;
+  display: block;
+}
+
+.cart-price {
+  padding: 0px 5px;
+  color: #000;
+  font-weight: bold;
+  font-size: 14px;
+  border: 1px solid #eee;
+  border-top: none;
+}
+
+/* Hover effect */
+.floating-cart:hover {
+  box-shadow: -4px 4px 15px rgba(0,0,0,0.15);
+}
+
+
+
+
+
+/* Recommendations Section Styling ("You May Also Like") */
+.recommendations-section {
+  background-color: #fff;
+  border: 1px solid #ff7f27; /* Orange dashed border from image */
+  border-style: dashed;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.recommendations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.recommendations-header h5 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: bold;
+}
+
+.carousel-nav {
+  display: flex;
+  gap: 5px;
+}
+
+.nav-btn {
+  background-color: #eee;
+  border: none;
+  color: #555;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+}
+
+.nav-btn:hover {
+  background-color: #ddd;
+}
+
+
+
+
+
+
+/* Recommendation Container */
+.recommendations-container {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 12px;
+  margin: 10px 0;
+  border: 1px solid #eee;
+}
+
+.rec-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.rec-title {
+  font-size: 13px;
+  color: #777;
+  margin: 0;
+}
+
+/* Nav Buttons Layout */
+.swiper-nav-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.prev-el, .next-el {
+  width: 22px;
+  height: 22px;
+  background: #f17e28;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* Swiper Progress Bar Fix */
+.rec-swiper .swiper-pagination-progressbar {
+  top: 0 !important;
+  height: 3px !important;
+  background: #e0e0e0 !important;
+}
+
+.rec-swiper .swiper-pagination-progressbar-fill {
+  background: #2196F3 !important; /* Blue progress bar */
+}
+
+/* Card Styling - The Main Fix */
+.rec-card {
+  background: #fff;
+  border: 1px solid #efefef;
+  border-radius: 10px;
+  padding: 8px;
+  display: flex; /* Horizontal alignment */
+  align-items: center;
+  gap: 10px;
+  min-height: 80px;
+  box-sizing: border-box;
+  margin-top: 10px;
+}
+
+.rec-img-box {
+  flex-shrink: 0; /* Image keno choto hoye jabe na */
+}
+
+.rec-img-box img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.rec-content {
+  flex-grow: 1;
+  text-align: left;
+  overflow: hidden; /* Text overflow protection */
+}
+
+.rec-name {
+  font-size: 11px;
+  color: #333;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Boro naam hole '...' hobe */
+}
+
+.rec-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: #222;
+  margin: 2px 0;
+}
+
+.rec-add-btn {
+  background: #f17e28;
+  color: #fff;
+  border: none;
+  padding: 3px 12px;
+  border-radius: 15px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.rec-add-btn:hover {
+  background: #d46a1a;
+}
+/* Size Select Dropdown Styling */
+.size-option select {
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 11px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  outline: none;
+  margin-bottom: 4px; /* Button theke ektu gap */
+}
+
+
+
+
+
+
+/* Card Content Box */
+.rec-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column; 
+  text-align: left;
+}
+.size-option select {
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 11px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  outline: none;
+  margin-bottom: 4px;
+}
+
+/* Button overlap protection */
+.rec-add-btn {
+  width: 100%; 
+  background: #f17e28;
+  color: #fff;
+  border: none;
+  padding: 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  display: block;
+}
+
+.rec-swiper .swiper-slide {
+  overflow: visible !important;
+}
+
+.rec-card {
+  overflow: visible !important;
+  min-height: 110px; 
+}
+
+
 
 @media only screen and (max-width: 900px) {
   .mini-cart {

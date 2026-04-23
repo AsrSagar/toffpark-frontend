@@ -47,8 +47,8 @@
   background: #f5f5f5;
 }
 .search-item img {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   object-fit: cover;
 }
 .search-product-info {
@@ -58,6 +58,13 @@
 }
 .search-product-info p {
   margin-bottom: -5px;
+  font-size: 12px;
+  line-height: 20px;
+}
+span.woocommerce-Price-amount.amount {
+  font-size: 13px;
+  color: #000;
+  font-weight: 600;
 }
 .desktop-call {
   display: none !important;
@@ -127,22 +134,14 @@
 /* Top header */
 .top-header {
   background: #000;
-  padding: 0.5rem 1rem;
+  padding: 5px 1rem;
 }
 .contact-info a{
-  color: #fff;
-}
-.header-icons a {
-  margin-left: 0.75rem;
   color: #fff;
 }
 .site-header .container {
   display: block;
 }
-.header-icons a {
-  margin-left: 0.75rem;
-}
-
 /* Responsive trigger */
 #mobile-trigger {
   font-size: 1.25rem;
@@ -162,7 +161,7 @@ position:relative;
 }
 
 .product-search-wrapper input{
-  padding:8px 10px;
+  padding:10px;
   width: 330px;
 }
 
@@ -211,16 +210,120 @@ position:relative;
   padding:8px;
 }
 
-/* responsive */
-@media (max-width:768px){
-  .searchForm{
-    display:none;
-  }
 
-  .mobile-product-search{
-    display:block;
-  }
+.header-flex-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
 }
+
+
+
+
+
+
+
+
+/* Header Background and Text Color */
+.top-header {
+  background-color: #000; /* Black background */
+  color: #fff;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+/* Container for alignment */
+.flex-between {
+  display: flex;
+  justify-content: space-between; /* Items ke bame, majhe ebong dane spread korbe */
+  align-items: center;
+  max-width: 1200px; /* Apnar container width onujayi change korte paren */
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+/* Contact Info Styling */
+.contact-info a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 400;
+}
+
+/* Notice Item Styling */
+.notic-item p {
+  margin: 0;
+  color: #ccc; /* Thoda greyish tone for notice text */
+}
+
+/* Social Icons Styling */
+.header-icons {
+  display: flex;
+  gap: 15px; /* Icons-er majhkane space */
+}
+
+.header-icons a {
+  color: #fff;
+  text-decoration: none;
+  transition: opacity 0.3s ease;
+}
+
+.header-icons a:hover {
+  opacity: 0.7;
+}
+
+/* Icon size adjustment */
+.header-icons i {
+  font-size: 16px;
+}
+
+.site-header.sticky-enabled {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05) !important;
+  transition: all 1s ease-in-out !important;
+}
+
+
+
+/* ১. ডিফল্ট হেডার স্টাইল (ঐচ্ছিক যদি না থাকে) */
+.site-header {
+    width: 100%;
+    background: #fff;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.site-header.sticky-enabled {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95); 
+  animation: slideDown 0.4s ease-out forwards;
+}
+
+@keyframes slideDown {
+    from {
+      transform: translateY(-100%); /* শুরু হবে স্ক্রিনের বাইরে থেকে */
+    }
+    to {
+      transform: translateY(0); /* স্ক্রিনের ভেতরে চলে আসবে */
+    }
+}
+
+/* ৪. স্টিকি অবস্থায় লোগো বা প্যাডিং ছোট করতে চাইলে */
+.sticky-enabled .site-logo {
+    transition: 0.3s;
+}
+
+
+
+
 /* Optional: hide desktop menu on mobile */
 @media only screen and (max-width: 900px) {
   .flex-between {
@@ -251,7 +354,7 @@ position:relative;
     color: #000;
     cursor: pointer;
     padding: 0;
-    margin-top: 8px;
+    margin-top: 5px;
     font-size: 18px;
     margin-right: -15px;
   }
@@ -270,7 +373,25 @@ position:relative;
   .desktop-menu {
     display: none;
   }
-  img.site-logo {
-    width: 200px;
+  .sub-menu li {
+    margin: 0.5rem 0;
+    text-align: left;
+  }
+  .mobile-search-box {
+    position: fixed;
+    top: 0;
+    width: 100%;
+  }
+  .search-dropdown {
+    top: 65px;
+  }
+  .searchForm{
+    display:none;
+  }
+  .mobile-product-search{
+    display:block;
+  }
+  .mobile-trigger-wrapper.pull-left {
+    width: 20%;
   }
 }

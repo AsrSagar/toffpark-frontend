@@ -17,6 +17,7 @@ import PrivacyPolicy from "./Pages/PrivacyPolicy/PrivacyPolicy";
 import ReturnExchangePolicy from "./Pages/ReturnsRefunds/ReturnsRefunds";
 import ShippingPolicy from "./Pages/ShippingPolicy/ShippingPolicy";
 import OffersPage from "./Pages/Offers/Offers";
+import MobileFooterNav from "./components/MobileFooterNav/MobileFooterNav";
 
 // 🔥 THIS COMPONENT TRACKS PAGE VIEW ON EVERY ROUTE CHANGE
 function PixelTracker() {
@@ -54,6 +55,7 @@ function App() {
         <Route path="/offers" element={<OffersPage />} />
       </Routes>
       <Footer />  
+      <MobileFooterNav />
     </>
   );
 }

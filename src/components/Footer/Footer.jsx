@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import "./Footer.css";
 
 const Footer = () => {
     return (
@@ -39,18 +40,18 @@ const Footer = () => {
                                 <p><i className="far fa-clock" aria-hidden="true"></i> 7 Days / 10:00 AM - 10:00 PM</p>
                             </div>
                         </aside>
-                        <aside className="col-grid-12">
-                            <img src="/images/Payment-Banner_Jul24_V1-02-2048x229.png" alt="Footer Logo" />
-                        </aside>
                     </div>
                 </div>
             </div>
             <footer id="colophon" className="site-footer">
                 <div className="colophon-bottom">
                     <div className="container">
-                        <div className="inner-wrapper">
-                            <div className="col-grid-12 copyright text-aligncenter">
+                        <div className="inner-wrapper bottom-fotter-widget-area">
+                            <div className="col-grid-6 copyright text-alignleft">
                                 <p>Copyright © 2025 Toffpark. All rights reserved.</p>
+                            </div>
+                            <div className="col-grid-6 payment-images text-alignright">
+                                <img src="/images/faysy1756641916.png" alt="Footer Logo" />
                             </div>
                         </div>
                     </div>

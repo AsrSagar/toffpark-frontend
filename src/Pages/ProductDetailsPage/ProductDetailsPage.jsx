@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { wcApi } from "../../api/woocommerce";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { wcApiV3 } from "../../api/woocommerce";
 import { useCart } from "../../context/CartContext";
 import BuyNowPopupCheckout from "../../components/BuyNowPopupCheckout/BuyNowPopupCheckout";
 import config from "../../config";
@@ -11,28 +11,96 @@ import FrequentlyBoughtTogether from "./FBT/fbtProductList";
 import RecentlyViewedProducts from "./RecentlyViewedProducts/RecentlyViewedProducts";
 import "./ProductDetailsPage.css";
 import SalesPopup from "../../components/SalesPopup/SalesPopup";
+import { AnimatePresence, motion } from "framer-motion";
+import { getProductById } from "../../api/products";
+import QuickViewModal from "../../components/QuickViewModal/QuickViewModal";
 
 
 const ProductDetailsPage = () => {
     const { slug } = useParams();
-    const { addToCart, setCartOpen, isInCart } = useCart();
-
+    const { addToCart, isInCart } = useCart();
     const [product, setProduct] = useState(null);
     const [activeImage, setActiveImage] = useState("");
     const [loading, setLoading] = useState(true);
     const [loadingId, setLoadingId] = useState(null); 
+    const [quickLoading, setQuickLoading] = useState(false);
     const [quantity, setQuantity] = useState(1); 
     const [variations, setVariations] = useState([]);
     const [selectedVariation, setSelectedVariation] = useState(null);
     const [selectedSize, setSelectedSize] = useState(null);
-    const [activeTab, setActiveTab] = useState("description");
     const [relatedProducts, setRelatedProducts] = useState([]);
-
     const [fbtProducts, setFbtProducts] = useState([]);
     const [fbtSelected, setFbtSelected] = useState({});
     const [fbtSelectedSize, setFbtSelectedSize] = useState({});
-
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+    const mainImageRef = useRef(null); 
+    const [isFlying, setIsFlying] = useState(false);
+    const [flyCoords, setFlyCoords] = useState({ startX: 0, startY: 0, endX: 0, endY: 0 });
     const API_URL = config.API_URL;
+    const navigate = useNavigate();
+    const [isOpen, setIsOpen] = useState(false);
+
+    const toggleAccordion = () => {
+        setIsOpen(!isOpen);
+    };
+
+        // Handle Add to Cart with Animation
+    const handleAddWithAnimation = async (e) => {
+        e.preventDefault();
+        
+        const cartIcon = document.getElementById('cart-icon');
+        const productImage = mainImageRef.current;
+
+        if (cartIcon && productImage) {
+            const startRect = productImage.getBoundingClientRect();
+            const endRect = cartIcon.getBoundingClientRect();
+
+            setFlyCoords({
+                startX: startRect.left,
+                startY: startRect.top,
+                endX: endRect.left + (endRect.width / 2), 
+                endY: endRect.top + (endRect.height / 2)
+            });
+
+            setIsFlying(true);
+            
+            setTimeout(() => {
+                setIsFlying(false);
+                cartIcon.classList.add('cart-icon-bounce');
+                setTimeout(() => cartIcon.classList.remove('cart-icon-bounce'), 400);
+            }, 800); 
+        }
+
+        await handleAddAllToCart();
+    };
+
+    const handleQuickView = async (id) => {
+        setQuickLoading(id); 
+        try {
+            const [product] = await Promise.all([
+                getProductById(id),
+                new Promise((resolve) => setTimeout(resolve, 1000)) // Artificial delay
+            ]);
+
+            setSelectedProduct(product);
+            setIsQuickViewOpen(true); // Ekhon modal open hobe
+        } catch (error) {
+            console.error("Error loading product:", error);
+        } finally {
+            setQuickLoading(null); 
+        }
+    };
+
+    const getSlugFromPermalink = (permalink) => {
+        if (!permalink) return "";
+        return permalink.split("/").filter(Boolean).pop();
+    };
+    const goToProduct = (permalink) => {
+        const slug = getSlugFromPermalink(permalink);
+        if (!slug) return;
+        navigate(`/product/${slug}`);
+    };
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -42,7 +110,7 @@ const ProductDetailsPage = () => {
         let isMounted = true;
         const fetchProduct = async () => {
             try {
-                const res = await wcApi.get("/products", { params: { slug } });
+                const res = await wcApiV3.get("/products", { params: { slug } });
                 if (!isMounted) return;
                 const p = res.data[0];
                 setProduct(p);
@@ -50,12 +118,12 @@ const ProductDetailsPage = () => {
 
                 if (p.categories && p.categories.length > 0) {
                     const categoryId = p.categories[0].id;
-                    const relatedRes = await wcApi.get("/products", { params: { category: categoryId, per_page: 8 } });
+                    const relatedRes = await wcApiV3.get("/products", { params: { category: categoryId, per_page: 8 } });
                     setRelatedProducts(relatedRes.data.filter(item => item.id !== p.id).slice(0,4));
                 }
 
                 if (p.type === "variable") {
-                    const variationRes = await wcApi.get(`/products/${p.id}/variations`);
+                    const variationRes = await wcApiV3.get(`/products/${p.id}/variations`);
                     setVariations(variationRes.data);
                 }
 
@@ -144,7 +212,7 @@ const ProductDetailsPage = () => {
                 }
 
                 // Fetch variations of this FBT product
-                const variationRes = await wcApi.get(`/products/${p.id}/variations`);
+                const variationRes = await wcApiV3.get(`/products/${p.id}/variations`);
                 const variations = variationRes.data;
 
                 const matchedVariation = variations.find(v =>
@@ -161,7 +229,6 @@ const ProductDetailsPage = () => {
                 addToCart(p, 1, matchedVariation);
             }
 
-            setCartOpen(true);
 
         } catch (error) {
             console.error("Add to cart error:", error);
@@ -180,6 +247,11 @@ const ProductDetailsPage = () => {
         </div>
         );
     }
+
+    const regularPrice = parseInt(product.custom_price_data.regular_price);
+    const salePrice = parseInt(product.custom_price_data.sale_price);
+    const isSale = salePrice < regularPrice;
+    const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
 
     return (
         <>
@@ -210,14 +282,24 @@ const ProductDetailsPage = () => {
                                 <main id="main" className="site-main">
                                     <div className="product-single">
                                         <div className="inner-wrapper">
-                                            <div className="col-grid-5">
+                                            <div className="col-grid-6">
                                                 <div className="single-thumb-detail">
                                                     <div className="single-main-thumb">
                                                         <div className="single-thumb">
-                                                            {isOutOfStock && (
-                                                            <span className="ribbon-rotated onsale">Out of Stock</span>
+                                                            {isSale && (
+                                                                <>
+                                                                    <span className="ribbon-offered">{savePercent}% Off</span>
+                                                                    <span className="ribbon-save">Offered items</span>
+                                                                </>
                                                             )}
-                                                            <img src={activeImage} alt="product" />
+                                                            <img 
+                                                                ref={mainImageRef} 
+                                                                src={activeImage} 
+                                                                alt="product" 
+                                                            />
+                                                            {isOutOfStock && (
+                                                                <span className="ribbon-rotated onsale">Out of Stock</span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <div className="pager-thumbnail">
@@ -225,7 +307,7 @@ const ProductDetailsPage = () => {
                                                             dots={false}
                                                             arrows={false}
                                                             infinite={false}
-                                                            slidesToShow={4}
+                                                            slidesToShow={5}
                                                             slidesToScroll={1}
                                                             swipeToSlide={true}
                                                             responsive={[
@@ -252,16 +334,25 @@ const ProductDetailsPage = () => {
                                                         </Slider>
                                                     </div>
                                                 </div>
+                                                <FrequentlyBoughtTogether
+                                                    productId={product.id}
+                                                    onChange={(products, selected, selectedSize) => {
+                                                        setFbtProducts(products);
+                                                        setFbtSelected(selected);
+                                                        setFbtSelectedSize(selectedSize); 
+                                                    }}
+                                                />
                                             </div>
-
-                                            <div className="col-grid-7">
+                                            <div className="col-grid-6">
                                                 <div className="summary entry-summary">
                                                     <div className="product-item-details">
                                                         <h2 className="product-title">{product.name}</h2>
-                                                        <div
-                                                            className="product-price-container"
-                                                            dangerouslySetInnerHTML={{ __html: product.price_html }}
-                                                        />
+                                                        <div className="product-price-container">
+                                                            {isSale && <span className="sale-price">৳{salePrice.toFixed(0)}</span>}
+                                                            {isSale && <del className="regular-price">৳{salePrice.toFixed(0)}</del>}
+                                                            {isSale && <span className="save-amount"> Save ৳{((regularPrice - salePrice)).toFixed(0)}</span>}
+                                                            {!isSale && <span className="regular-price sale-price">৳{regularPrice.toFixed(0)}</span>}
+                                                        </div>
                                                         {product.short_description && (
                                                             <div
                                                                 className="product-short-description"
@@ -310,17 +401,35 @@ const ProductDetailsPage = () => {
                                                     )}
 
                                                     <form className="single-cart">
-                                                        <input
+                                                        <div className="quantity-selector">
+                                                            <button 
+                                                            type="button" 
+                                                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                                            className="qty-btn qty-minus"
+                                                            >
+                                                            −
+                                                            </button>
+                                                            
+                                                            <input
                                                             type="number"
                                                             className="input-text"
                                                             min="1"
                                                             value={quantity}
-                                                            onChange={(e) => setQuantity(Number(e.target.value))}
-                                                        />
+                                                            onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+                                                            />
+                                                            
+                                                            <button 
+                                                            type="button" 
+                                                            onClick={() => setQuantity(quantity + 1)}
+                                                            className="qty-btn qty-plus"
+                                                            >
+                                                            +
+                                                            </button>
+                                                        </div>
 
                                                         <button
-                                                            className="custom-button button-small"
-                                                            onClick={(e) => { e.preventDefault(); handleAddAllToCart(); }}
+                                                            className="custom-button button-small single-add-to-cart-btn"
+                                                            onClick={handleAddWithAnimation}
                                                             disabled={loadingId === product?.id || isInCart(product?.id) || isOutOfStock}
                                                         >
                                                             {isOutOfStock
@@ -341,100 +450,130 @@ const ProductDetailsPage = () => {
                                                             />
                                                         )}
                                                     </form>
-                                                    <FrequentlyBoughtTogether
-                                                        productId={product.id}
-                                                        onChange={(products, selected, selectedSize) => {
-                                                            setFbtProducts(products);
-                                                            setFbtSelected(selected);
-                                                            setFbtSelectedSize(selectedSize); 
-                                                        }}
-                                                    />
                                                 </div>
+                                                <div className="product-info-wrapper">
+                                                    <div className={`policy-accordion ${isOpen ? 'active' : ''}`}>
+                                                        <div className="accordion-header" onClick={toggleAccordion} style={{ cursor: 'pointer' }}>
+                                                            <div className="terms-box">
+                                                                <span className="check-icon">🕒</span>
+                                                                <strong>Tell us within 7 days</strong>
+                                                            </div>
+                                                            <div className="terms-box">
+                                                                <span className="check-icon">🚚</span>
+                                                                <strong>Free return shipping</strong>
+                                                            </div>
+                                                            <div className="terms-box">
+                                                                <span className="check-icon">💳</span>
+                                                                <strong>Instant refund on receipt</strong>
+                                                            </div>
+                                                            <span className={`arrow-down ${isOpen ? 'rotate' : ''}`}>▼</span>
+                                                        </div>
+                                                        {isOpen && (
+                                                            <div className="accordion-content">
+                                                                <div className="policy-details">
+                                                                    <p>Your satisfaction is our priority. If something isn't right with your order, returning it is simple.</p>
+                                                                    
+                                                                    <h4>Return Window</h4>
+                                                                    <p>Request a return within <strong>7 days</strong> of receiving your order.</p>
+                                                                    
+                                                                    <h4>Free Return Shipping</h4>
+                                                                    <p>We cover return shipping for defective products, size/color mismatch, print issues, or wrong item sent.</p>
+                                                                    
+                                                                    <h4>How to Return</h4>
+                                                                    <ul>
+                                                                        <li>Call our hotline +8809677666888, email support@fabrilife.com, or message us on Facebook</li>
+                                                                        <li>Items must be unused, unwashed, with original tags and packaging</li>
+                                                                        <li>We'll arrange pickup for eligible returns</li>
+                                                                    </ul>
+                                                                    
+                                                                    <a href="/" className="view-policy-link">View Full Return & Refund Policy</a>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="product-description-text">
+                                                        <p>Fabrilife Men's Premium Quality T-shirt offers a smoother, silky feel and a more structured, mid-weight fit than regular t-shirts. Made with the finest quality Combed Compact Cotton, it features an astonishing ~175 GSM on just 26's cotton, providing a smooth and compact construction.</p>
+                                                        <p>The compact finish guarantees that the t-shirt's length and width will not change over washes or months of usage.</p>
+                                                        <p><strong>Color:</strong> White</p>
+                                                        <p><strong>Detailed Specification:</strong></p>
+                                                    </div>
+                                                </div>
+
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Product Tabs */}
-                                    <div className="product-tabs">
-                                        <ul className="wc-custom-tabs">
-                                            <li
-                                                className={activeTab === "description" ? "active" : ""}
-                                                onClick={() => setActiveTab("description")}
-                                            >
-                                                DESCRIPTION
-                                            </li>
-
-                                            <li
-                                                className={activeTab === "additional" ? "active" : ""}
-                                                onClick={() => setActiveTab("additional")}
-                                            >
-                                                ADDITIONAL INFORMATION
-                                            </li>
-                                        </ul>
-
-                                        <div className="tab-content">
-                                            {activeTab === "description" && (
-                                                <div>
-                                                    <h3>Description</h3>
-                                                    <div dangerouslySetInnerHTML={{ __html: product.description }} />
-                                                </div>
-                                            )}
-                                            {activeTab === "additional" && (
-                                                <div>
-                                                    <h3>Additional Information</h3>
-                                                    <table className="wc-attr-table">
-                                                        <tbody>
-                                                            {product.attributes.map((attr) => (
-                                                                <tr key={attr.id}>
-                                                                    <th>{attr.name}</th>
-                                                                    <td>{attr.options.join(", ")}</td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
                                     <div className="section-products related-product clear-fix top-space">
                                         {relatedProducts && relatedProducts.length > 0 && (
-                                            <div className="section-title-wrap text-alignleft">
-                                                <h2 className="section-title">Related Product</h2>
-                                                <span className="divider"></span>
+                                            <div className="underline-title-section-title-wrap">
+                                                <div className="title-left">
+                                                    <h2>Related Product</h2>
+                                                    <div className="title-underline"></div>
+                                                </div>
                                             </div>
                                         )}
                                         <div className="inner-wrapper">
                                             <div className="products-inner-wrapper clear-fix section-carousel-enabled byapr-carousel">
-                                                {relatedProducts.map((item) => (
-                                                    <div key={item.id} className="product-item col-grid-3">
-                                                        <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
-                                                            <div className="product-thumb zoom-effect">
-                                                                <Link className="thumbnail" to={`/product/${item.slug}`}>
-                                                                    <img alt={item.name} src={item.images?.[0]?.src} />
-                                                                </Link>
-                                                                {item.on_sale && item.regular_price && item.sale_price && (
-                                                                    <span className="ribbon-rotated onsale">
-                                                                        -{Math.round(((item.regular_price - item.sale_price)/item.regular_price)*100)}%
-                                                                    </span>
-                                                                )}
-                                                                <div className="quick-view">
-                                                                    <Link
-                                                                        to={`/product/${item.slug}`}
-                                                                        className="custom-button button-small quick-view-link"
-                                                                    >
-                                                                        VIEW PRODUCT
+                                                {relatedProducts.map((item) => {
+                                                    const regularPrice = parseInt(item.custom_price_data.regular_price);
+                                                    const salePrice = parseInt(item.custom_price_data.sale_price);
+                                                    const isSale = salePrice < regularPrice;
+                                                    const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
+                                                    return(
+                                                        <div key={item.id} className="product-item col-grid-3">
+                                                            <div className="product-item-wrapper zoom-effect-hover-container">
+                                                                <div className="product-thumb zoom-effect">
+                                                                    {isSale && (
+                                                                        <>
+                                                                            <span className="ribbon-offered">{savePercent}% Off</span>
+                                                                            <span className="ribbon-save">Offered items</span>
+                                                                        </>
+                                                                    )}
+                                                                    <Link className="thumbnail" to={`/product/${item.slug}`}>
+                                                                        <img alt={item.name} src={item.images?.[0]?.src} />
                                                                     </Link>
                                                                 </div>
-                                                            </div>
-                                                            <div className="product-item-details">
-                                                                <h3 className="product-title">
-                                                                    <Link to={`/product/${item.slug}`}>{item.name}</Link>
-                                                                </h3>
-                                                                <div className="product-price-container" dangerouslySetInnerHTML={{ __html: item.price_html }} />
+                                                                <div className="product-item-details">
+                                                                    <h3 className="product-title">
+                                                                        <Link to={`/product/${product.slug}`}>
+                                                                            {item.name.length > 45 
+                                                                            ? item.name.substring(0, 45) + "..." 
+                                                                            : item.name}
+                                                                        </Link>
+                                                                    </h3>
+                                                                    <div className="product-price-container">
+                                                                        {isSale && <span className="sale-price">৳{salePrice.toFixed(0)}</span>}
+                                                                        {isSale && <del className="regular-price">৳{regularPrice.toFixed(0)}</del>}
+                                                                        {isSale && <span className="save-amount"> Save ৳{((regularPrice - salePrice)).toFixed(0)}</span>}
+                                                                        {!isSale && <span className="regular-price sale-price">৳{regularPrice.toFixed(0)}</span>}
+                                                                    </div>
+                                                                    <div className="button-group">
+                                                                        <button 
+                                                                            className="btn-cart" 
+                                                                            disabled={quickLoading === item.id}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation(); // 2. Eta card-er click event-ke thamay dibe
+                                                                                handleQuickView(item.id);
+                                                                            }}
+                                                                            >
+                                                                            {quickLoading === item.id ? (
+                                                                                <i className="fas fa-spinner fa-spin"></i> 
+                                                                            ) : (
+                                                                                <i className="fas fa-shopping-cart"></i> 
+                                                                            )}
+                                                                            CART
+                                                                        </button>
+                                                                        <button 
+                                                                            className="btn-buy-now" onClick={(e) => { e.stopPropagation(); 
+                                                                            goToProduct(product.permalink); }}>
+                                                                            Buy Now
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     </div>
@@ -446,6 +585,51 @@ const ProductDetailsPage = () => {
                 </div>
             </div>
             )}
+            <AnimatePresence>
+                {isFlying && (
+                    <motion.img
+                        src={activeImage}
+                        initial={{ 
+                            position: "fixed",
+                            top: flyCoords.startY,
+                            left: flyCoords.startX,
+                            width: mainImageRef.current?.offsetWidth || "400px", 
+                            height: mainImageRef.current?.offsetHeight || "auto",
+                            zIndex: 99999,
+                            borderRadius: "10px",
+                            opacity: 0.8,
+                            scale: 1
+                        }}
+                        animate={{ 
+                            top: flyCoords.endY, 
+                            left: flyCoords.endX, 
+                            width: "40px", 
+                            height: "40px",
+                            opacity: 0.5,
+                            scale: 0.1,
+                            rotate: 45 
+                        }}
+                        exit={{ opacity: 0 }}
+                        transition={{ 
+                            duration: 0.8,
+                            ease: [0.45, 0, 0.55, 1], 
+                        }}
+                        style={{ 
+                            pointerEvents: "none", 
+                            objectFit: "cover",
+                            boxShadow: "0 10px 25px rgba(0,0,0,0.2)" 
+                        }}
+                    />
+                )}
+            </AnimatePresence>
+            <QuickViewModal
+                isOpen={isQuickViewOpen}
+                onClose={() => {
+                    setIsQuickViewOpen(false);
+                    setSelectedProduct(null);
+                }}
+                product={selectedProduct}
+            />
             <SalesPopup />
         </>
     );
