@@ -17,24 +17,48 @@ import PrivacyPolicy from "./Pages/PrivacyPolicy/PrivacyPolicy";
 import ReturnExchangePolicy from "./Pages/ReturnsRefunds/ReturnsRefunds";
 import ShippingPolicy from "./Pages/ShippingPolicy/ShippingPolicy";
 import OffersPage from "./Pages/Offers/Offers";
+import MobileFooterNav from "./components/MobileFooterNav/MobileFooterNav";
+import TermsAndConditions from "./Pages/TermsConditions/TermsAndConditions";
+import TagManager from 'react-gtm-module';
 
 // 🔥 THIS COMPONENT TRACKS PAGE VIEW ON EVERY ROUTE CHANGE
-function PixelTracker() {
+// function PixelTracker() {
+//   const location = useLocation();
+
+//   useEffect(() => {
+//     if (window.fbq) {
+//       window.fbq("track", "PageView");
+//     }
+//   }, [location]);
+
+//   return null;
+// }
+
+const tagManagerArgs = {
+  gtmId: 'GTM-KR68KTZG'
+};
+
+TagManager.initialize(tagManagerArgs);
+
+function App() {
   const location = useLocation();
 
   useEffect(() => {
-    if (window.fbq) {
-      window.fbq("track", "PageView");
-    }
+
+    const pageViewObj = {
+      event: 'pageview',
+      page: location.pathname + location.search,
+      title: document.title
+    };
+
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push(pageViewObj);
+    
+    console.log("GTM Triggered for:", location.pathname); // চেক করার জন্য
   }, [location]);
-
-  return null;
-}
-
-function App() {
   return (
     <>
-      <PixelTracker />
+      {/* <PixelTracker /> */}
       <Header/>
       <MiniCart/>
       <Routes>
@@ -52,8 +76,10 @@ function App() {
         <Route path="/returns-refunds" element={<ReturnExchangePolicy />} />
         <Route path="/delivery-policy" element={<ShippingPolicy />} />
         <Route path="/offers" element={<OffersPage />} />
+        <Route path="/terms-conditions" element={<TermsAndConditions />} />
       </Routes>
       <Footer />  
+      <MobileFooterNav />
     </>
   );
 }

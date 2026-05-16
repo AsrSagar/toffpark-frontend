@@ -23,6 +23,175 @@
   100% { transform: rotate(360deg); }
 }
 
+
+
+/* Button Group Container */
+.button-group {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* বাটন দুটির মাঝখানের গ্যাপ */
+  margin-top: 15px;
+  width: 100%; /* কন্টেইনারের পুরো জায়গা নিবে */
+}
+
+/* Common Styles for both buttons */
+.btn-cart, .btn-buy-now {
+  flex: 1; /* এটি নিশ্চিত করবে যে দুটি বাটনই সমান (৫০/৫০) জায়গা নিবে */
+  height: 38px;
+  border-radius: 4px;
+  font-size: 11px; /* বাটন ছোট হলে টেক্সট ফিট করার জন্য ফন্ট সাইজ সামান্য কমানো হয়েছে */
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  white-space: nowrap; /* টেক্সট যেন কোনোভাবেই দুই লাইনে না যায় */
+  border: none;
+  padding: 0 4px;
+}
+
+/* Cart Button Style */
+.btn-cart {
+  background-color: #ffffff;
+  color: #333;
+  border: 1px solid #e0e0e0 !important;
+}
+.btn-cart:hover {
+  background-color: #ffffff;
+  color: #000;
+  border: 1px solid #e0e0e0 !important;
+}
+
+.btn-cart i {
+  margin-right: 5px;
+  font-size: 13px;
+}
+
+/* Buy Now Button Style */
+.btn-buy-now {
+  background-color: #e91e63; /* Pink/Red color */
+  color: #ffffff;
+}
+
+/* Hover Effects */
+.btn-cart:hover {
+  background-color: #f5f5f5;
+}
+
+
+
+
+/* রিবন কন্টেইনার পজিশনিং */
+.product-thumb {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Offered items (কমলা রিবন - বামে) */
+.ribbon-offered {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #ff3f6c;
+  color: white;
+  padding: 0px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 3px;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Save % (সবুজ রিবন - ডানে) */
+.ribbon-save {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #4caf50; /* Green */
+  color: white;
+  padding: 0px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 3px;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Out of Stock (মাঝখানে বা কোণায়) */
+.ribbon-rotated.onsale {
+  background-color: #777 !important;
+}
+
+/* বাটন গ্রুপ স্টাইল */
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.btn-cart, .btn-buy-now {
+  flex: 1;
+  padding: 8px 5px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  text-transform: uppercase;
+  height: 35px;
+}
+
+.btn-cart {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.btn-buy-now {
+  background: #000;
+  color: white;
+}
+
+.btn-buy-now:hover {
+  background: #333;
+}
+
+.save-amount {
+  border-radius: 99px;
+  background: #bfdb38;
+  font-size: 12px;
+  line-height: 120%;
+  text-align: center;
+  color: #000;
+  padding: 1px 6px 1px 3px !important;
+}
+.sale-price {
+  font-size: 20px;
+  color: #000;
+  font-weight: 500;
+}
+del.regular-price {
+  margin-right: 10px;
+}
+
+.size-variation-btn {
+    white-space: normal; /* টেক্সট অটোমেটিক র‍্যাপ হবে */
+    word-break: break-word; /* লম্বা শব্দ হলে ভেঙে যাবে */
+}
+
+.size-variation-btn:hover:not(:disabled) {
+    border-color: #1a2233 !important;
+    background-color: #f8f9fa !important;
+}
+
+/* আপনার আগের ক্লোজ বাটন এবং বাকি CSS এখানে থাকবে */
+/* ক্লোজ বাটনের হোভার ইফেক্ট */
+.modal-close-btn:hover {
+  background: rgba(0, 0, 0, 0.4) !important;
+  opacity: 1 !important;
+  transform: scale(1.05);
+}
+
 /* Mobile Devices (max-width: 767px) */
 @media (max-width: 767px) {
   .product-item.col-grid-3 {
@@ -33,6 +202,7 @@
   .products-inner-wrapper {
     display: flex;
     flex-wrap: wrap;
+    margin-top: 10px;
   }
   .product-item.col-grid-3 {
     flex: 0 0 50%; 
@@ -48,5 +218,13 @@
   .sort-by {
     margin-left: 0px;
     min-width: 100%;
+  }
+  .ribbon-offered {
+    padding: 0px 6px;
+    font-size: 11px;
+  }
+  .ribbon-save {
+    padding: 0px 5px;
+    font-size: 11px;
   }
 }

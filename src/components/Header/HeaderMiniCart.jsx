@@ -11,7 +11,7 @@ const HeaderMiniCart = () => {
   };
 
   return (
-
+    <>
     <div id="header-right" className="pull-right">
       <div className="hearder-min-cart">
         <ul>
@@ -24,6 +24,7 @@ const HeaderMiniCart = () => {
         </ul>
       </div>
     </div>
+    </>
   );
 };
 

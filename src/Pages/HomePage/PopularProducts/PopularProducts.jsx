@@ -11,7 +11,7 @@ const PopularProducts = () => {
                     <div className="inner-wrapper">
                         <div className="products-inner-wrapper">
                             <div className="product-item col-grid-3">
-                                <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
+                                <div className="product-item-wrapper zoom-effect-hover-container">
                                     <div className="product-thumb zoom-effect">
                                         <a className="thumbnail" href="/">
                                             <img alt="product" src="/images/shop/product-1.jpg" />
@@ -58,7 +58,7 @@ const PopularProducts = () => {
                                 </div>
                             </div>
                             <div className="product-item col-grid-3">
-                                <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
+                                <div className="product-item-wrapper zoom-effect-hover-container">
                                     <div className="product-thumb zoom-effect">
                                         <a className="thumbnail" href="/">
                                             <img alt="product" src="/images/shop/product-1.jpg" />
@@ -105,7 +105,7 @@ const PopularProducts = () => {
                                 </div>
                             </div>
                             <div className="product-item col-grid-3">
-                                <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
+                                <div className="product-item-wrapper zoom-effect-hover-container">
                                     <div className="product-thumb zoom-effect">
                                         <a className="thumbnail" href="/">
                                             <img alt="product" src="/images/shop/product-1.jpg" />
@@ -152,7 +152,7 @@ const PopularProducts = () => {
                                 </div>
                             </div>
                             <div className="product-item col-grid-3">
-                                <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
+                                <div className="product-item-wrapper zoom-effect-hover-container">
                                     <div className="product-thumb zoom-effect">
                                         <a className="thumbnail" href="/">
                                             <img alt="product" src="/images/shop/product-1.jpg" />

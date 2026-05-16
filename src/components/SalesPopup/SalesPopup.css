@@ -1,42 +1,34 @@
 /* SalesPopup.css */
-
 .sales-popup-wrapper {
     position: fixed;
-    bottom: 25px; /* স্ক্রিনের নিচ থেকে দূরত্ব */
-    left: 25px;   /* স্ক্রিনের বাম থেকে দূরত্ব */
+    bottom: 25px; 
+    left: 25px; 
     z-index: 9999;
-    
-    /* এনিমেশনের মূল অংশ: transition */
-    /* opacity এবং transform (Y-axis) এনিমেট হবে */
     transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s ease;
-    
-    /* ডিফল্ট অবস্থা: স্ক্রিনের নিচে invisible হয়ে থাকবে */
-    transform: translateY(150px); /* পপআপটিকে স্ক্রিনের নিচে পাঠিয়ে রাখা */
+    transform: translateY(150px); 
     opacity: 0;
-    pointer-events: none; /* যখন শো করবে না, তখন যেন ক্লিক না পড়ে */
+    pointer-events: none; 
 }
 
-/* যখন পপআপ শো করবে (asbe) */
+
 .sales-popup-wrapper.show {
-    transform: translateY(0); /* আগের পজিশনে ফিরে আসবে ( ভেসে উঠবে) */
+    transform: translateY(0); 
     opacity: 1;
-    pointer-events: auto; /* ক্লিক করার পারমিশন */
+    pointer-events: auto; 
 }
 
-/* যখন পপআপ chole jabe (hide) */
 .sales-popup-wrapper.hide {
-    transform: translateY(150px); /* আবার নিচে নেমে যাবে */
+    transform: translateY(150px);
     opacity: 0;
     pointer-events: none;
 }
 
-/* বাকি ডিজাইন (আপনার শেয়ার করা ইমেজ অনুযায়ী) */
 .sales-popup-container {
     width: 350px;
     background: #ffffff;
     display: flex;
     align-items: center;
-    padding: 12px;
+    padding: 0;
     border-radius: 4px; /* Image looks slightly rounded */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); /* Deep shadow like the image */
     border: 1px solid #f1f1f1;
@@ -45,11 +37,11 @@
 }
 
 .sales-popup-image {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     flex-shrink: 0;
     overflow: hidden;
-    border-radius: 2px;
+    border-radius: 2px 0px 0px 2px;
 }
 
 .sales-popup-image img {
@@ -70,14 +62,13 @@
     font-weight: 400;
 }
 
-.product-name {
-    font-size: 13px;
+.sales-popup-content .product-name {
+    font-size: 10px;
     font-weight: 700;
     color: #222;
     margin: 0 0 5px 0;
     line-height: 1.4;
     display: -webkit-box;
-    -webkit-line-clamp: 2; /* Max 2 lines for title */
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -129,5 +120,11 @@
     }
     .sales-popup-container {
         width: 100%;
+    }
+    .sales-popup-wrapper {
+        bottom: 80px;
+    }
+    .sales-popup-wrapper {
+        display: none;
     }
 }

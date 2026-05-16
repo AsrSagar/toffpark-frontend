@@ -7,7 +7,7 @@ const BlogGridPage = () => {
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -21,13 +21,15 @@ const BlogGridPage = () => {
       } catch (error) {
         console.log(error);
       }
-      setLoading(false);
+      // setLoading(false);
     };
 
     fetchPosts();
   }, [page]);
 
-  console.log(posts);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -37,14 +39,14 @@ const BlogGridPage = () => {
     };
   };
 
-  if (loading) {
-    return (
-      <div className="full-page-loader">
-        <div className="spinner"></div>
-        <p>Loading Products...</p>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="full-page-loader">
+  //       <div className="spinner"></div>
+  //       <p>Loading Products...</p>
+  //     </div>
+  //   );
+  // }
 
   return (
     <>
@@ -92,7 +94,7 @@ const BlogGridPage = () => {
                         key={post.id}
                         className="hentry post col-grid-4"
                       >
-                        <div className="entry-content-wrapper box-shadow-block">
+                        <div className="entry-content-wrapper">
                           <div className="entry-thumb aligncenter thumb-overlay">
                             <Link to={`/blog/${post.slug}`}>
                               {image && (

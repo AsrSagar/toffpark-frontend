@@ -1,127 +1,83 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Slider from "react-slick";
+import config from "../../../config";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import "./PopularCategory.css";
 
 const PopularCategory = () => {
+    const API_URL = config.API_URL;
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0);
 
-    const PrevArrow = ({ onClick }) => (
-        <span className="slick-prev" onClick={onClick}>
-            <i className="fa fa-angle-left" aria-hidden="true"></i>
-        </span>
-    );
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener("resize", handleResize);
+        
+        const fetchCategories = async () => {
+            try {
+                const response = await fetch(`${API_URL}/wc/store/v1/products/categories?per_page=20`);
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    setCategories(data);
+                }
+                setLoading(false);
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                setLoading(false);
+            }
+        };
 
-    const NextArrow = ({ onClick }) => (
-        <span className="slick-next" onClick={onClick}>
-            <i className="fa fa-angle-right" aria-hidden="true"></i>
-        </span>
-    );
+        fetchCategories();
+        return () => window.removeEventListener("resize", handleResize);
+    }, [API_URL]);
 
     const settings = {
-        slidesToShow: 4,
         dots: false,
         arrows: true,
-        infinite: true,
-
-        prevArrow: <PrevArrow />,
-        nextArrow: <NextArrow />,
-
-        responsive: [
-            { breakpoint: 1024, settings: { slidesToShow: 4 } },
-            { breakpoint: 800, settings: { slidesToShow: 3 } },
-            { breakpoint: 659, settings: { slidesToShow: 2 } },
-            { breakpoint: 479, settings: { slidesToShow: 1 } },
-        ]
+        infinite: categories.length > 2,
+        speed: 500,
+        slidesToShow: windowWidth <= 480 ? 2 : windowWidth <= 768 ? 2 : windowWidth <= 1024 ? 3 : 6,
+        slidesToScroll: 1,
     };
 
     return (
-        <aside className="section no-padding">
-            <div className="section-product-categorys">
-                <div className="container">
-                    <div className="section-title-wrap">
-                        <h2 className="section-title">
-                            Explore By Categories
-                        </h2>
-                    </div>
-                    <div className="inner-wrapper">
-                        <Slider 
-                            {...settings}
-                            className="product-categorys-inner-wrapper section-carousel-enabled byapr-carousel"
-                        >
-                            <div className="product-item col-grid-3">
-                                <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
-                                    <div className="product-thumb zoom-effect">
-                                        <a className="thumbnail" href="/">
-                                            <img alt="category" src="images/shop/cat1.jpg" />
-                                        </a>
+        <section className="popular-category-section">
+            <div className="container">
+                <div className="section-header">
+                    <h2>Explore By Categories</h2>
+                </div>
+                <div className="category-slider-wrapper">
+                    {loading ? (
+                        <div className="full-page-loader">
+                            <div className="spinner"></div>
+                            <p>Loading...</p>
+                        </div>
+                    ) : categories.length > 0 ? (
+                        <Slider key={`${windowWidth}-${categories.length}`} {...settings}>
+                            {categories.map((cat) => (
+                                <div key={cat.id} className="category-slide-item">
+                                    <div className="category-card">
+                                        <div className="category-image">
+                                            <img 
+                                                src={cat.image?.src || "/images/shop/cat1.jpg"} 
+                                                alt={cat.name} 
+                                            />
+                                        </div>
+                                        <div className="category-label-overlay">
+                                            <span className="label-text">{cat.name}</span>
+                                        </div>
                                     </div>
-                                    <h3 className="category-title">
-                                        <a href="/">
-                                            Women's Winter <span className="count">14</span>
-                                        </a>
-                                    </h3>
                                 </div>
-                            </div>
-                            <div className="product-item col-grid-3">
-                                <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
-                                    <div className="product-thumb zoom-effect">
-                                        <a className="thumbnail" href="/">
-                                            <img alt="category" src="images/shop/cat2.jpg" />
-                                        </a>
-                                    </div>
-                                    <h3 className="category-title">
-                                        <a href="/">
-                                            Summer Fashion <span className="count">12</span>
-                                        </a>
-                                    </h3>
-                                </div>
-                            </div>
-                            <div className="product-item col-grid-3">
-                                <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
-                                    <div className="product-thumb zoom-effect">
-                                        <a className="thumbnail" href="/">
-                                            <img alt="category" src="images/shop/cat3.jpg" />
-                                        </a>
-                                    </div>
-                                    <h3 className="category-title">
-                                        <a href="/">
-                                            Men's Fashion <span className="count">20</span>
-                                        </a>
-                                    </h3>
-                                </div>
-                            </div>
-                            <div className="product-item col-grid-3">
-                                <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
-                                    <div className="product-thumb zoom-effect">
-                                        <a className="thumbnail" href="/">
-                                            <img alt="category" src="images/shop/cat4.jpg" />
-                                        </a>
-                                    </div>
-                                    <h3 className="category-title">
-                                        <a href="/">
-                                            Men's Jeans <span className="count">14</span>
-                                        </a>
-                                    </h3>
-                                </div>
-                            </div>
-                            <div className="product-item col-grid-3">
-                                <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
-                                    <div className="product-thumb zoom-effect">
-                                        <a className="thumbnail" href="/">
-                                            <img alt="category" src="images/shop/cat4.jpg" />
-                                        </a>
-                                    </div>
-                                    <h3 className="category-title">
-                                        <a href="/">
-                                            Men's Jeans <span className="count">14</span>
-                                        </a>
-                                    </h3>
-                                </div>
-                            </div>
+                            ))}
                         </Slider>
-                    </div>
+                    ) : (
+                        <p>No categories found.</p>
+                    )}
                 </div>
             </div>
-        </aside>
+        </section>
     );
 };
 

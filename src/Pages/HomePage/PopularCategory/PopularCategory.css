@@ -47,3 +47,238 @@
 .section-product-categorys .slick-next {
     right: -20px;
 }
+.section-product-categorys{
+    margin-top: 50px;
+}
+
+.popular-category-section {
+    padding: 30px 0;
+    background: #fff;
+    margin-top: 10px;
+}
+
+/* Slider Wrapper */
+.category-slider-wrapper {
+    padding: 0 10px;
+}
+
+/* Individual Card Styling */
+.category-slide-item {
+    padding: 10px; /* Space between slides */
+}
+
+.category-card {
+    position: relative;
+    border-radius: 5px; /* Screenshot-er moto rounded corners */
+    overflow: hidden;
+    aspect-ratio: 1 / 1; /* Square cards */
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.category-image {
+    width: 100%;
+    height: 100%;
+}
+
+.category-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+/* Hover Zoom Effect */
+.category-card:hover .category-image img {
+    transform: scale(1.1);
+}
+
+/* Overlay Label Styling */
+.category-label-overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: transparent;
+    padding: 0px 9px;
+    border-radius: 50px;
+    z-index: 10;
+    transition: all 0.3s ease;
+    border: 1px solid #fff;
+}
+
+.label-text {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.category-card:hover .category-label-overlay {
+    background: #fff; 
+    transition: all 0.3s ease;
+}
+
+.category-card:hover .label-text {
+    color: #000;
+}
+
+/* Custom Arrows */
+.custom-slick-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: #fff;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 100;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slick-prev { left: -20px; }
+.slick-next { right: -20px; }
+
+.custom-slick-arrow i {
+    font-size: 20px;
+    color: #333;
+}
+/* Arrow আইকনের সাইজ এবং ফন্ট ওয়েট কমানোর জন্য */
+.swiper-button-next:after, 
+.swiper-button-prev:after {
+    font-size: 20px !important; /* আপনার প্রয়োজনমতো সাইজ কমিয়ে নিন */
+    font-weight: normal !important; /* অথবা ৩০০/৪০০ দিতে পারেন */
+}
+
+/* বাটন কন্টেইনারের সাইজ ঠিক রাখতে চাইলে */
+.swiper-button-next, 
+.swiper-button-prev {
+    width: 30px !important;
+    height: 30px !important;
+}
+
+
+
+/* কন্টেইনারকে রিলেটিভ রাখা */
+.category-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 5px;
+}
+
+/* ইমেজের ওপর গ্রাডিয়েন্ট লেয়ার */
+.category-image::after {
+    content: "";
+    position: absolute;
+    inset: 0; /* top, left, bottom, right: 0 */
+    /* নিচ থেকে উপরের দিকে কালো গ্রাডিয়েন্ট */
+    background: linear-gradient(
+        to top, 
+        rgba(0, 0, 0, 0.7) 0%, 
+        rgba(0, 0, 0, 0.3) 50%, 
+        rgba(0, 0, 0, 0) 100%
+    );
+    z-index: 1;
+    pointer-events: none; /* যাতে ইমেজে ক্লিক করতে সমস্যা না হয় */
+}
+
+/* টেক্সটকে গ্রাডিয়েন্টের উপরে আনা */
+.category-label-overlay {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2; /* গ্রাডিয়েন্টের উপরে রাখার জন্য */
+    text-align: center;
+}
+
+
+
+/* স্লাইডারের অ্যারো বাটন দুটোর কমন স্টাইল */
+.slick-prev:before, 
+.slick-next:before {
+    font-size: 16px !important; /* সাইজ ২০-২৪ থেকে কমিয়ে ১৬ বা আপনার পছন্দমতো করুন */
+    font-weight: 300 !important; /* ডিফল্ট বোল্ডনেস কমানোর জন্য */
+    color: #000; /* আইকনের রঙ কালো করার জন্য (ঐচ্ছিক) */
+    opacity: 0.5; /* আইকন আরও হালকা দেখাতে অপাসিটি কমাতে পারেন */
+    transition: all 0.3s ease;
+}
+
+/* হোভার করলে আইকন একটু গাঢ় দেখাবে (ভালো ইউজার এক্সপেরিয়েন্সের জন্য) */
+.slick-prev:hover:before, 
+.slick-next:hover:before {
+    opacity: 1;
+}
+
+/* আইকনগুলোর পজিশন স্লাইডারের একদম ভেতরে বা কিনারায় সেট করার জন্য */
+.slick-prev {
+    left: -25px !important;
+    z-index: 10;
+}
+
+.slick-next {
+    right: -25px !important;
+    z-index: 10;
+}
+
+
+/* Card hover e smooth zoom effect */
+.category-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 10px; /* Slide er majhe gap */
+}
+
+.category-card:hover {
+    transform: translateY(-5px); /* Hover e ektu upore uthbe */
+}
+
+/* Image transition */
+.category-image img {
+    width: 100%;
+    transition: transform 0.6s ease;
+}
+
+.category-card:hover .category-image img {
+    transform: scale(1.1); /* Image ektu zoom hobe */
+}
+
+/* Slick Arrows smooth kora */
+.slick-prev:before, .slick-next:before {
+    color: #000; /* Arrow color */
+    font-size: 24px;
+    transition: opacity 0.3s ease;
+}
+.popular-category-section h2{
+    text-align: center;
+}
+@media only screen and (max-width: 900px) {
+    .category-image img {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+    }
+    .category-product-price .sale-price {
+        font-size: 16px;
+    }
+    .category-product-price .regular-price {
+        font-size: 11px;
+    }
+    .category-product-price .save-amount {
+        font-size: 10px;
+    }
+    .category-label-overlay {
+        background: transparent;
+        padding: 2px 10px;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+        border: 1px solid #fff;
+    }
+}

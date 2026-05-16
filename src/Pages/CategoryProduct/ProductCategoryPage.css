@@ -1,8 +1,8 @@
 .products-grid-row {
   display: flex;
   flex-wrap: wrap;
-  margin-left: -15px;
-  margin-right: -15px;
+  margin-left: -25px;
+  margin-right: -25px;
 }
 
 .col-grid-4 {
@@ -19,6 +19,249 @@
   animation: fa-spin 2s infinite linear;
   display: inline-block;
 }
+.category-search-container {
+  margin-bottom: 20px;
+  display: none
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.search-box input {
+    border: none;
+    outline: none;
+    width: 100%;
+    margin-left: 10px;
+    font-size: 14px;
+}
+
+/* জেন্ডার বাটন স্টাইল */
+.gender-filter-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.gender-btn {
+    padding: 8px 20px;
+    border-radius: 25px;
+    border: 1px solid #eee;
+    background: #000;
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.3s;
+}
+
+.gender-btn.active {
+    background: #333; /* মেন ক্যাটাগরির নীল রঙ */
+    color: #fff;
+    border-color: #333;
+}
+.gender-btn:hover {
+    background: #555;
+    color: #fff;
+    border-color: #555;
+}
+/* সাব-ক্যাটাগরি চিপস */
+.subcategory-chips-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 1px dashed #eee;
+    padding-bottom: 20px;
+}
+
+.sub-chip {
+    padding: 6px 15px;
+    background: #fff;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+    border: 1px solid #eee;
+}
+.sub-chip:hover {
+  background: #f0f0f0;
+  border: 1px solid #eee;
+}
+.chip-count {
+  color: #999;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.sub-chip:hover {
+  border-color: #3b5998;
+  color: #3b5998;
+}
+
+.active-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.clear-all-btn {
+    background: none;
+    border: none;
+    color: #ff4757;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+
+/* Layout Settings */
+.product-category-layout {
+  display: flex;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.category-sidebar {
+  width: 250px;
+  flex-shrink: 0;
+}
+.category-sidebar .widget-title {
+  color: #000;
+  font-weight: 500;
+  margin-bottom: 0;
+  border-bottom: 1px solid #eee;
+}
+
+#primary {
+  flex-grow: 1;
+}
+.category-content-area{
+  padding-left: 0px !important;
+  padding-right: 0px !important;
+}
+/* Sidebar Styling */
+.widget {
+  background: #fff;
+  border: 1px solid #eaeaea;
+  margin-bottom: 25px;
+  border-radius: 5px;
+}
+
+.widget-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #d63384; 
+  margin: 0;
+  padding: 0;
+  text-transform: capitalize;
+  padding: 10px 15px !important;
+}
+
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-right: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.clear-filter {
+  background: none;
+  border: none;
+  color: #d63384;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  letter-spacing: 0.5px;
+  transition: opacity 0.2s;
+}
+.clear-filter:hover {
+  opacity: 0.7;
+}
+
+
+
+.cat-parent {
+  font-size: 15px;
+  padding: 10px 15px;
+  color: #007bff;
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  cursor: pointer;
+}
+
+.cat-sub-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cat-sub-menu li a {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 25px;
+  color: #555;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.cat-sub-menu li.active a {
+  color: #d11e5d;
+  font-weight: 600;
+}
+
+.count, .cat-count {
+  background: #eee;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  color: #777;
+}
+
+/* Special Offers List */
+.widget-special-links ul {
+  list-style: none;
+  padding: 10px 0;
+  margin-bottom: 0;
+}
+
+.widget-special-links li a {
+  display: block;
+  padding: 5px 15px;
+  color: #333;
+  transition: 0.3s;
+}
+
+.widget-special-links li a:hover {
+  background: #f8f9fa;
+  color: #000;
+}
+
+/* Responsive Sidebar */
+@media (max-width: 991px) {
+  .product-category-layout {
+    flex-direction: column;
+  }
+  .category-sidebar {
+    width: 100%;
+    order: 2; 
+    padding: 0 15px;
+    display: none;
+  }
+}
+
+
+
+
 @-webkit-keyframes fa-spin {
   0% { -webkit-transform: rotate(0deg); transform: rotate(0deg); }
   100% { -webkit-transform: rotate(359deg); transform: rotate(359deg); }
@@ -38,5 +281,363 @@
 @media (max-width: 576px) {
   .col-grid-4 {
     width: 100%;
+  }
+}
+
+/* Sidebar Tree Styling - Compact Version */
+.all-categories-wrapper {
+  margin-top: 10px;
+}
+
+.category-tree {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* সাব-ক্যাটাগরির গ্যাপ এবং কানেক্টিং লাইন */
+.category-tree ul {
+  padding-left: 15px; /* একটু কমপ্যাক্ট গ্যাপ */
+  margin: 0;
+  border-left: 1px solid #e0e0e0; /* বাম পাশের চিকন লাইন */
+  list-style: none;
+}
+
+.category-tree li {
+  position: relative;
+}
+
+/* আইটেমগুলোর মাঝখানের দূরত্ব কমানো */
+.category-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px; /* প্যাডিং কমিয়ে লাইন হাইট কমানো হয়েছে */
+  border-radius: 4px;
+  margin-bottom: 0; /* গ্যাপ জিরো করা হয়েছে */
+  transition: all 0.2s ease;
+  cursor: pointer;
+  min-height: 35px; /* ফিক্সড হাইট যাতে বেশি ছড়িয়ে না যায় */
+}
+
+.category-item:hover {
+  background-color: #f8f9fa;
+}
+
+.category-item.active {
+  background-color: #efedff; 
+}
+
+.cat-link {
+  flex-grow: 1;
+  text-decoration: none;
+  color: #333; /* টেক্সট কালার একটু গাঢ় করা হয়েছে */
+  font-size: 13.5px;
+  line-height: 1.2;
+}
+
+.category-item.active .cat-name {
+  color: #6c5ce7;
+  font-weight: 500;
+}
+
+/* কাউন্ট বক্স ডিজাইন */
+.cat-count {
+  font-size: 11px;
+  background: #f1f1f1;
+  color: #777;
+  min-width: 24px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  margin-right: 5px;
+}
+
+.category-item.active .cat-count {
+  background: #6c5ce7;
+  color: #fff;
+}
+
+.arrow-icon {
+  font-size: 9px;
+  color: #ccc;
+  transition: transform 0.3s;
+}
+
+.category-item:hover .arrow-icon {
+  color: #999;
+}
+
+.widget-title {
+  text-transform: capitalize;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clear-filter {
+  font-size: 12px;
+  color: #d63384;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+
+
+
+.category-filter-container {
+  padding: 20px;
+  background: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Parent Tabs */
+.parent-category-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.tab-btn {
+  padding: 10px 25px;
+  border-radius: 25px;
+  border: 1px solid #eee;
+  background: #fff;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+/* Dynamic Colors */
+.tab-btn.men.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+.tab-btn.women { color: #db2777; background: #fff1f2; border-color: #fce7f3; }
+.tab-btn.kids { color: #059669; background: #f0fdf4; border-color: #dcfce7; }
+.tab-btn.teens { color: #7c3aed; background: #f5f3ff; border-color: #ede9fe; }
+
+.divider {
+  border-top: 1px dashed #e5e7eb;
+  margin: 20px 0;
+}
+
+/* Sub-category Pills */
+.sub-category-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.pill {
+  padding: 8px 18px;
+  border-radius: 30px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 14px;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.pill small {
+  color: #9ca3af;
+  margin-left: 5px;
+}
+
+.pill:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+/* Active Filter Tag */
+.active-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.filter-tag {
+  background: #f3f4f6;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #4b5563;
+}
+
+.filter-tag i {
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+/* Container Fix */
+.category-filter-container {
+    width: 100%;
+    display: block !important; /* নিশ্চিত করা যাতে হাইড না থাকে */
+    overflow: visible;
+}
+
+/* Parent Tabs Mobile Fix */
+.parent-category-tabs {
+    display: flex !important; /* মোবাইলে অবশ্যই ফ্লেক্স হবে */
+    flex-wrap: nowrap; /* এক লাইনে থাকবে */
+    overflow-x: auto; /* মোবাইলে ডানে-বামে স্ক্রল হবে */
+    -webkit-overflow-scrolling: touch; /* স্মুথ স্ক্রলিং */
+    gap: 10px;
+    padding: 10px 5px;
+    margin-bottom: 15px;
+    scrollbar-width: none; /* ফায়ারফক্সের জন্য স্ক্রলবার হাইড */
+}
+
+/* হাইড স্ক্রলবার ফর ক্রোম/সাফারি */
+.parent-category-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.tab-btn {
+    flex: 0 0 auto; 
+    justify-content: center;
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #000;
+}
+
+/* Divider Fix */
+.divider {
+    width: 100%;
+    height: 1px;
+    border-top: 1px dashed #e5e7eb;
+    margin: 15px 0;
+    display: block;
+}
+.top-category-list {
+  display: none;
+}
+
+.tab-btn.active {
+  background: #000;
+  color: #fff;
+}
+.bottom-pagination {
+  margin-left: 15px;
+}
+/* Mobile Responsive Fixes */
+@media only screen and (max-width: 768px) {
+  .category-filter-container {
+    padding: 10px 0;
+  }
+  .top-category-list {
+    display: block !important;
+  }
+  .parent-category-tabs {
+    display: flex;
+    overflow-x: auto; 
+    white-space: nowrap;
+    padding-bottom: 10px;
+    gap: 8px;
+    scrollbar-width: none; 
+  }
+  
+  .parent-category-tabs::-webkit-scrollbar {
+    display: none; 
+  }
+
+  .tab-btn {
+    padding: 8px 15px; 
+    font-size: 13px;
+    flex: 0 0 auto;
+  }
+
+  /* Sub-category Pills Fix */
+  .sub-category-pills {
+    display: flex;
+    flex-wrap: wrap; 
+    gap: 6px; 
+    justify-content: flex-start;
+  }
+
+  .pill {
+    padding: 6px 12px;
+    font-size: 12px; /* টেক্সট সাইজ কমানো */
+    line-height: 1.4;
+  }
+
+  .pill small {
+    font-size: 10px;
+    margin-left: 3px;
+  }
+
+  /* Active Filter Row */
+  .active-filter-row {
+    margin-top: 15px;
+    flex-direction: row; /* পাশাপাশি রাখা */
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .filter-tag {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .parent-category-tabs {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .tab-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .products-grid-row {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .category-search-container {
+    padding: 0 15px;
+  }
+  .pruduct-filter-row {
+    padding: 10px 15px;
+  }
+  .product-category-layout {
+    margin-top: 0px;
+    gap: 0px;
+  }
+  .category-page-content{
+    padding: 0 !important;
+  }
+  .category-products-wrapper{
+    padding: 0 15px !important;
+  }
+  .sort-by-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    align-items: center;
+    vertical-align: middle;
+  }
+  .filter-row-box.navigation.pagination {
+    float: right;
+    width: 100%;
+    text-align: right;
+    margin-top: 0;
+  }
+  .pagination .nav-links {
+    text-align: right;
   }
 }

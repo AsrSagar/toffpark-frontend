@@ -1,0 +1,94 @@
+/* Main Header Container */
+.top-header {
+  background-color: #f7f1f1;
+  color: #fff;
+  padding: 4px 0;
+  width: 100%;
+}
+
+/* Flexbox Layout Logic */
+.top-header .container.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  width: 1270px;
+  margin: 0 auto;
+  padding-left: 20px;
+  padding-right: 20px;
+  max-width: 100%;
+}
+
+.contact-info, .header-icons {
+  flex: 0 0 200px; 
+}
+
+.contact-info {
+  text-align: left;
+}
+
+.contact-info a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Notice Section (Middle) */
+.notic-item {
+  flex: 1; 
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.notic-item p {
+  display: inline-block;
+  margin: 0;
+  /* Animation settings */
+  animation: marquee-reverse 15s linear infinite;
+  color: #000;
+}
+
+/* Left to Right Animation Logic */
+@keyframes marquee-reverse {
+  0% {
+    transform: translateX(-100%); /* Screen er baire bame thakbe */
+  }
+  100% {
+    transform: translateX(150%); /* Screen er baire dane chole jabe */
+  }
+}
+
+/* Social Icons (Right) */
+.header-icons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20px;
+}
+
+.header-icons a {
+  color: #000;
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .contact-info {
+    display: none;
+  }
+  .header-icons {
+    display: none;
+  }
+  .top-header {
+    padding: 4px 0;
+  }
+  #masthead {
+    padding: 13px 0 !important;
+    text-align: center;
+  }
+  .site-branding {
+    float: left;
+    width: 50%;
+    margin: 0 auto;
+  }
+}

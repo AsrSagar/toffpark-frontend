@@ -1,3 +1,15 @@
 .ads-banner{
     margin-bottom: 50px;
+    margin-top: -40px;
+}
+@media (max-width: 991px) {
+    .ads-banner-image {
+        width: 50% !important;
+        padding-right: 6px;
+        padding-left: 6px;
+    }
+    .ads-banner {
+        margin-bottom: 20px;
+        margin-top: -40px;
+    }
 }

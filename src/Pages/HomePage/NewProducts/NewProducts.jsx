@@ -14,7 +14,7 @@ const NewProducts = () => {
                     data-slick='{"slidesToShow":4,"dots":false,"prevArrow":"<span data-role=\"none\" class=\"slick-prev\" tabindex=\"0\"><i class=\"fa fa-angle-left\" aria-hidden=\"true\"></i></span>","nextArrow":"<span data-role=\"none\" class=\"slick-next\" tabindex=\"0\"><i class=\"fa fa-angle-right\" aria-hidden=\"true\"></i></span>","responsive":[{"breakpoint":1024,"settings":{"slidesToShow":4}},{"breakpoint":800,"settings":{"slidesToShow":3}},{"breakpoint":659,"settings":{"slidesToShow":2}},{"breakpoint":479,"settings":{"slidesToShow":1}}]}'
                     >
                         <div className="product-item col-grid-3">
-                            <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
+                            <div className="product-item-wrapper zoom-effect-hover-container">
                                 <div className="product-thumb zoom-effect">
                                     <a className="thumbnail" href="/">
                                         <img alt="product" src="/images/shop/product-1.jpg" />
@@ -61,7 +61,7 @@ const NewProducts = () => {
                             </div>
                         </div>
                         <div className="product-item col-grid-3">
-                            <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
+                            <div className="product-item-wrapper zoom-effect-hover-container">
                                 <div className="product-thumb zoom-effect">
                                     <a className="thumbnail" href="/">
                                         <img alt="product" src="/images/shop/product-1.jpg" />
@@ -108,7 +108,7 @@ const NewProducts = () => {
                             </div>
                         </div>
                         <div className="product-item col-grid-3">
-                            <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
+                            <div className="product-item-wrapper zoom-effect-hover-container">
                                 <div className="product-thumb zoom-effect">
                                     <a className="thumbnail" href="/">
                                         <img alt="product" src="/images/shop/product-1.jpg" />
@@ -155,7 +155,7 @@ const NewProducts = () => {
                             </div>
                         </div>
                         <div className="product-item col-grid-3">
-                            <div className="product-item-wrapper zoom-effect-hover-container box-shadow-block">
+                            <div className="product-item-wrapper zoom-effect-hover-container">
                                 <div className="product-thumb zoom-effect">
                                     <a className="thumbnail" href="/">
                                         <img alt="product" src="/images/shop/product-1.jpg" />
