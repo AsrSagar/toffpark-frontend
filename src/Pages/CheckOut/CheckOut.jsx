@@ -47,7 +47,6 @@ const CheckoutPage = () => {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [promoMessage, setPromoMessage] = useState("");
   const [promoLoading, setPromoLoading] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const [orderId, setOrderId] = useState(null);
@@ -61,6 +60,10 @@ const CheckoutPage = () => {
   const handleBillingChange = (e) => {
     setBilling({ ...billing, [e.target.name]: e.target.value });
   };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Apply Promo Code
   const applyPromoCode = async () => {
@@ -114,7 +117,6 @@ const CheckoutPage = () => {
   const placeOrder = async (e) => {
     e.preventDefault();
 
-    if (!termsAccepted) return alert("Please accept the terms & conditions");
     if (cartItems.length === 0) return alert("Cart is empty or invalid product data");
 
     setLoading(true);
@@ -350,14 +352,21 @@ const CheckoutPage = () => {
         <div className="custom-header-content">
           <div className="container">
             <div id="breadcrumb">
-              <ul className="trail-items">
-                <li className="trail-item trail-begin">
-                  <a href="/" rel="home"><span>Home</span></a>
-                </li>
-                <li className="trail-item trail-end">
-                  <span>Checkout</span>
-                </li>
-              </ul>
+              <div
+                aria-label="Breadcrumbs"
+                className="breadcrumbs breadcrumb-trail"
+              >
+                <ul className="trail-items">
+                  <li className="trail-item trail-begin">
+                    <a href="/" rel="home">
+                      <span>Home</span>
+                    </a>
+                  </li>
+                  <li className="trail-item trail-end">
+                    <span>Checkout</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -372,7 +381,7 @@ const CheckoutPage = () => {
                 <div className="section-checkout">
                   <form className="checkout product-checkout" onSubmit={placeOrder}>
                     <div className="col2-set" id="customer_details">
-                      <div className="col-1">
+                      <div className="col-1 checkout-billing">
                         <div className="product-billing-fields_field-wrapper">
                           <h3>Contact & Shipping Details:</h3>
                           <div className="form-row">
@@ -399,7 +408,7 @@ const CheckoutPage = () => {
                           </div>
 
                           <div className="form-row">
-                            <label>Email Address </label>
+                            <label>Email Address (optional)</label>
                             <input
                               type="email"
                               name="email"
@@ -411,31 +420,33 @@ const CheckoutPage = () => {
                           </div>
 
                           <div className="form-row">
-                            <label>Address *</label>
+                            <label>Full Delivery Address*</label>
                             <input
                               type="text"
                               name="address_1"
                               value={billing.address_1}
+                              placeholder="House/Flat, Road, Area, Thana/Upazila, District"
                               onChange={handleBillingChange}
                               required
                             />
                           </div>
                           <div className="form-row">
-                            <label>Order Note</label>
+                            <label>Order Note (optional)</label>
                             <textarea
                               name="order_note"
                               value={billing.order_note}
+                              placeholder="Special notes for order & delivery"
                               onChange={handleBillingChange}
                             />
                           </div>
                         </div>
                       </div>
                       {/* Order Review & Payment */}
-                      <div className="col-2">
+                      <div className="col-2 checkout-review">
                         <div className="order-summary-card">
                           <div className="summary-header">
                             <h3>Order Summary</h3>
-                            <Link to="/cart" className="mobile-edit-link">Modify</Link>
+                            <Link to="/cart" className="mobile-edit-link">Edit</Link>
                           </div>
 
                           <div className="order-items">
@@ -449,7 +460,8 @@ const CheckoutPage = () => {
                                   <p>Size: {item.size} • Qty: {item.qty}</p>
                                 </div>
                                 <div className="item-pricing">
-                                  <span className="new-price">৳{item.price.toFixed(0)}</span>
+                                  <span className="new-price">৳{(item.price * item.qty).toFixed(0)}</span>
+                                  <del className="old-price">৳{(item.regularPrice * item.qty).toFixed(0)}</del>
                                 </div>
                               </div>
                             ))}
@@ -509,7 +521,7 @@ const CheckoutPage = () => {
                         </div>
                         {/* Delivery Method Section */}
                         <div className="payment-method-section">
-                          <h3>Shipping Options</h3>
+                          <h3>Delivery Area</h3>
                           <div className="payment-options">
                             {/* Inside Dhaka */}
                             <label className={`payment-card ${deliveryMethod === 'inside_dhaka' ? 'selected' : ''}`}>
@@ -527,7 +539,7 @@ const CheckoutPage = () => {
                                     <span className="method-title">Inside Dhaka City</span>
                                   </div>
                                 </div>
-                                <span className="price-tag">Tk 80.00</span>
+                                <span className="price-tag">Tk 80</span>
                               </div>
                             </label>
 
@@ -547,7 +559,7 @@ const CheckoutPage = () => {
                                     <span className="method-title">Outside Dhaka City</span>
                                   </div>
                                 </div>
-                                <span className="price-tag">Tk 150.00</span>
+                                <span className="price-tag">Tk 150</span>
                               </div>
                             </label>
                           </div>
@@ -564,7 +576,7 @@ const CheckoutPage = () => {
                                   <span className="radio-circle"></span>
                                   {/* <img src="/images/icons/cod-icon.png" alt="COD" className="method-icon" /> */}
                                   <div className="text-group">
-                                    <span className="method-title">Cash on Delivery <small className="badge popular">POPULAR</small></span>
+                                    <span className="method-title">Cash on Delivery</span>
                                     <span className="method-subtitle">Pay when you receive your order</span>
                                   </div>
                                 </div>
@@ -577,7 +589,7 @@ const CheckoutPage = () => {
                                   <span className="radio-circle"></span>
                                   {/* <img src="/images/icons/card-icon.png" alt="Card" className="method-icon" /> */}
                                   <div className="text-group">
-                                    <span className="method-title">Card Payment <small className="badge secure">SECURE</small></span>
+                                    <span className="method-title">Card Payment</span>
                                     <span className="method-subtitle">Visa, Mastercard, Amex</span>
                                   </div>
                                 </div>
@@ -592,7 +604,7 @@ const CheckoutPage = () => {
                                   {/* <img src="/images/bkash-logo.png" alt="bKash" className="method-icon" /> */}
                                   <div className="text-group">
                                     <span className="method-title">bKash</span>
-                                    <span className="method-subtitle">Pay with bKash mobile wallet</span>
+                                    <span className="method-subtitle">Pay with bKash</span>
                                   </div>
                                 </div>
                                 <img src="/images/bkash.png" alt="bKash Logo" className="provider-logo" />
@@ -601,22 +613,15 @@ const CheckoutPage = () => {
                           </div>
                         </div>
                         <div className="checkout-footer">
-                          
                           <div className="terms-container">
                             <div className="terms-wrapper">
-                            <input 
-                              type="checkbox" 
-                              id="terms" 
-                              checked={termsAccepted} // isChecked-er poriborte
-                              onChange={(e) => setTermsAccepted(e.target.checked)} // setIsChecked-er poriborte
-                            />
-                            <label htmlFor="terms" className="terms-label">
-                              I agree to the <span className="link">Terms & Conditions</span>, <span className="link">Refund Policy</span> and <span className="link">Privacy Policy</span>
-                            </label>
-                          </div>
+                              <label htmlFor="terms" className="terms-label">
+                                By clicking Confirm Order, you agree to our <Link to="/delivery-policy" className="link">delivery policy</Link> and <Link to="/returns-refunds" className="link">returns & refunds policy</Link>.
+                              </label>
+                            </div>
                           </div>
                           <button type="submit" className="confirm-btn" disabled={loading}>
-                            <span className="lock-icon">🔒</span> {loading ? "Processing..." : `Confirm Order ৳${finalTotal}`}
+                            {loading ? "Processing..." : `Confirm Order - ৳${finalTotal}`}
                           </button>
                         </div>
                       </div>

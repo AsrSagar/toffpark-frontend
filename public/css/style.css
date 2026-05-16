@@ -443,7 +443,7 @@ table {
 --------------------------------------------------------------*/
 
 input[type="button"], input[type="reset"], input[type="submit"], button {
-    background: #ce1648;
+    background: #000;
     color: #fff;
     font-size: 14px;
     padding: 9px 35px;
@@ -2359,16 +2359,26 @@ span#selected-category {
 
 img.site-logo {
     vertical-align: middle;
-    width: 170px;
-	margin-top: 5px;
+    width: 160px;
 }
 
 #main-navigation .container {
 	position: relative;
 }
-
+.fa-tiktok:before {
+    content: "\e07b";
+}
 /*Quick Contact*/
-
+.content-block h2 {
+    text-transform: capitalize;
+    font-size: 20px;
+}
+.content-block p{
+	font-size: 14px;
+}
+.contact-information p a:hover{
+	color: #000;
+}
 .quick-contact ul {
 	margin: 0;
 	padding: 0;
@@ -2471,7 +2481,7 @@ nav.main-navigation.navigation-border {
 
 #custom-header {
     background: #f9f9f9;
-    padding: 5px 0;
+    padding: 2px 0;
     clear: both;
     background-size: 100%;
     border-left: 0;
@@ -3734,7 +3744,7 @@ article.hentry.post.col-grid-4:nth-child(3n+1) {
 }
 
 #footer-widgets ul li::before {
-	color: #727272;
+	color: #fff;
 	content: "\f105";
 	display: inline-block;
 	font-family: 'Font Awesome 5 Free';
@@ -5189,7 +5199,7 @@ span.newsletter-icon.pull-left {
 }
 
 h3.contact-title {
-	background: #CE1648;
+	background: #000;
 	text-align: center;
 	padding: 10px;
 	margin: -40px -40px 40px;
@@ -6190,7 +6200,7 @@ aside.section.section-quick-contact.background-img.overlay-enabled {
 #breadcrumb {
     color: #222;
     text-align: center;
-    padding-top: 5px;
+    padding-top: 0px;
     float: left;
 }
 
@@ -6778,9 +6788,9 @@ select.orderby {
 .pagination.filter-row-box .nav-links a:hover,
 .pagination.filter-row-box .nav-links a:active,
 .pagination.filter-row-box .nav-links a:focus {
-    background: #CE1648;
+    background: #656565;
     color: #fff;
-    border-color: #CE1648;
+    border-color: #656565;
 }
 
 .filter-row-box.product-view > a {
@@ -7249,6 +7259,7 @@ table.cart .actions input[type="submit"]{
 .cart-collaterals {
     max-width: 50%;
     margin-top: 30px;
+	float: right;
 }
 td.product-remove button {
     text-align: center;
@@ -7317,9 +7328,9 @@ td.product-remove {
 .section-checkout h3, .checkout h3 {
     font-size: 20px;
     border-bottom: 1px solid #efefef;
-    padding-bottom: 7px;
     clear: both;
-    margin-bottom: 25px;
+    margin-bottom: 12px;
+    padding: 15px;
 }
 
 .section-checkout .col2-set .col-1,
@@ -7476,6 +7487,7 @@ td.product-remove {
     color: #000;
     width: auto;
     padding: 5px 10px;
+	font-weight: 400;
 }
 
 .filter-by-size button.active,
@@ -8199,8 +8211,12 @@ form.checkout {
 
 
 
-
-
+.content-block ul{
+	margin-left: 20px;
+}
+.content-block ul li{
+	list-style: disc;
+}
 
 
 /* ================= RESPONSIVE ================= */
@@ -8235,7 +8251,9 @@ form.checkout {
   margin-bottom: 10px;
   animation: pulse 1.2s infinite ease-in-out;
 }
-
+.static-page-section{
+	padding-top: 30px;
+}
 @keyframes pulse {
   0% {
     background-color: #f0f0f0;

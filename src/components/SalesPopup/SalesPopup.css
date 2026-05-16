@@ -62,14 +62,13 @@
     font-weight: 400;
 }
 
-.product-name {
-    font-size: 13px;
+.sales-popup-content .product-name {
+    font-size: 10px;
     font-weight: 700;
     color: #222;
     margin: 0 0 5px 0;
     line-height: 1.4;
     display: -webkit-box;
-    -webkit-line-clamp: 2; /* Max 2 lines for title */
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -124,5 +123,8 @@
     }
     .sales-popup-wrapper {
         bottom: 80px;
+    }
+    .sales-popup-wrapper {
+        display: none;
     }
 }

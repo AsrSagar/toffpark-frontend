@@ -1,8 +1,80 @@
 .payment-images {
-    background: #fff;
+    background: transparent;
+}
+.payment-images img{
+    width: 520px;
 }
 .bottom-fotter-widget-area{
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+.footer-widget-area p{
+    color: #fff;
+    margin-top: 15px;
+}
+#footer-widgets a, #footer-widgets a:visited {
+    color: #fff;
+}
+#footer-widgets a:hover {
+    color: #fff;
+    padding-left: 5px;
+    transition: all 0.3s ease-in-out;
+    -webkit-transition: all 0.3s ease-in-out;
+    -moz-transition: all 0.3s ease-in-out;
+    -o-transition: all 0.3s ease-in-out;
+    -ms-transition: all 0.3s ease-in-out;
+}
+.footer-logo img{
+    width: 230px;
+}
+.footer-icons {
+    display: flex;
+    justify-content: flex-start;
+    gap: 20px;
+    float: left;
+    margin-top: 15px;
+}
+.footer-icons a {
+    color: #fff;
+    font-size: 13px;
+    transition: color 0.3s ease;
+    border: 1px solid #fff;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.footer-icons a:hover {
+    color: #fff;
+    border: 1px solid #fff;
+}
+.mobile-footer{
+    display: none;
+}
+img.footer-logo {
+    margin-bottom: 10px;
+    width: 160px;
+}
+@media (max-width: 768px) {
+    .footer-logo {
+        width: 150px !important;
+    }
+    .site-footer{
+        display: none;
+    }
+    .bottom-fotter-widget-area {
+        display: inline-block;
+        align-items: center;
+        margin-bottom: 40px;
+    }
+    .mobile-footer{
+        display: block;
+    }
+    .payment-images {
+        background: #fff;
+        margin-bottom: 10px;
+    }
 }

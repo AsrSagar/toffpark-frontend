@@ -2,10 +2,14 @@ import React, { useEffect, useState, useRef } from "react";
 import { useCart } from "../../context/CartContext";
 import { wcApiV3 } from "../../api/woocommerce";
 import { AnimatePresence, motion } from "framer-motion";
+import "./QuickViewModal.css";
 
 const QuickViewModal = ({ isOpen, onClose, product }) => {
     const { addToCart, isInCart } = useCart();
+
     const [variations, setVariations] = useState([]);
+    const [variationLoading, setVariationLoading] = useState(false);
+
     const [selectedVariation, setSelectedVariation] = useState(null);
     const [selectedSize, setSelectedSize] = useState(null);
     const [loadingId, setLoadingId] = useState(null);
@@ -17,14 +21,22 @@ const QuickViewModal = ({ isOpen, onClose, product }) => {
         if (!product) return;
         setSelectedSize(null);
         setSelectedVariation(null);
+        setVariations([]);
 
         const fetchVariations = async () => {
             if (product.type === "variable") {
                 try {
-                    const res = await wcApiV3.get(`/products/${product.id}/variations`);
+                    setVariationLoading(true);
+
+                    const res = await wcApiV3.get(
+                        `/products/${product.id}/variations?per_page=100`
+                    );
+
                     setVariations(res.data);
                 } catch (err) {
                     console.error("Variation fetch error:", err);
+                } finally {
+                    setVariationLoading(false);
                 }
             }
         };
@@ -39,15 +51,23 @@ const QuickViewModal = ({ isOpen, onClose, product }) => {
 
     const isSizeAvailable = (size) => {
         const matched = variations.find((v) =>
-            v.attributes.some((attr) => attr.option.toLowerCase() === size.toLowerCase())
+            v.attributes.some(
+                (attr) =>
+                    attr.option.toLowerCase() === size.toLowerCase()
+            )
         );
+
         return matched && matched.stock_status === "instock";
     };
 
     const handleSizeSelect = (size) => {
         const matchedVariation = variations.find((v) =>
-            v.attributes.some((attr) => attr.option.toLowerCase() === size.toLowerCase())
+            v.attributes.some(
+                (attr) =>
+                    attr.option.toLowerCase() === size.toLowerCase()
+            )
         );
+
         if (matchedVariation && matchedVariation.stock_status === "instock") {
             setSelectedSize(size);
             setSelectedVariation(matchedVariation);
@@ -74,7 +94,11 @@ const QuickViewModal = ({ isOpen, onClose, product }) => {
 
     const handleAddWithAnimation = async (e) => {
         e.preventDefault();
-        
+        if (isOutOfStock) return;
+        if (product.type === "variable" && !selectedVariation) {
+            alert("Please select a size");
+            return;
+        }
         const cartIcon = document.getElementById('cart-icon');
         const productImage = mainImageRef.current;
 
@@ -103,6 +127,11 @@ const QuickViewModal = ({ isOpen, onClose, product }) => {
 
     const cartId = product.type === "variable" ? selectedVariation?.id : product.id;
 
+    const regularPrice = parseFloat(product.custom_price_data?.regular_price || 0).toFixed(0);
+    const currentPrice = parseFloat(product.price || 0).toFixed(0);
+
+
+    
     return (
         <>
         <div onClick={onClose} style={styles.overlay}>
@@ -111,7 +140,7 @@ const QuickViewModal = ({ isOpen, onClose, product }) => {
                     <span style={{ fontWeight: '600' }}>Select Options</span>
                     <button 
                         onClick={onClose} 
-                        className="modal-close-btn" // ক্লাস যোগ করুন
+                        className="modal-close-btn" 
                         style={styles.closeBtn}
                     >
                         ✕
@@ -122,13 +151,13 @@ const QuickViewModal = ({ isOpen, onClose, product }) => {
                         <img 
                             src={productImage} 
                             alt={product.name} 
-                            style={styles.image} 
+                            className="product-image"
                             ref={mainImageRef}
                         />
                     </div>
 
-                    <h3 style={styles.title}>{product.name}</h3>
-                    <button 
+                    <h3 className="quickview-product-title">{product.name}</h3>
+                    {/* <button 
                         type="button" 
                         onClick={(e) => {
                             e.preventDefault();
@@ -136,47 +165,71 @@ const QuickViewModal = ({ isOpen, onClose, product }) => {
                         style={styles.sizeGuideBtn}
                     >
                         Size Guide
-                    </button>
+                    </button> */}
                     {sizeAttribute && (
-                        <p style={styles.label}>Choose Size</p>
+                        <>
+                            <p className="quickview-product-size">
+                                Choose Size
+                            </p>
+
+                            {variationLoading ? (
+                                <div style={{ padding: "10px" }}>
+                                    Loading sizes...
+                                </div>
+                            ) : (
+                                <div style={styles.sizeGroup}>
+                                    {sizeAttribute?.options.map((size) => {
+                                        const available =
+                                            isSizeAvailable(size);
+
+                                        const isSelected =
+                                            selectedSize === size;
+
+                                        return (
+                                            <button
+                                                key={size}
+                                                type="button"
+                                                onClick={() =>
+                                                    available &&
+                                                    handleSizeSelect(size)
+                                                }
+                                                className="size-variation-btn"
+                                                style={{
+                                                    ...styles.sizeBox,
+                                                    borderColor: isSelected
+                                                        ? "#1a2233"
+                                                        : "#e5e5e5",
+                                                    cursor: available
+                                                        ? "pointer"
+                                                        : "not-allowed",
+                                                    color: available
+                                                        ? "#1a2233"
+                                                        : "#cccccc",
+                                                }}
+                                            >
+                                                {size}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </>
                     )}
-
-                    <div style={styles.sizeGroup}>
-                        {sizeAttribute?.options.map((size) => {
-                            const available = isSizeAvailable(size);
-                            const isSelected = selectedSize === size;
-
-                            return (
-                                <button
-                                    key={size}
-                                    type="button"
-                                    onClick={() => available && handleSizeSelect(size)}
-                                    className="size-variation-btn"
-                                    style={{
-                                        ...styles.sizeBox,
-                                        borderColor: isSelected ? "#1a2233" : "#e5e5e5",
-                                        backgroundColor: "#fff",
-                                        cursor: available ? "pointer" : "not-allowed",
-                                        color: available ? "#1a2233" : "#cccccc",
-                                    }}
-                                >
-                                    {size}
-                                    {!available && <span style={styles.crossIcon}>✕</span>}
-                                </button>
-                            );
-                        })}
-                    </div>
                     <div className="product-price-container" style={{ marginBottom: "10px" }}>
                         <label style={styles.PriceLabel}>Price:</label>
-                        <span style={styles.UnitPrice}>৳{product.price}</span>
+                        <span style={styles.UnitPrice}>৳{currentPrice}</span>
+                        {
+                            parseFloat(regularPrice) > parseFloat(currentPrice) && (
+                                <del className="regular-price" style={{ marginRight: "0", color: "#999" }}>
+                                    ৳{regularPrice}
+                                </del>
+                            )
+                        }
                     </div>
                     <button
                         onClick={handleAddWithAnimation}
+                        className="add-to-cart-btn"
                         disabled={loadingId === cartId || isInCart(cartId) || isOutOfStock}
-                        style={{
-                            ...styles.addBtn,
-                            backgroundColor: isOutOfStock ? "#ccc" : "#1a2233"
-                        }}
                     >
                         {isOutOfStock ? "Out of Stock" : loadingId === cartId ? "Adding..." : isInCart(cartId) ? "Added to Cart" : "ADD TO CART"}
                     </button>
@@ -230,7 +283,7 @@ const styles = {
         position: "fixed",
         inset: 0,
         background: "rgba(0,0,0,0.7)",
-        zIndex: 99,
+        zIndex: 9999,
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
@@ -244,9 +297,9 @@ const styles = {
         overflow: "hidden",
     },
     header: {
-        background: "#2d3448",
+        background: "#000",
         color: "#fff",
-        padding: "15px 20px",
+        padding: "10px 20px",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
@@ -279,17 +332,6 @@ const styles = {
     imageContainer: {
         marginBottom: "15px"
     },
-    image: {
-        width: "180px",
-        height: "auto",
-        margin: "0 auto",
-        borderRadius: "5px"
-    },
-    title: {
-        fontSize: "15px",
-        margin: "10px 0",
-        color: "#444"
-    },
     sizeGuide: {
         fontSize: "12px",
         color: "#888",
@@ -297,12 +339,6 @@ const styles = {
         display: "block",
         marginBottom: "15px"
     },
-    label: {
-        fontSize: "14px",
-        fontWeight: "700",
-        marginBottom: "10px"
-    },
-    // ... আপনার অন্যান্য স্টাইল
     sizeGroup: {
         display: "flex",
         justifyContent: "center", 
@@ -313,40 +349,11 @@ const styles = {
         maxWidth: "100%",        
         padding: "0 10px"        
     },
-    sizeBox: {
-        border: "1px solid", 
-        minWidth: "48px",       
-        height: "auto",         
-        minHeight: "38px",      
-        padding: "8px 12px",    
-        display: "flex",
-        flexDirection: "column", 
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: "12px",       
-        fontWeight: "500",
-        transition: "all 0.2s ease-in-out",
-        position: "relative",
-        background: "#fff",
-        textAlign: "center",   
-        lineHeight: "1.4",     
-    },
     crossIcon: {
         position: "absolute",
         color: "rgba(255, 0, 0, 0.6)",
         fontSize: "16px",
         fontWeight: "bold"
-    },
-    // ... বাকি স্টাইল
-    addBtn: {
-        width: "100%",
-        padding: "15px",
-        color: "#fff",
-        border: "none",
-        fontSize: "14px",
-        fontWeight: "bold",
-        cursor: "pointer",
-        letterSpacing: "1px"
     },
     sizeGuideBtn: {
         fontSize: "12px",
@@ -361,12 +368,12 @@ const styles = {
     },
     PriceLabel: {
         fontSize: "16px",
-        fontWeight: "700", 
+        fontWeight: "500", 
         color: "#000"       
     },
     UnitPrice: {
         fontSize: "16px",
-        fontWeight: "700",
+        fontWeight: "500",
         color: "#000"
     }   
 };

@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import config from "../../../config";
 import "./fbtProductList.css";
 import { useCart } from "../../../context/CartContext";
 import { wcApiV3 } from "../../../api/woocommerce";
+import { AnimatePresence, motion } from "framer-motion";
 
 const FrequentlyBoughtTogether = ({ productId, onChange }) => {
   const [products, setProducts] = useState([]);
@@ -10,11 +11,13 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
   const [addingToCart, setAddingToCart] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectedSize, setSelectedSize] = useState({});
-  const { addToCart, setCartOpen } = useCart();
+  const [isFlying, setIsFlying] = useState(false);
+  const [flyCoords, setFlyCoords] = useState({ startX: 0, startY: 0, endX: 0, endY: 0 });
+  const { addToCart } = useCart();
+  const imageRefs = useRef({}); 
 
   const API_URL = config.API_URL;
 
-  // ১. ডাটা ফেচ করা
   useEffect(() => {
     if (!productId) return;
     let isMounted = true;
@@ -44,7 +47,6 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
     return () => { isMounted = false; };
   }, [productId, API_URL]);
 
-  // ২. প্রাইস ক্যালকুলেশন
   const { regularTotal, saleTotal } = useMemo(() => {
     return products
       .filter((p) => selectedIds.includes(p.id))
@@ -78,7 +80,6 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
     );
   };
 
-  // ৪. ডাইনামিক অ্যাড টু কার্ট লজিক
   const handleAddToCart = async () => {
     if (selectedIds.length === 0) return;
 
@@ -88,13 +89,12 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
       const selectedProducts = products.filter((p) => selectedIds.includes(p.id));
 
       for (const p of selectedProducts) {
-        // ১. সিম্পল প্রোডাক্টের জন্য
+
         if (p.type !== "variable") {
           addToCart(p, 1);
           continue;
         }
 
-        // ২. ভ্যারিয়েবল প্রোডাক্টের জন্য সাইজ চেক
         const sizeForThisProduct = selectedSize[p.id];
 
         if (!sizeForThisProduct) {
@@ -103,11 +103,9 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
           return;
         }
 
-        // ৩. ভ্যারিয়েশন ফেচ করা
         const variationRes = await wcApiV3.get(`products/${p.id}/variations`);
         const variations = variationRes.data;
 
-        // ৪. সাইজ ম্যাচ করানো
         const matchedVariation = variations.find(v =>
           v.attributes.some(attr =>
             attr.option.toLowerCase() === sizeForThisProduct.toLowerCase()
@@ -119,11 +117,8 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
           continue;
         }
 
-        // ৫. কার্টে যোগ করা (Original Product, Quantity, Variation)
         addToCart(p, 1, matchedVariation);
       }
-
-      setCartOpen(true); 
     } catch (error) {
       console.error("FBT Add to cart error:", error);
       alert("কার্টে যোগ করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
@@ -132,7 +127,46 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
     }
   };
 
+  const handleAddWithAnimation = async (e) => {
+    e.preventDefault();
+
+    const cartIcon = document.getElementById('cart-icon');
+    const firstSelectedId = selectedIds[0];
+    const productImageElement = imageRefs.current[firstSelectedId];
+
+    const sizeForThisProduct = selectedSize[selectedIds[0]];
+
+    if (!sizeForThisProduct) {
+      alert(`Please select a size`);
+      setAddingToCart(false);
+      return;
+    }
+
+    if (cartIcon && productImageElement) {
+      const startRect = productImageElement.getBoundingClientRect();
+      const endRect = cartIcon.getBoundingClientRect();
+
+      setFlyCoords({
+        startX: startRect.left,
+        startY: startRect.top,
+        endX: endRect.left + (endRect.width / 2), 
+        endY: endRect.top + (endRect.height / 2)
+      });
+
+      setIsFlying(true);
+      setTimeout(() => {
+        setIsFlying(false);
+        cartIcon.classList.add('cart-icon-bounce');
+        setTimeout(() => cartIcon.classList.remove('cart-icon-bounce'), 400);
+      }, 800); 
+    }
+    await handleAddToCart();
+  };
+
+  const flyingImage = products.find(p => selectedIds.includes(p.id))?.images[0]?.src || "/images/placeholder.png";
+
   return (
+    <>
     <div className="fbt-wrapper">
       <h3>Frequently Bought Together</h3>
       <div className="right-combo-side">
@@ -142,7 +176,7 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
               const regularPrice = parseInt(product.custom_price_data?.regular_price || 0);
               const salePrice = parseInt(product.custom_price_data?.sale_price || 0);
               const isSale = salePrice > 0 && salePrice < regularPrice;
-
+              const activeImage = product.images[0]?.src || "/images/placeholder.png";
               return (
                 <div key={product.id} className="combo-item-row">
                   <div className="item-main-info">
@@ -152,7 +186,12 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
                       onChange={() => toggleProduct(product.id)}
                     />
                     <div className="item-img-box">
-                      <img src={product.images?.[0]?.src} alt={product.name} />
+                      <img 
+                        src={activeImage} 
+                        alt={product.name} 
+                        ref={el => imageRefs.current[product.id] = el}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      />
                     </div>
                     <div className="item-text">
                       <h4>{product.name}</h4>
@@ -165,7 +204,6 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
                           </>
                         )}
                       </div>
-                      
                       {product.type === "variable" && product.attributes?.length > 0 && (
                         <div className="fbt-select-wrapper">
                           <select
@@ -193,7 +231,6 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
               );
             })}
           </div>
-
           <div className="total-price-summary">
             <span className="total-label">TOTAL PRICE:</span>
             <div className="total-amount-box">
@@ -201,11 +238,10 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
               <span className="grand-total"> ৳{saleTotal.toFixed(0)}</span>
             </div>
           </div>
-
           <div className="fbt-cart-button-wrapper">
             <button
               className={`add-to-cart-combo-btn ${selectedIds.length > 0 ? "active" : "disabled"}`}
-              onClick={handleAddToCart}
+              onClick={handleAddWithAnimation}
               disabled={selectedIds.length === 0 || addingToCart}
             >
               {addingToCart ? (
@@ -223,6 +259,44 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
         </div>
       </div>
     </div>
+    <AnimatePresence>
+      {isFlying && (
+        <motion.img
+          src={flyingImage}
+          initial={{ 
+            position: "fixed",
+            top: flyCoords.startY,
+            left: flyCoords.startX,
+            width: "80px", 
+            height: "80px",
+            zIndex: 99999,
+            borderRadius: "10px",
+            opacity: 0.9,
+            scale: 1,
+            objectFit: "cover"
+          }}
+          animate={{ 
+            top: flyCoords.endY, 
+            left: flyCoords.endX, 
+            width: "20px", 
+            height: "20px",
+            opacity: 0.4,
+            scale: 0.1,
+            rotate: 720 
+          }}
+          exit={{ opacity: 0 }}
+          transition={{ 
+            duration: 0.8,
+            ease: "easeInOut", 
+          }}
+          style={{ 
+            pointerEvents: "none", 
+            boxShadow: "0 10px 25px rgba(0,0,0,0.3)" 
+          }}
+        />
+      )}
+    </AnimatePresence>
+    </>
   );
 };
 

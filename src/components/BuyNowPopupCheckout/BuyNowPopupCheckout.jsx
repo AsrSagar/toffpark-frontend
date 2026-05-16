@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import ThankYouPopup from "../../Pages/ThankYouPopup/ThankYouPopup";
 import "./BuyNowPopupCheckout.css";
+import { Link } from "react-router-dom";
 
 const BuyNowPopupCheckout = ({
   product,
@@ -41,12 +42,12 @@ const BuyNowPopupCheckout = ({
 
   const [shipping, setShipping] = useState({
     method: "inside_dhaka",
-    cost: 70,
+    cost: 80,
   });
 
   const shippingRates = {
-    inside_dhaka: 70,
-    outside_dhaka: 120,
+    inside_dhaka: 80,
+    outside_dhaka: 150,
   };
 
   const handleBillingChange = (e) =>
@@ -64,6 +65,7 @@ const BuyNowPopupCheckout = ({
 
   const finalPrice = selectedVariation?.price ? Number(selectedVariation.price) : product.price;
   const checkprice = (selectedVariation?.prices?.price || 0) / 100 || product.price;
+  const regularPrice = selectedVariation?.regular_price ? Number(selectedVariation.regular_price) : product.regular_price;
 
   // Subtotal = main product + fbt products
   const subtotal =
@@ -200,7 +202,7 @@ const BuyNowPopupCheckout = ({
         shipping_lines: [
           {
             method_id: "flat_rate",
-            method_title: shipping.method === "inside_dhaka" ? "ঢাকার ভিতরে" : "ঢাকার বাহিরে",
+            method_title: shipping.method === "inside_dhaka" ? "Inside Dhaka City" : "Outside Dhaka City",
             total: shipping.cost.toString(),
           },
         ],
@@ -227,6 +229,8 @@ const BuyNowPopupCheckout = ({
     setLoading(false);
   };
 
+  console.log("Selected Variation:", selectedVariation);
+
   return (
     <>
       <button type="button" className="custom-button button-small single-buy-now-btn" onClick={handleBuyNowClick}>
@@ -238,34 +242,37 @@ const BuyNowPopupCheckout = ({
           <div className="popup-checkout-content">
             <div className="popup-form">
               <span className="popup-close" onClick={() => setShowModal(false)}>×</span>
-
-              {/* Billing Form */}
+              <div className="popt-title">
+                <h3>Contact & Shipping Details:</h3>
+              </div>
               <div className="form-control">
-                <label>Name *</label>
+                <label>Full Name *</label>
                 <div className="input-wrapper">
-                  <span className="icon">👤</span>
-                  <input type="text" name="name" placeholder="Name" value={billing.name} onChange={handleBillingChange} />
+                  <input type="text" name="name" placeholder="Your full name" value={billing.name} onChange={handleBillingChange} />
                 </div>
               </div>
               <div className="form-control">
-                <label>Phone *</label>
+                <label>Phone Number *</label>
                 <div className="input-wrapper">
-                  <span className="icon">📞</span>
-                  <input type="tel" name="phone" placeholder="Phone" value={billing.phone} onChange={handleBillingChange} />
+                  <input type="tel" name="phone" placeholder="Your phone number" value={billing.phone} onChange={handleBillingChange} />
                 </div>
               </div>
               <div className="form-control">
-                <label>Address</label>
+                <label>Email Address (optional)</label>
                 <div className="input-wrapper">
-                  <span className="icon">📍</span>
-                  <input type="text" name="address" placeholder="Address" value={billing.address} onChange={handleBillingChange} />
+                  <input type="email" name="email" placeholder="Your email address" value={billing.email} onChange={handleBillingChange} />
                 </div>
               </div>
               <div className="form-control">
-                <label>Note (optional)</label>
+                <label>Full Delivery Address*</label>
                 <div className="input-wrapper">
-                  <span className="icon">📝</span>
-                  <input type="text" name="note" placeholder="Note" value={billing.note} onChange={handleBillingChange} />
+                  <input type="text" name="address" placeholder="House/Flat, Road, Area, Thana/Upazila, District" value={billing.address} onChange={handleBillingChange} />
+                </div>
+              </div>
+              <div className="form-control">
+                <label>Order Note (optional)</label>
+                <div className="input-wrapper">
+                  <input type="text" name="note" placeholder="Special notes for order & delivery" value={billing.note} onChange={handleBillingChange} />
                 </div>
               </div>
 
@@ -282,7 +289,7 @@ const BuyNowPopupCheckout = ({
                   <tr>
                     <td><img src={product.images[0]?.src} alt={product.name} width="70" /></td>
                     <td>{product.name}{size && ` (Size: ${size})`} × {qty}</td>
-                    <td>৳{(Number(finalPrice) || checkprice) * qty}</td>
+                    <td>৳{(Number(finalPrice) || checkprice) * qty} <del>৳{regularPrice}</del></td>
                   </tr>
                   {fbtProducts.map((p) => {
                     if (!fbtSelected[p.id]) return null;
@@ -300,7 +307,7 @@ const BuyNowPopupCheckout = ({
               <div className="promo-code">
                 <input
                   type="text"
-                  placeholder="Promo Code"
+                  placeholder="Enter coupon code"
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value)}
                 />
@@ -327,7 +334,7 @@ const BuyNowPopupCheckout = ({
                 {promoMessage && <p>{promoMessage}</p>}
               </div>
               <div className="shipping-methods">
-                <h3>Shipping Method</h3>
+                <h3>Delivery Area</h3>
                 <label className={shipping.method === "inside_dhaka" ? "active" : ""}>
                   <input 
                     type="radio" 
@@ -336,7 +343,7 @@ const BuyNowPopupCheckout = ({
                     checked={shipping.method === "inside_dhaka"} 
                     onChange={handleShippingChange} 
                   />
-                  <span>ঢাকার ভিতরে – ৳70</span>
+                  <span>Inside Dhaka City – ৳80</span>
                 </label>
                 
                 <label className={shipping.method === "outside_dhaka" ? "active" : ""}>
@@ -347,13 +354,13 @@ const BuyNowPopupCheckout = ({
                     checked={shipping.method === "outside_dhaka"} 
                     onChange={handleShippingChange} 
                   />
-                  <span>ঢাকার বাহিরে – ৳120</span>
+                  <span>Outside Dhaka City – ৳150</span>
                 </label>
               </div>
 
               {/* Order Summary */}
               <div className="checkout-order-review">
-                <h3>Your Order</h3>
+                <h3>Order Summary</h3>
                 <table className="shop_table">
                   <tbody>
                     {discountAmount > 0 && (
@@ -389,9 +396,15 @@ const BuyNowPopupCheckout = ({
                   </label>
                 ))}
               </div>
-
+              <div className="terms-container">
+                <div className="terms-wrapper">
+                  <label htmlFor="terms" className="terms-label">
+                    By clicking Confirm Order, you agree to our <Link to="/delivery-policy" className="link">delivery policy</Link> and <Link to="/returns-refunds" className="link">returns & refunds policy</Link>.
+                  </label>
+                </div>
+              </div>
               <button type="button" className="place-order-btn" onClick={placeOrder} disabled={loading}>
-                {loading ? "Placing Order..." : "Place Order"}
+                {loading ? "Placing Order..." : "Confirm Order - ৳" + total.toFixed(0)}
               </button>
               {orderStatus && <p>{orderStatus}</p>}
             </div>

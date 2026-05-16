@@ -12,74 +12,66 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem("cartItems", JSON.stringify(cartItems));
   }, [cartItems]);
 
-  // 🔥 Smart WooCommerce Price Resolver
-  const resolvePrice = (product, variation = null) => {
-    const source = variation || product;
-
-    if (source?.prices) {
-      const {
-        price,
-        sale_price,
-        regular_price,
-        currency_minor_unit,
-      } = source.prices;
-
-      const divisor = Math.pow(10, currency_minor_unit || 2);
-
-      if (sale_price && Number(sale_price) > 0)
-        return Number(sale_price) / divisor;
-
-      if (regular_price && Number(regular_price) > 0)
-        return Number(regular_price) / divisor;
-
-      if (price && Number(price) > 0)
-        return Number(price) / divisor;
-    }
-
-    if (source?.price) {
-      return Number(source.price);
-    }
-
-    return 0;
-  };
-
+  /**
+   * addToCart: Product o Variation er upor ভিত্তি kore cart-e item add kore.
+   * Ekhane Regular Price ebong Sale Price dui-i handle kora hoyeche.
+   */
   const addToCart = (product, qty = 1, selectedVariation = null) => {
     const safeQty = Math.max(1, Number(qty) || 1);
-    const finalPrice = resolvePrice(product, selectedVariation);
-
     const variationId = selectedVariation?.id || null;
-    const size =
-      selectedVariation?.attributes?.find(
-        (attr) =>
-          attr.name.toLowerCase() === "size" ||
-          attr.slug === "pa_size"
-      )?.option || null;
+    
+    // --- Price Logic ---
+    const source = selectedVariation || product;
+    let finalPrice = 0;
+    let regPrice = 0;
+    let slPrice = null;
 
-    // 🔑 Unique cart ID (product + variation)
-    const cartId = variationId ? `${product.id}-${variationId}` : `${product.id}`;
+    if (source?.prices) {
+      // WooCommerce Store API structure handle korar jonno
+      const { price, sale_price, regular_price, currency_minor_unit } = source.prices;
+      const divisor = Math.pow(10, currency_minor_unit || 2);
+
+      regPrice = Number(regular_price) / divisor;
+      slPrice = sale_price ? Number(sale_price) / divisor : null;
+      finalPrice = Number(price) / divisor;
+    } else {
+      // Fallback: Jodi structure simple hoy (Standard REST API)
+      regPrice = Number(source.regular_price || source.price || 0);
+      slPrice = source.sale_price ? Number(source.sale_price) : null;
+      finalPrice = slPrice && slPrice > 0 ? slPrice : regPrice;
+    }
+
+    
+    // Size attribute khuje ber kora
+    const size = product.size || selectedVariation?.attributes?.find(
+      (attr) => attr.name.toLowerCase() === "size" || attr.slug === "pa_size"
+    )?.option || null;
+
+    // Unique Cart ID (Product ID + Variation ID combination)
+    const cartId = variationId 
+    ? `${product.id}-${variationId}` 
+    : (product.size ? `${product.id}-${product.size}` : `${product.id}`);
 
     const standardizedProduct = {
       cartId,
       productId: product.id,
       variationId,
       name: product.name,
-      size,
+      size, // Ekhon eita pathano size-ta pabe
       price: finalPrice,
-      image: product.images?.[0]?.src || "",
+      regularPrice: regPrice,
+      salePrice: slPrice,
+      image: product.images?.[0]?.src || product.image || "", // product.image fallback add kora hoyeche
       qty: safeQty,
     };
 
     setCartItems((prev) => {
       const existing = prev.find((item) => item.cartId === cartId);
-
       if (existing) {
         return prev.map((item) =>
-          item.cartId === cartId
-            ? { ...item, qty: item.qty + safeQty }
-            : item
+          item.cartId === cartId ? { ...item, qty: item.qty + safeQty } : item
         );
       }
-
       return [...prev, standardizedProduct];
     });
   };
@@ -101,10 +93,7 @@ export const CartProvider = ({ children }) => {
   const clearCart = () => setCartItems([]);
 
   const isInCart = (productId, variationId = null) => {
-    const cartId = variationId
-      ? `${productId}-${variationId}`
-      : `${productId}`;
-
+    const cartId = variationId ? `${productId}-${variationId}` : `${productId}`;
     return cartItems.some((item) => item.cartId === cartId);
   };
 

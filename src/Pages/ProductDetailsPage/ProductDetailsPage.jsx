@@ -1,12 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { wcApiV3 } from "../../api/woocommerce";
 import { useCart } from "../../context/CartContext";
 import BuyNowPopupCheckout from "../../components/BuyNowPopupCheckout/BuyNowPopupCheckout";
 import config from "../../config";
-import Slider from "react-slick";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
 import FrequentlyBoughtTogether from "./FBT/fbtProductList";
 import RecentlyViewedProducts from "./RecentlyViewedProducts/RecentlyViewedProducts";
 import "./ProductDetailsPage.css";
@@ -14,7 +11,14 @@ import SalesPopup from "../../components/SalesPopup/SalesPopup";
 import { AnimatePresence, motion } from "framer-motion";
 import { getProductById } from "../../api/products";
 import QuickViewModal from "../../components/QuickViewModal/QuickViewModal";
-
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+const getSafeImage = (src) => {
+    return typeof src === "string" && src.trim() !== ""
+        ? src
+        : undefined;
+};
 
 const ProductDetailsPage = () => {
     const { slug } = useParams();
@@ -41,6 +45,21 @@ const ProductDetailsPage = () => {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
 
+    const mainSliderRef = useRef(null);
+    const thumbSliderRef = useRef(null);
+    const [activeIndex, setActiveIndex] = useState(0);
+
+    // থাম্বনেইলে ক্লিক করলে বড় ইমেজ এবং স্লাইডার দুইটাই চেঞ্জ হবে
+    const handleThumbClick = (index) => {
+        setActiveIndex(index);
+        if (mainSliderRef.current) {
+            mainSliderRef.current.slickGoTo(index);
+        }
+        if (thumbSliderRef.current) {
+            thumbSliderRef.current.slickGoTo(index);
+        }
+    };
+
     const toggleAccordion = () => {
         setIsOpen(!isOpen);
     };
@@ -51,6 +70,13 @@ const ProductDetailsPage = () => {
         
         const cartIcon = document.getElementById('cart-icon');
         const productImage = mainImageRef.current;
+
+        console.log("Adding to cart:", cartIcon);
+
+        if (product.type === "variable" && !selectedVariation) {
+            alert("Please select a size");
+            return;
+        }
 
         if (cartIcon && productImage) {
             const startRect = productImage.getBoundingClientRect();
@@ -98,7 +124,15 @@ const ProductDetailsPage = () => {
     };
     const goToProduct = (permalink) => {
         const slug = getSlugFromPermalink(permalink);
+
         if (!slug) return;
+
+        // Instant scroll top
+        window.scrollTo({
+            top: 0,
+            behavior: "instant"
+        });
+
         navigate(`/product/${slug}`);
     };
 
@@ -108,34 +142,82 @@ const ProductDetailsPage = () => {
 
     useEffect(() => {
         let isMounted = true;
+
         const fetchProduct = async () => {
             try {
-                const res = await wcApiV3.get("/products", { params: { slug } });
+                // Reset state instantly
+                setLoading(true);
+                setProduct(null);
+                setSelectedVariation(null);
+                setSelectedSize(null);
+                setVariations([]);
+                setRelatedProducts([]);
+                setActiveImage("");
+
+                // STEP 1: Fetch Product First
+                const productRes = await wcApiV3.get("/products", {
+                    params: { slug }
+                });
+
                 if (!isMounted) return;
-                const p = res.data[0];
+
+                const p = productRes.data[0];
+
+                if (!p) {
+                    setLoading(false);
+                    return;
+                }
+
                 setProduct(p);
-                setActiveImage(p.images[0]?.src);
+                setActiveImage(getSafeImage(p?.images?.[0]?.src) || "");
 
-                if (p.categories && p.categories.length > 0) {
-                    const categoryId = p.categories[0].id;
-                    const relatedRes = await wcApiV3.get("/products", { params: { category: categoryId, per_page: 8 } });
-                    setRelatedProducts(relatedRes.data.filter(item => item.id !== p.id).slice(0,4));
-                }
+                // STEP 2: Parallel API Calls
+                const relatedPromise =
+                    p.categories?.length > 0
+                        ? wcApiV3.get("/products", {
+                            params: {
+                                category: p.categories[0].id,
+                                per_page: 8,
+                            },
+                        })
+                        : Promise.resolve({ data: [] });
 
-                if (p.type === "variable") {
-                    const variationRes = await wcApiV3.get(`/products/${p.id}/variations`);
-                    setVariations(variationRes.data);
-                }
+                const variationPromise =
+                    p.type === "variable"
+                        ? wcApiV3.get(`/products/${p.id}/variations`)
+                        : Promise.resolve({ data: [] });
 
-                setLoading(false);
+                const [relatedRes, variationRes] = await Promise.all([
+                    relatedPromise,
+                    variationPromise,
+                ]);
+
+                if (!isMounted) return;
+
+                // Related Products
+                setRelatedProducts(
+                    relatedRes.data
+                        .filter((item) => item.id !== p.id)
+                        .slice(0, 4)
+                );
+
+                // Variations
+                setVariations(variationRes.data);
+
             } catch (err) {
                 console.error("Product fetch error:", err);
-                setLoading(false);
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchProduct();
-        return () => { isMounted = false; };
+
+        return () => {
+            isMounted = false;
+        };
     }, [slug]);
 
     useEffect(() => {
@@ -237,26 +319,40 @@ const ProductDetailsPage = () => {
         }
     };
     
-    const sizeAttribute = product?.attributes?.find(attr => attr.slug === "pa_size" || attr.name.toLowerCase() === "size");
+    const sizeAttribute = product?.attributes?.find(
+    attr =>
+        attr.slug === "pa_size" ||
+        attr?.name?.toLowerCase() === "size"
+    );
 
-    if (loading) {
-        return (
-        <div className="full-page-loader">
-            <div className="spinner"></div>
-            <p>Loading...</p>
-        </div>
-        );
-    }
 
-    const regularPrice = parseInt(product.custom_price_data.regular_price);
-    const salePrice = parseInt(product.custom_price_data.sale_price);
+
+    const regularPrice = parseInt(product?.custom_price_data?.regular_price || product?.regular_price || 0);
+    const salePrice = parseInt(product?.custom_price_data?.sale_price || product?.sale_price || 0);
     const isSale = salePrice < regularPrice;
     const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
+    const decodeHtml = (html) => {
+        const txt = document.createElement("textarea");
+        txt.innerHTML = html;
+        return txt.value;
+    };
+
+    // if (loading) {
+    //     return (
+    //     <div className="full-page-loader">
+    //         <div className="spinner"></div>
+    //         <p>Loading...</p>
+    //     </div>
+    //     );
+    // }
 
     return (
         <>
             {loading || !product ? (
-                <div>Loading...</div>
+                <div className="full-page-loader">
+                    <div className="spinner"></div>
+                    <p>Loading...</p>
+                </div>
             ) : (
             <div className="product-single-page">
                 <div id="custom-header">
@@ -267,7 +363,8 @@ const ProductDetailsPage = () => {
                                     <ul className="trail-items">
                                     <li className="trail-item trail-begin"><a href="/" rel="home"><span>Home</span></a></li>
                                     <li className="trail-item"><span>Shop</span></li>
-                                        <li className="trail-item trail-end"><span>{product.name}</span></li>
+                                        <li className="trail-item trail-end desktop-view"><span>{product.name}</span></li>
+                                        <li className="trail-item trail-end mobile-view"><span>{product?.name?.length > 30 ? product.name.substring(0, 30) + "..." : product?.name}</span></li>
                                     </ul>
                                 </div> 
                             </div> 
@@ -275,7 +372,7 @@ const ProductDetailsPage = () => {
                     </div>
                 </div>
 
-                <div id="content" className="site-content global-layout-right-sidebar">
+                <div id="content" className="site-content global-layout-right-sidebar single-product-layout">
                     <div className="container">
                         <div className="inner-wrapper">
                             <div id="primary" className="content-area">
@@ -286,62 +383,87 @@ const ProductDetailsPage = () => {
                                                 <div className="single-thumb-detail">
                                                     <div className="single-main-thumb">
                                                         <div className="single-thumb">
-                                                            {isSale && (
-                                                                <>
-                                                                    <span className="ribbon-offered">{savePercent}% Off</span>
-                                                                    <span className="ribbon-save">Offered items</span>
-                                                                </>
-                                                            )}
-                                                            <img 
-                                                                ref={mainImageRef} 
-                                                                src={activeImage} 
-                                                                alt="product" 
-                                                            />
-                                                            {isOutOfStock && (
-                                                                <span className="ribbon-rotated onsale">Out of Stock</span>
-                                                            )}
+                                                        {isSale && (
+                                                            <>
+                                                            <span className="ribbon-offered">{savePercent}% Off</span>
+                                                            <span className="ribbon-save">Offered items</span>
+                                                            </>
+                                                        )}
+                                                        <Slider
+                                                            ref={mainSliderRef}
+                                                            asNavFor={thumbSliderRef.current || undefined}
+                                                            arrows={false}
+                                                            fade={true}
+                                                            afterChange={(index) => setActiveIndex(index)}
+                                                        >
+                                                            {(product?.images || []).map((img, index) => (
+                                                                <div key={img?.id || index}>
+                                                                    <img
+                                                                        ref={index === activeIndex ? mainImageRef : null}
+                                                                        src={getSafeImage(img?.src)}
+                                                                        width="100%"
+                                                                        alt={product?.name || "product"}
+                                                                        className="single-product-image"
+                                                                        style={{ cursor: "grab" }}
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                        </Slider>
+                                                        {isOutOfStock && (
+                                                            <span className="ribbon-rotated onsale">Out of Stock</span>
+                                                        )}
                                                         </div>
                                                     </div>
+
                                                     <div className="pager-thumbnail">
                                                         <Slider
-                                                            dots={false}
+                                                            ref={thumbSliderRef}
+                                                            asNavFor={mainSliderRef.current || undefined}
+                                                            slidesToShow={5}
+                                                            swipeToSlide={true}
+                                                            focusOnSelect={true}
                                                             arrows={false}
                                                             infinite={false}
-                                                            slidesToShow={5}
-                                                            slidesToScroll={1}
-                                                            swipeToSlide={true}
                                                             responsive={[
-                                                                { breakpoint: 768, settings: { slidesToShow: 3 } },
-                                                                { breakpoint: 480, settings: { slidesToShow: 2 } },
+                                                                { breakpoint: 768, settings: { slidesToShow: 5 } },
+                                                                { breakpoint: 480, settings: { slidesToShow: 5 } }
                                                             ]}
                                                         >
-                                                            {product.images.map((img) => (
-                                                                <div key={img.id} onClick={() => setActiveImage(img.src)}>
-                                                                    <img 
-                                                                        src={img.src} 
+                                                            {(product?.images || []).map((img, index) => (
+                                                                <div
+                                                                    key={img?.id || index}
+                                                                    onClick={() => handleThumbClick(index)}
+                                                                >
+                                                                    <img
+                                                                        src={getSafeImage(img?.src)}
+                                                                        alt="thumb"
                                                                         style={{
-                                                                            width: "110px",
-                                                                            height: "110px",
+                                                                            width: "100px",
+                                                                            height: "100px",
                                                                             objectFit: "cover",
-                                                                            opacity: activeImage === img.src ? 1 : 0.7,
+                                                                            margin: "5px auto",
+                                                                            borderRadius: "4px",
+                                                                            border: "1px solid #eee",
+                                                                            opacity: activeIndex === index ? 1 : 0.6,
                                                                             cursor: "pointer",
-                                                                            margin: "0 auto",
+                                                                            transition: "0.3s"
                                                                         }}
-                                                                        alt="thumb" 
                                                                     />
                                                                 </div>
                                                             ))}
                                                         </Slider>
                                                     </div>
                                                 </div>
-                                                <FrequentlyBoughtTogether
-                                                    productId={product.id}
-                                                    onChange={(products, selected, selectedSize) => {
-                                                        setFbtProducts(products);
-                                                        setFbtSelected(selected);
-                                                        setFbtSelectedSize(selectedSize); 
-                                                    }}
-                                                />
+                                                <div className="fbt-desktop">
+                                                    <FrequentlyBoughtTogether
+                                                        productId={product.id}
+                                                        onChange={(products, selected, selectedSize) => {
+                                                            setFbtProducts(products);
+                                                            setFbtSelected(selected);
+                                                            setFbtSelectedSize(selectedSize); 
+                                                        }}
+                                                    />
+                                                </div>
                                             </div>
                                             <div className="col-grid-6">
                                                 <div className="summary entry-summary">
@@ -349,7 +471,7 @@ const ProductDetailsPage = () => {
                                                         <h2 className="product-title">{product.name}</h2>
                                                         <div className="product-price-container">
                                                             {isSale && <span className="sale-price">৳{salePrice.toFixed(0)}</span>}
-                                                            {isSale && <del className="regular-price">৳{salePrice.toFixed(0)}</del>}
+                                                            {isSale && <del className="regular-price">৳{regularPrice.toFixed(0)}</del>}
                                                             {isSale && <span className="save-amount"> Save ৳{((regularPrice - salePrice)).toFixed(0)}</span>}
                                                             {!isSale && <span className="regular-price sale-price">৳{regularPrice.toFixed(0)}</span>}
                                                         </div>
@@ -360,26 +482,13 @@ const ProductDetailsPage = () => {
                                                             />
                                                         )}
                                                     </div>
-
                                                     <div className="availability">
-                                                        <i className="fas fa-check-circle" />
-                                                        {product.stock_status === "instock" ? (
-                                                            <span>In Stock</span>
-                                                        ) : (
-                                                            <span>Out of Stock</span>
-                                                        )}
+                                                        <span>Select Size: {selectedSize}</span>
                                                     </div>
-
-                                                    {selectedSize && (
-                                                        <div style={{ marginBottom: "10px", fontWeight: "500" }}>
-                                                            SIZE: {selectedSize}
-                                                        </div>
-                                                    )}
-
                                                     {sizeAttribute && (
                                                         <div className="quick-filter filter-by-size">
                                                             <div className="filter-size-container">
-                                                                {sizeAttribute.options.map((size) => {
+                                                                {(sizeAttribute?.options || []).map((size) => {
                                                                     const available = isSizeAvailable(size);
                                                                     return (
                                                                         <button
@@ -399,7 +508,6 @@ const ProductDetailsPage = () => {
                                                             </div>
                                                         </div>
                                                     )}
-
                                                     <form className="single-cart">
                                                         <div className="quantity-selector">
                                                             <button 
@@ -455,23 +563,24 @@ const ProductDetailsPage = () => {
                                                     <div className={`policy-accordion ${isOpen ? 'active' : ''}`}>
                                                         <div className="accordion-header" onClick={toggleAccordion} style={{ cursor: 'pointer' }}>
                                                             <div className="terms-box">
-                                                                <span className="check-icon">🕒</span>
-                                                                <strong>Tell us within 7 days</strong>
+                                                                <span className="check-icon"><img src="/icons/Exchange.svg" alt="return" /></span>
+                                                                <strong>Easy Return & Exchange</strong>
                                                             </div>
                                                             <div className="terms-box">
-                                                                <span className="check-icon">🚚</span>
-                                                                <strong>Free return shipping</strong>
+                                                                <span className="check-icon"><img src="/icons/Fast-Delivery.svg" alt="Fast Delivery" /></span>
+                                                                <strong>Fast Home Delivery</strong>
                                                             </div>
                                                             <div className="terms-box">
-                                                                <span className="check-icon">💳</span>
-                                                                <strong>Instant refund on receipt</strong>
+                                                                <span className="check-icon"><img src="/icons/Quality.svg" alt="Quality" /></span>
+                                                                <strong>Best Quality</strong>
                                                             </div>
-                                                            <span className={`arrow-down ${isOpen ? 'rotate' : ''}`}>▼</span>
+                                                            {/* <span className={`arrow-down ${isOpen ? 'rotate' : ''}`}>▼</span> */}
                                                         </div>
                                                         {isOpen && (
                                                             <div className="accordion-content">
                                                                 <div className="policy-details">
-                                                                    <p>Your satisfaction is our priority. If something isn't right with your order, returning it is simple.</p>
+                                                                    orlazz
+                                                                    {/* <p>Your satisfaction is our priority. If something isn't right with your order, returning it is simple.</p>
                                                                     
                                                                     <h4>Return Window</h4>
                                                                     <p>Request a return within <strong>7 days</strong> of receiving your order.</p>
@@ -486,19 +595,33 @@ const ProductDetailsPage = () => {
                                                                         <li>We'll arrange pickup for eligible returns</li>
                                                                     </ul>
                                                                     
-                                                                    <a href="/" className="view-policy-link">View Full Return & Refund Policy</a>
+                                                                    <a href="/" className="view-policy-link">View Full Return & Refund Policy</a> */}
                                                                 </div>
                                                             </div>
                                                         )}
                                                     </div>
+                                                    <div className="product_meta">
+                                                        <span className="sku_wrapper">SKU: <span className="sku">{product.sku}</span></span>    
+                                                    </div>
                                                     <div className="product-description-text">
-                                                        <p>Fabrilife Men's Premium Quality T-shirt offers a smoother, silky feel and a more structured, mid-weight fit than regular t-shirts. Made with the finest quality Combed Compact Cotton, it features an astonishing ~175 GSM on just 26's cotton, providing a smooth and compact construction.</p>
-                                                        <p>The compact finish guarantees that the t-shirt's length and width will not change over washes or months of usage.</p>
-                                                        <p><strong>Color:</strong> White</p>
-                                                        <p><strong>Detailed Specification:</strong></p>
+                                                        {product.description && (
+                                                            <div
+                                                                className="product-short-description"
+                                                                dangerouslySetInnerHTML={{ __html: product.description }}
+                                                            />
+                                                        )}
                                                     </div>
                                                 </div>
-
+                                                <div className="fbt-mobile">
+                                                    <FrequentlyBoughtTogether
+                                                        productId={product.id}
+                                                        onChange={(products, selected, selectedSize) => {
+                                                            setFbtProducts(products);
+                                                            setFbtSelected(selected);
+                                                            setFbtSelectedSize(selectedSize); 
+                                                        }}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -507,74 +630,89 @@ const ProductDetailsPage = () => {
                                         {relatedProducts && relatedProducts.length > 0 && (
                                             <div className="underline-title-section-title-wrap">
                                                 <div className="title-left">
-                                                    <h2>Related Product</h2>
+                                                    <h2>Related Products</h2>
                                                     <div className="title-underline"></div>
                                                 </div>
                                             </div>
                                         )}
-                                        <div className="inner-wrapper">
-                                            <div className="products-inner-wrapper clear-fix section-carousel-enabled byapr-carousel">
-                                                {relatedProducts.map((item) => {
-                                                    const regularPrice = parseInt(item.custom_price_data.regular_price);
-                                                    const salePrice = parseInt(item.custom_price_data.sale_price);
-                                                    const isSale = salePrice < regularPrice;
-                                                    const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
-                                                    return(
-                                                        <div key={item.id} className="product-item col-grid-3">
-                                                            <div className="product-item-wrapper zoom-effect-hover-container">
-                                                                <div className="product-thumb zoom-effect">
-                                                                    {isSale && (
+
+                                        <div className="products-grid-container">
+                                            {relatedProducts.map((item) => {
+                                                const regularPrice = parseInt(
+                                                    item?.custom_price_data?.regular_price || item?.regular_price || 0
+                                                );
+
+                                                const salePrice = parseInt(
+                                                    item?.custom_price_data?.sale_price || item?.sale_price || 0
+                                                );
+                                                const isSale = salePrice < regularPrice;
+                                                const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
+
+                                                return (
+                                                    <div key={item.id} className="custom-product-card">
+                                                        <div className="product-card-inner" onClick={() => goToProduct(item.permalink)}>
+                                                            {/* Thumbnail */}
+                                                            <div className="product-image-box">
+                                                                {isSale && savePercent > 0 && (
+                                                                    <div className="badge-wrap">
+                                                                        <span className="ribbon-offered">{savePercent}% Off</span>
+                                                                        <span className="ribbon-save">Offered items</span>
+                                                                    </div>
+                                                                )}
+                                                                <img
+                                                                    alt={item?.name || ""}
+                                                                    src={getSafeImage(item?.images?.[0]?.src)}
+                                                                />
+                                                                {isOutOfStock && <span className="ribbon-out-stock">Out of Stock</span>}
+                                                            </div>
+
+                                                            {/* Details */}
+                                                            <div className="product-info">
+                                                                <h3 className="product-title product-title-desktop">
+                                                                    {decodeHtml((item?.name || "").length > 60 ? item.name.substring(0, 60) + "..." : item.name)}
+                                                                </h3>
+                                                                <h3 className="product-title product-title-mobile">
+                                                                    {decodeHtml((item?.name || "").length > 40 ? item.name.substring(0, 40) + "..." : item.name)}
+                                                                </h3>
+                                                                <div className="product-price">
+                                                                    {isSale ? (
                                                                         <>
-                                                                            <span className="ribbon-offered">{savePercent}% Off</span>
-                                                                            <span className="ribbon-save">Offered items</span>
+                                                                            <span className="price-new">৳{salePrice.toFixed(0)}</span>
+                                                                            <del className="price-old">৳{regularPrice.toFixed(0)}</del>
+                                                                            <div className="save-tag">Save ৳{(regularPrice - salePrice).toFixed(0)}</div>
                                                                         </>
+                                                                    ) : (
+                                                                        <span className="price-new">৳{regularPrice.toFixed(0)}</span>
                                                                     )}
-                                                                    <Link className="thumbnail" to={`/product/${item.slug}`}>
-                                                                        <img alt={item.name} src={item.images?.[0]?.src} />
-                                                                    </Link>
                                                                 </div>
-                                                                <div className="product-item-details">
-                                                                    <h3 className="product-title">
-                                                                        <Link to={`/product/${product.slug}`}>
-                                                                            {item.name.length > 45 
-                                                                            ? item.name.substring(0, 45) + "..." 
-                                                                            : item.name}
-                                                                        </Link>
-                                                                    </h3>
-                                                                    <div className="product-price-container">
-                                                                        {isSale && <span className="sale-price">৳{salePrice.toFixed(0)}</span>}
-                                                                        {isSale && <del className="regular-price">৳{regularPrice.toFixed(0)}</del>}
-                                                                        {isSale && <span className="save-amount"> Save ৳{((regularPrice - salePrice)).toFixed(0)}</span>}
-                                                                        {!isSale && <span className="regular-price sale-price">৳{regularPrice.toFixed(0)}</span>}
-                                                                    </div>
-                                                                    <div className="button-group">
-                                                                        <button 
-                                                                            className="btn-cart" 
-                                                                            disabled={quickLoading === item.id}
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation(); // 2. Eta card-er click event-ke thamay dibe
-                                                                                handleQuickView(item.id);
-                                                                            }}
-                                                                            >
-                                                                            {quickLoading === item.id ? (
-                                                                                <i className="fas fa-spinner fa-spin"></i> 
-                                                                            ) : (
-                                                                                <i className="fas fa-shopping-cart"></i> 
-                                                                            )}
-                                                                            CART
-                                                                        </button>
-                                                                        <button 
-                                                                            className="btn-buy-now" onClick={(e) => { e.stopPropagation(); 
-                                                                            goToProduct(product.permalink); }}>
-                                                                            Buy Now
-                                                                        </button>
-                                                                    </div>
+
+                                                                {/* Buttons */}
+                                                                <div className="card-button-group">
+                                                                    <button 
+                                                                        className="btn-cart" 
+                                                                        disabled={quickLoading === item.id}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation(); // 2. Eta card-er click event-ke thamay dibe
+                                                                            handleQuickView(item.id);
+                                                                        }}
+                                                                        >
+                                                                        {quickLoading === item.id ? (
+                                                                            <i className="fas fa-spinner fa-spin"></i> 
+                                                                        ) : (
+                                                                            <i className="fas fa-shopping-cart"></i> 
+                                                                        )}
+                                                                        CART
+                                                                    </button>
+                                                                    <button 
+                                                                        className="btn-buy-now" onClick={() => goToProduct(item.permalink)}>
+                                                                        Buy Now
+                                                                    </button>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                     <RecentlyViewedProducts />
@@ -588,12 +726,14 @@ const ProductDetailsPage = () => {
             <AnimatePresence>
                 {isFlying && (
                     <motion.img
-                        src={activeImage}
+                        src={getSafeImage(activeImage)}
                         initial={{ 
                             position: "fixed",
                             top: flyCoords.startY,
                             left: flyCoords.startX,
-                            width: mainImageRef.current?.offsetWidth || "400px", 
+                            width: mainImageRef.current
+                            ? `${mainImageRef.current.offsetWidth}px`
+                            : "400px",
                             height: mainImageRef.current?.offsetHeight || "auto",
                             zIndex: 99999,
                             borderRadius: "10px",

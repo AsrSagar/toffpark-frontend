@@ -23,6 +23,10 @@ const NavBar = () => {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null); // top-level open
   const [activeSubMenu, setActiveSubMenu] = useState(null); // nested submenu open
+
+  // Desktop check state
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
+
   const toggleMenu = () => setMobileMenu(!mobileMenu);
   const closeMenu = () => setMobileMenu(false);
 
@@ -33,6 +37,15 @@ const NavBar = () => {
       setActiveSubMenu(activeSubMenu === id ? null : id);
     }
   };
+
+  // Resize Listener to update isDesktop state
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth > 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     axios
@@ -221,8 +234,6 @@ const NavBar = () => {
     setCartOpen(true); 
   };
 
-  console.log(searchResults);
-
   return (
     <>
     <header 
@@ -245,7 +256,7 @@ const NavBar = () => {
             <h1 className="site-title">
               <Link to="/" rel="home">
                 <img
-                  src="https://toffpark.com/wp-content/uploads/2021/08/Toffpark-Logo-Black-1.png"
+                  src="/images/logo-black.png"
                   alt="logo"
                   className="site-logo"
                 />
@@ -321,7 +332,6 @@ const NavBar = () => {
 
           {showSearch && (
             <div className="mobile-search-box">
-
               <input
                 type="text"
                 placeholder="Search Products"
@@ -359,10 +369,8 @@ const NavBar = () => {
                           alt={product.name}
                           width="40"
                         />
-
                         <div className="search-product-info">
                           <p>{product.name} sad</p>
-
                           <div className="product-price-container">
                             {isSale && <span className="sale-price">৳{(salePrice / 100).toFixed(0)}</span>}
                             {isSale && <del className="regular-price">৳{(regularPrice / 100).toFixed(0)}</del>}
@@ -424,14 +432,17 @@ const NavBar = () => {
       </div>
       {renderMobileSubMenu(menuItems)}
     </div>
-    <div className="floating-cart" onClick={toggleMiniCart} id="cart-icon">
-      <div className="cart-icon-box">
-        <span className="cart-icon">🛒</span> <span className="item-count">{cartItems.length} Items</span>
+    {isDesktop && (
+      <div className="floating-cart" onClick={toggleMiniCart} id="cart-icon">
+        <div className="cart-icon-box">
+          <span className="cart-icon">🛒</span> 
+          <span className="item-count">{cartItems.length} Items</span>
+        </div>
+        <div className="cart-price">
+          ৳{subtotal.toFixed(0)}
+        </div>
       </div>
-      <div className="cart-price">
-        ৳{`${subtotal.toFixed(0)}`}
-      </div>
-    </div>
+    )}
     </>
   );
 };

@@ -27,12 +27,19 @@ const CategoryProducts = () => {
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const PER_PAGE = 16;
+  const PER_PAGE = 32;
 
+  // ক্যাটাগরি স্ল্যাগ বের করা
   const categoryPath = location.pathname.replace("/product-category/", "").replace(/\/$/, "");
   const slug = categoryPath.split("/").pop();
 
-  // ১. ডিবউন্সড সার্চ (useMemo ব্যবহার করা হয়েছে ESLint warning এড়াতে)
+  // ১. সল্যুশন: যখনই ক্যাটাগরি (slug) চেঞ্জ হবে, পেজ নাম্বার ১-এ রিসেট হবে
+  useEffect(() => {
+    setCurrentPage(1);
+    setSearchInput(""); 
+    setSearchQuery("");
+  }, [slug]);
+
   const delayedSearch = useMemo(
     () =>
       debounce((value) => {
@@ -65,7 +72,7 @@ const CategoryProducts = () => {
   };
 
   useEffect(() => {
-    fetch(`${API_URL}/wc/store/v1/products/categories?per_page=100`)
+    fetch(`${API_URL}/wc/store/v1/products/categories?per_page=32`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -75,6 +82,19 @@ const CategoryProducts = () => {
       })
       .catch(err => console.error("Categories Fetch Error:", err));
   }, [API_URL]);
+
+  const findCurrentCategoryDetails = (categories, currentSlug) => {
+    for (let cat of categories) {
+      if (cat.slug === currentSlug) return { parent: cat, children: cat.children };
+      if (cat.children) {
+        const childMatch = cat.children.find(c => c.slug === currentSlug);
+        if (childMatch) return { parent: cat, children: cat.children };
+      }
+    }
+    return { parent: null, children: [] };
+  };
+
+  const { parent: currentParent, children: subCategories } = findCurrentCategoryDetails(allCategories, slug);
 
   const getSlugFromPermalink = (permalink) => {
     if (!permalink) return "";
@@ -116,7 +136,6 @@ const CategoryProducts = () => {
     }
   };
 
-  // প্রোডাক্টস ফেচ করার ইফেক্ট
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
@@ -187,34 +206,31 @@ const CategoryProducts = () => {
         </div>
       </div>
 
-      <div id="content" className="site-content">
+      <div id="content" className="site-content category-page-content">
         <div className="container">
           <div className="inner-wrapper product-category-layout">
             <aside id="secondary" className="widget-area category-sidebar">
-              <section className="widget widget-special-links">
-                <h2 className="widget-title">Special Offers</h2>
-                <ul>
-                  <li><Link to="/mega-deal">⚡ Mega Deal</Link></li>
-                  <li><Link to="/new-arrival">✨ New Arrival</Link></li>
-                  <li><Link to="/top-selling">🔥 Top Selling</Link></li>
-                </ul>
-              </section>
-              <section className="widget widget-categories-list">
-                <div className="widget-header">
-                  <h2 className="widget-title">Categories</h2>
-                  <button className="clear-filter" onClick={() => navigate('/shop')}>
-                    CLEAR ALL
-                  </button>
-                </div>
-                <div className="all-categories-wrapper">
-                  {allCategories.length > 0 ? (
-                    renderCategoryList(allCategories)
-                  ) : (
-                    <div className="loading-cats">Loading...</div>
-                  )}
-                </div>
-              </section>
+               <section className="widget widget-special-links">
+                  <h2 className="widget-title">Special Offers</h2>
+                  <ul>
+                    <li><Link to="/product-category/up-to-60-off/">Up To 60% Off</Link></li>
+                    <li><Link to="/product-category/new-arrivals/">New Arrival</Link></li>
+                    <li><Link to="/product-category/top-selling-items/">Top Selling</Link></li>
+                  </ul>
+               </section>
+               <section className="widget widget-categories-list">
+                 <div className="widget-header">
+                   <h2 className="widget-title">Categories</h2>
+                   <button className="clear-filter" onClick={() => navigate('/shop')}>
+                     CLEAR ALL
+                   </button>
+                 </div>
+                 <div className="all-categories-wrapper">
+                   {allCategories.length > 0 ? renderCategoryList(allCategories) : <div className="loading-cats">Loading...</div>}
+                 </div>
+               </section>
             </aside>
+
             <div id="primary" className="content-area category-content-area">
               <main id="main" className="site-main">
                 <div className="category-search-container">
@@ -231,24 +247,64 @@ const CategoryProducts = () => {
 
                 <div className="section-products">
                   <div className="pruduct-filter-row clear-fix">
-                    <div className="filter-row-box product-listing-filter">
-                      <div className="sort-by">
-                        <span className="sort-by-list">Sort by</span>
-                        <ul>
-                          <li><button className="sort-btn" onClick={()=>handleSort("popularity")}>Popularity</button></li>
-                          <li><button className="sort-btn" onClick={()=>handleSort("price_low")}>Price: Low to High</button></li>
-                          <li><button className="sort-btn" onClick={()=>handleSort("price_high")}>Price: High to Low</button></li>
-                        </ul>
+                    <div className="top-category-list">
+                      <div className="category-filter-container">
+                        <div className="parent-category-tabs">
+                          {allCategories.map(cat => (
+                            <button 
+                              key={cat.id} 
+                              className={`tab-btn ${currentParent?.slug === cat.slug ? 'active' : ''}`}
+                              onClick={() => navigate(`/product-category/${cat.slug}`)}
+                            >
+                              {cat.name}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="divider"></div>
+
+                        {subCategories.length > 0 && (
+                          <div className="sub-category-pills">
+                            {subCategories.map(sub => (
+                              <span 
+                                key={sub.id} 
+                                className={`pill ${slug === sub.slug ? 'active' : ''}`}
+                                onClick={() => navigate(`/product-category/${sub.slug}`)}
+                                style={{cursor: 'pointer'}}
+                              >
+                                {sub.name} <small>{sub.count}</small>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="active-filter-row">
+                          <div className="filter-tag">
+                            {slug.replace(/-/g, " ")} <i className="fas fa-times" onClick={() => navigate('/shop')}></i>
+                          </div>
+                          <button className="clear-btn" onClick={() => navigate('/shop')}>Clear</button>
+                        </div>
                       </div>
                     </div>
-                    
-                    <nav className="filter-row-box navigation pagination pull-right">
-                      <div className="nav-links">
-                        {currentPage > 1 && <span className="page-numbers" onClick={() => setCurrentPage(currentPage - 1)}>« Prev</span>}
-                        <span className="page-numbers current">{currentPage}</span>
-                        {currentPage < totalPages && <span className="page-numbers" onClick={() => setCurrentPage(currentPage + 1)}>Next »</span>}
+                    <div className="sort-by-container">
+                      <div className="filter-row-box product-listing-filter">
+                        <div className="sort-by">
+                          <span className="sort-by-list">Sort by</span>
+                          <ul>
+                            <li><button className="sort-btn" onClick={()=>handleSort("popularity")}>Popularity</button></li>
+                            <li><button className="sort-btn" onClick={()=>handleSort("price_low")}>Price: Low to High</button></li>
+                            <li><button className="sort-btn" onClick={()=>handleSort("price_high")}>Price: High to Low</button></li>
+                          </ul>
+                        </div>
                       </div>
-                    </nav>
+                      <nav className="filter-row-box navigation pagination pull-right">
+                        <div className="nav-links">
+                          {currentPage > 1 && <span className="page-numbers" onClick={() => setCurrentPage(currentPage - 1)}>« Prev</span>}
+                          <span className="page-numbers current">{currentPage}</span>
+                          {currentPage < totalPages && <span className="page-numbers" onClick={() => setCurrentPage(currentPage + 1)}>Next »</span>}
+                        </div>
+                      </nav>
+                    </div>
                   </div>
 
                   <div className="products-inner-wrapper clear-fix">
@@ -259,55 +315,81 @@ const CategoryProducts = () => {
                         <p>No products found in <strong>{slug}</strong> {searchQuery && `for "${searchQuery}"`}.</p>
                       </div>
                     ) : (
-                      <div className="products-grid-row clear-fix">
-                        {products.map((product) => {
-                          const regularPrice = parseInt(product.prices.regular_price);
-                          const salePrice = parseInt(product.prices.sale_price);
-
-                          return(
-                            <div key={product.id} className="product-item col-grid-3 top-space">
-                              <div className="product-item-wrapper" onClick={() => navigate(`/product/${product.slug}`)}>
-                                <div className="product-thumb">
-                                  <img alt={product.name} src={product.images[0]?.src} />
-                                  {!product.is_in_stock && <span className="ribbon-rotated onsale">Out of Stock</span>}
-                                </div>
-                                <div className="product-item-details">
-                                  <Link to={`/product/${product.slug}`}>
-                                    {product.name.length > 35 ? product.name.substring(0, 32) + "..." : product.name}
-                                  </Link>
-                                  <div className="product-price-container">
-                                    <span className="sale-price">৳{(salePrice / 100).toFixed(0)}</span>
-                                    {salePrice < regularPrice && <del className="regular-price">৳{(regularPrice / 100).toFixed(0)}</del>}
+                    <div className="products-grid-container category-products-wrapper">
+                      {products.map((product) => {
+                        const regularPrice = parseFloat(product.prices.regular_price || 0);
+                        const salePrice = parseFloat(product.prices.sale_price || 0);
+                        const isSale = product.on_sale && salePrice > 0 && regularPrice > salePrice;
+                        const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
+                        const isOutOfStock = product.stock_status === "outofstock";
+                        
+                        return(
+                          <div key={product.id} className="custom-product-card">
+                            <div className="product-card-inner" onClick={() => navigate(`/product/${product.slug}`)}>
+                              <div className="product-image-box">
+                                {isSale && savePercent > 0 && (
+                                  <div className="badge-wrap">
+                                    <span className="ribbon-offered">{savePercent}% Off</span>
+                                    <span className="ribbon-save">Offered items</span>
                                   </div>
-                                  <div className="button-group">
-                                  <button 
-                                    className="btn-cart" 
-                                    disabled={quickLoading === product.id}
-                                    onClick={(e) => {
-                                      e.stopPropagation(); // 2. Eta card-er click event-ke thamay dibe
-                                      handleQuickView(product.id);
-                                    }}
-                                    >
-                                      {quickLoading === product.id ? (
-                                        <i className="fas fa-spinner fa-spin"></i> 
-                                      ) : (
-                                        <i className="fas fa-shopping-cart"></i> 
-                                      )}
-                                      CART
-                                  </button>
-                                  <button 
-                                    className="btn-buy-now" onClick={(e) => { e.stopPropagation(); 
-                                    goToProduct(product.permalink); }}>
-                                      Buy Now
-                                  </button>
+                                )}
+                                <img alt={product.name} src={product.images[0]?.src || ""} />
+                                {isOutOfStock && <span className="ribbon-out-stock">Out of Stock</span>}
+                              </div>
+                              <div className="product-item-details">
+                                <h3 className="product-title product-title-desktop">
+                                  {product.name.length > 42 ? product.name.substring(0, 42) + "..." : product.name}
+                                </h3>
+                                <h3 className="product-title product-title-mobile">
+                                  {product.name.length > 35 ? product.name.substring(0, 35) + "..." : product.name}
+                                </h3>
+                                <div className="product-price">
+                                  {isSale ? (
+                                    <>
+                                      <span className="price-new">৳{(salePrice / 100).toFixed(0)}</span>
+                                      <del className="price-old">৳{(regularPrice / 100).toFixed(0)}</del>
+                                      <div className="save-tag">Save ৳{((regularPrice - salePrice) / 100).toFixed(0)}</div>
+                                    </>
+                                  ) : (
+                                    <span className="price-new">৳{(regularPrice / 100).toFixed(0)}</span>
+                                  )}
                                 </div>
-                                </div>
+                                <div className="button-group">
+                                <button 
+                                  className="btn-cart" 
+                                  disabled={quickLoading === product.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleQuickView(product.id);
+                                  }}
+                                  >
+                                    {quickLoading === product.id ? (
+                                      <i className="fas fa-spinner fa-spin"></i> 
+                                    ) : (
+                                      <i className="fas fa-shopping-cart"></i> 
+                                    )}
+                                    CART
+                                </button>
+                                <button 
+                                  className="btn-buy-now" onClick={(e) => { e.stopPropagation(); 
+                                  goToProduct(product.permalink); }}>
+                                    Buy Now
+                                </button>
+                              </div>
                               </div>
                             </div>
-                          )
-                        })}
-                      </div>
+                          </div>
+                        )
+                      })}
+                    </div>
                     )}
+                    <nav className="filter-row-box navigation pagination pull-left bottom-pagination">
+                      <div className="nav-links">
+                        {currentPage > 1 && <span className="page-numbers" onClick={() => setCurrentPage(currentPage - 1)}>« Prev</span>}
+                        <span className="page-numbers current">{currentPage}</span>
+                        {currentPage < totalPages && <span className="page-numbers" onClick={() => setCurrentPage(currentPage + 1)}>Next »</span>}
+                      </div>
+                    </nav>
                   </div>
                 </div>
               </main>
@@ -323,3 +405,6 @@ const CategoryProducts = () => {
 };
 
 export default CategoryProducts;
+
+
+

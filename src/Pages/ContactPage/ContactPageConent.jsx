@@ -1,25 +1,29 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 
 const ContactPageContent = () => {
 
-  const [loading, setLoading] = useState(true);
-  
   useEffect(() => {
-    const timer = setTimeout(() => {
-        setLoading(false);
-    }, 1500); 
+    window.scrollTo(0, 0);
+  }, []); 
 
-    return () => clearTimeout(timer);
-  }, []);
+  // const [loading, setLoading] = useState(true);
+  
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //       setLoading(false);
+  //   }, 1500); 
 
-  if (loading) {
-    return (
-      <div className="full-page-loader">
-        <div className="spinner"></div>
-        <p>Loading...</p>
-      </div>
-    );
-  }
+  //   return () => clearTimeout(timer);
+  // }, []);
+
+  // if (loading) {
+  //   return (
+  //     <div className="full-page-loader">
+  //       <div className="spinner"></div>
+  //       <p>Loading...</p>
+  //     </div>
+  //   );
+  // }
 
   return (
     <>
@@ -63,12 +67,17 @@ const ContactPageContent = () => {
                       {/* Map */}
                       <div className="col-grid-7">
                         <div className="contact-map">
+                          <div className="contact-information">
+                            <p>If you have any enquiries, complaints, ideas or general feedback please contact us. Orlazz</p>
+                            <p><strong>Phone: </strong><a href="tel:+8801811877477">+8801811877477</a></p>
+                            <p><strong>Email: </strong><a href="mailto:support@orlazz.com">support@orlazz.com</a></p>
+                          </div>
                           <div className="map-inner-wrapper">
                             <iframe
                               className="googlemap"
                               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3650.5199788479126!2d90.35467709999999!3d23.800102000000003!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755bf0671bfe0ef%3A0x7362043fa816f7e2!2sToffpark!5e0!3m2!1sen!2sbd!4v1772737837787!5m2!1sen!2sbd"
                               width="700"
-                              height="525"
+                              height="412"
                               loading="lazy"
                               title="Google Map"
                             />

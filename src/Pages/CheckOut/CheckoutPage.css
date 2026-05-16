@@ -118,7 +118,7 @@
 
 .product-billing-fields_field-wrapper {
   border: 1px solid #eee;
-  padding: 20px;
+  border-radius: 5px;
 }
 
 .order-summary-container {
@@ -141,7 +141,16 @@
   margin: 0;
   color: #1a1a1a;
 }
-
+.summary-header h3 {
+  font-size: 18px;
+  margin: 0;
+  color: #1a1a1a;
+  padding: 15px;
+  margin-left: 5px;
+  width: 50%;
+  float: left;
+  border-bottom: navajowhite;
+}
 .modify-btn {
   background: none;
   border: none;
@@ -150,7 +159,9 @@
   cursor: pointer;
   font-size: 14px;
 }
-
+.product-billing-fields_field-wrapper .form-row{
+  padding: 0px 20px !important;
+}
 .order-item-single {
   display: flex;
   gap: 15px;
@@ -239,28 +250,35 @@
 /* Order Summary Container */
 .order-summary-card {
     border: 1px solid #e5e7eb;
-    border-radius: 4px;
-    padding: 20px;
+    border-radius: 5px;
     margin-bottom: 15px;
 }
 
 .summary-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #e5e7eb;
-    padding-bottom: 12px;
+  display: inline-block;
+  width: 100%;
+  border-bottom: 1px solid #eee;
 }
-
+.mobile-edit-link {
+  margin-top: -45px;
+  margin-right: 20px;
+  width: 50%;
+  float: right;
+  display: block;
+  text-align: right;
+}
 .modify-btn {
-    background: none;
-    border: none;
-    color: #4b5563;
-    text-decoration: underline;
-    cursor: pointer;
-    font-size: 14px;
+  background: none;
+  border: none;
+  color: #4b5563;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
 }
-
+.order-items {
+  padding: 0 20px;
+  margin-top: -10px;
+}
 .item-row {
     display: flex;
     align-items: center;
@@ -270,10 +288,10 @@
 }
 
 .item-thumb img {
-    width: 60px;
-    height: 70px;
-    object-fit: cover;
-    border-radius: 4px;
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 5px;
 }
 
 .item-info h4 {
@@ -294,10 +312,10 @@
 }
 
 .old-price {
-    display: block;
-    color: #9ca3af;
-    font-size: 12px;
-    text-decoration: line-through;
+  display: block;
+  color: #888;
+  font-size: 14px;
+  text-decoration: line-through;
 }
 
 .new-price {
@@ -306,7 +324,7 @@
 }
 
 .pricing-details {
-    padding-top: 15px;
+  padding: 0px 20px;
 }
 
 .calc-row {
@@ -347,13 +365,13 @@
   display: flex;
   gap: 10px;
   margin-bottom: 0px;
-  margin-top: 20px;
+  padding: 20px;
 }
 .promo-section input {
   flex-grow: 1;
   border: 1px solid #e5e7eb;
   padding: 10px;
-  border-radius: 4px;
+  border-radius: 5px;
 }
 
 .promo-section button {
@@ -361,7 +379,7 @@
   color: white;
   padding: 0 20px;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
 }
 
 /* Payment Methods */
@@ -543,14 +561,18 @@
 
 /* Container styling */
 .payment-method-section {
-    margin-bottom: 25px;
+  margin-bottom: 25px;
+  border: 1px solid #eee;
+  padding: 20px;
+  border-radius: 5px;
 }
 
 .payment-method-section h3 {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 15px;
-    color: #333;
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  border-bottom: none;
+  padding: 0;
 }
 
 /* Base Card Style */
@@ -687,7 +709,6 @@
 
 .terms-label {
   font-size: 14px;
-  cursor: pointer;
   line-height: 1.4;
   user-select: none;
   margin-bottom: 0 !important;
@@ -695,6 +716,30 @@
 
 .terms-label .link {
   color: #1f2937;      /* Darker color links-er jonno */
-  text-decoration: underline;
+  text-decoration: none;
   font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .product-billing-fields_field-wrapper {
+    margin-bottom: 25px;
+  }
+  .item-thumb img {
+    width: 130px;
+  }
+  .summary-header h3 {
+    font-size: 16px;
+  }
+  .section-checkout h3, .checkout h3 {
+    font-size: 16px;
+  }
+  .checkout-billing{
+    padding: 0 !important;
+  }
+  .checkout-review{
+    padding: 0 !important;
+  }
+  .item-info h4 {
+    font-size: 14px;
+  }
 }

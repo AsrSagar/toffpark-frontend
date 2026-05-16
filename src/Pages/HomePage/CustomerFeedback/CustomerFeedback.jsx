@@ -16,8 +16,7 @@ const CustomerFeedback = () => {
     const { addToCart } = useCart();
     const [isFlying, setIsFlying] = useState(false);
     const [flyCoords, setFlyCoords] = useState({ startX: 0, startY: 0, endX: 0, endY: 0 });
-    
-    // একাধিক ইমেজের রেফারেন্স ট্র্যাক করার জন্য এটি ব্যবহার করা ভালো
+  
     const imageRefs = useRef({}); 
 
     const handleAddToCart = async () => {
@@ -68,11 +67,18 @@ const CustomerFeedback = () => {
 
     const handleAddWithAnimation = async (e) => {
       e.preventDefault();
-      
+
       const cartIcon = document.getElementById('cart-icon');
-      // প্রথম সিলেক্টেড ইমেজের রেফারেন্স নেয়া হচ্ছে এনিমেশনের জন্য
       const firstSelectedId = selectedIds[0];
       const productImageElement = imageRefs.current[firstSelectedId];
+
+      const sizeForThisProduct = selectedSize[selectedIds[0]];
+  
+      if (!sizeForThisProduct) {
+        alert(`Please select a size`);
+        setAddingToCart(false);
+        return;
+      }
 
       if (cartIcon && productImageElement) {
         const startRect = productImageElement.getBoundingClientRect();
@@ -103,6 +109,8 @@ const CustomerFeedback = () => {
                 
                 if (Array.isArray(data)) {
                     setProducts(data);
+                    // ডিফল্টভাবে সব প্রোডাক্ট সিলেক্ট করে রাখতে চাইলে নিচের লাইনটি ব্যবহার করতে পারেন
+                    // setSelectedIds(data.map(p => p.id));
                 }
                 setLoading(false);
             } catch (err) {
@@ -124,139 +132,144 @@ const CustomerFeedback = () => {
         .filter(p => selectedIds.includes(p.id))
         .reduce((sum, p) => sum + parseInt(p.custom_price_data?.sale_price || 0), 0);
 
-    if (loading) return <div className="loading">Loading Featured Combo...</div>;
-
     const flyingImage = products.find(p => selectedIds.includes(p.id))?.images[0]?.src || "/images/placeholder.png";
 
     return (
       <>
       <section className="main-combo-video-section">
         <div className="customer-heading-section">
-            <h2 className="feedback-title">CUSTOMERS FEEDBACK</h2>
+            <h2 className="feedback-title">Popular Bundle for Kids</h2>
             <p className="feedback-desc">
-                We're thrilled that you were satisfied with our products and services.
+              Parents usually choose these items together for their kids. Shop bundle now!
             </p>
         </div>
         <div className="custom-container">
-            <div className="flex-wrapper">
-                <div className="left-video-side">
-                    <div className="video-wrapper-custom">
-                        {!playVideo ? (
-                            <div className="video-box-custom" onClick={() => setPlayVideo(true)}>
-                                <img
-                                    src="/images/testimonials/Thumbnail-OVC-Nadia-2.jpg"
-                                    alt="Customer Feedback"
-                                    className="video-thumb-custom"
-                                    style={{ objectFit: "cover" }}
-                                />
-                                <div className="play-btn-custom">
-                                    <div className="play-icon-custom"></div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="iframe-container">
-                                <iframe
-                                    src="https://www.youtube.com/embed/Weh-dTfljgA?autoplay=1"
-                                    title="Customer Feedback"
-                                    frameBorder="0"
-                                    allow="autoplay; encrypted-media"
-                                    allowFullScreen
-                                    className="video-iframe-custom"
-                                ></iframe>
-                            </div>
-                        )}
-                    </div>
+            {loading ? (
+                <div className="fbt-main-loader">
+                    <div className="spinner-grow text-secondary" role="status"></div>
+                    <p>Loading Featured Combo & Reviews...</p>
                 </div>
+            ) : (
+                <div className="flex-wrapper">
+                    <div className="left-video-side">
+                        <div className="video-wrapper-custom">
+                            {!playVideo ? (
+                                <div className="video-box-custom" onClick={() => setPlayVideo(true)}>
+                                    <img
+                                        src="/images/testimonials/Thumbnail-OVC-Nadia-2.jpg"
+                                        alt="Customer Feedback"
+                                        className="video-thumb-custom"
+                                        style={{ objectFit: "cover" }}
+                                    />
+                                    <div className="play-btn-custom">
+                                        <div className="play-icon-custom"></div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="iframe-container">
+                                    <iframe
+                                        src="https://www.youtube.com/embed/Weh-dTfljgA?autoplay=1"
+                                        title="Customer Feedback"
+                                        frameBorder="0"
+                                        allow="autoplay; encrypted-media"
+                                        allowFullScreen
+                                        className="video-iframe-custom"
+                                    ></iframe>
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
-                <div className="right-combo-side"> 
-                    <div className="combo-card-wrapper">
-                        <div className="combo-items-scroll">
-                            {products.map((product) => {
-                                const regularPrice = parseInt(product.custom_price_data?.regular_price || 0);
-                                const salePrice = parseInt(product.custom_price_data?.sale_price || 0);
-                                const isSale = salePrice > 0 && salePrice < regularPrice;
-                                const activeImage = product.images[0]?.src || "/images/placeholder.png";
+                    <div className="right-combo-side"> 
+                        <div className="combo-card-wrapper">
+                            <div className="combo-items-scroll">
+                                {products.map((product) => {
+                                    const regularPrice = parseInt(product.custom_price_data?.regular_price || 0);
+                                    const salePrice = parseInt(product.custom_price_data?.sale_price || 0);
+                                    const isSale = salePrice > 0 && salePrice < regularPrice;
+                                    const activeImage = product.images[0]?.src || "/images/placeholder.png";
 
-                                return (
-                                    <div key={product.id} className="combo-item-row">
-                                        <div className="item-main-info">
-                                            <input 
-                                              type="checkbox" 
-                                              checked={selectedIds.includes(product.id)} 
-                                              onChange={() => toggleProduct(product.id)}
-                                            />
-                                            <div className="item-img-box">
-                                              <img 
-                                                src={activeImage} 
-                                                alt={product.name} 
-                                                ref={el => imageRefs.current[product.id] = el}
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                                              />
-                                            </div>
-                                            <div className="item-text">
-                                                <h4>{product.name}</h4>
-                                                <div className="product-price-container fbt-price-container">
-                                                  <span className="sale-price">৳{salePrice > 0 ? salePrice.toFixed(0) : regularPrice.toFixed(0)}</span>
-                                                  {isSale && (
-                                                    <>
-                                                      <del className="regular-price">৳{regularPrice.toFixed(0)}</del>
-                                                      <span className="save-amount"> Save ৳{(regularPrice - salePrice).toFixed(0)}</span>
-                                                    </>
-                                                  )}
+                                    return (
+                                        <div key={product.id} className="combo-item-row">
+                                            <div className="item-main-info">
+                                                <input 
+                                                  type="checkbox" 
+                                                  checked={selectedIds.includes(product.id)} 
+                                                  onChange={() => toggleProduct(product.id)}
+                                                />
+                                                <div className="item-img-box">
+                                                  <img 
+                                                    src={activeImage} 
+                                                    alt={product.name} 
+                                                    ref={el => imageRefs.current[product.id] = el}
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                                  />
                                                 </div>
-                                                {product.type === "variable" && product.attributes?.length > 0 && (
-                                                  <div className="fbt-select-wrapper">
-                                                    <select
-                                                      className="combo-select"
-                                                      value={selectedSize[product.id] || ""}
-                                                      onChange={(e) =>
-                                                        setSelectedSize((prev) => ({
-                                                          ...prev,
-                                                          [product.id]: e.target.value,
-                                                        }))
-                                                      }
-                                                    >
-                                                      <option value="">Select Size</option>
-                                                      {product.attributes
-                                                        .find((attr) => attr.variation === true || attr.name.toLowerCase() === "size")
-                                                        ?.options?.map((size) => (
-                                                          <option key={size} value={size}>{size}</option>
-                                                        ))}
-                                                    </select>
-                                                  </div>
-                                                )}
+                                                <div className="item-text">
+                                                    <h4>{product.name}</h4>
+                                                    <div className="product-price-container fbt-price-container">
+                                                      <span className="sale-price">৳{salePrice > 0 ? salePrice.toFixed(0) : regularPrice.toFixed(0)}</span>
+                                                      {isSale && (
+                                                        <>
+                                                          <del className="regular-price">৳{regularPrice.toFixed(0)}</del>
+                                                          <span className="save-amount"> Save ৳{(regularPrice - salePrice).toFixed(0)}</span>
+                                                        </>
+                                                      )}
+                                                    </div>
+                                                    {product.type === "variable" && product.attributes?.length > 0 && (
+                                                      <div className="fbt-select-wrapper">
+                                                        <select
+                                                          className="combo-select"
+                                                          value={selectedSize[product.id] || ""}
+                                                          onChange={(e) =>
+                                                            setSelectedSize((prev) => ({
+                                                              ...prev,
+                                                              [product.id]: e.target.value,
+                                                            }))
+                                                          }
+                                                        >
+                                                          <option value="">Select Size</option>
+                                                          {product.attributes
+                                                            .find((attr) => attr.variation === true || attr.name.toLowerCase() === "size")
+                                                            ?.options?.map((size) => (
+                                                              <option key={size} value={size}>{size}</option>
+                                                            ))}
+                                                        </select>
+                                                      </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        <div className="total-price-summary">
-                            <span className="total-label">Total Price:</span>
-                            <div className="total-amount-box">
-                                <span className="grand-total">৳{totalPrice}</span>
+                                    );
+                                })}
                             </div>
+
+                            <div className="total-price-summary">
+                                <span className="total-label">Total Price:</span>
+                                <div className="total-amount-box">
+                                    <span className="grand-total">৳{totalPrice}</span>
+                                </div>
+                            </div>
+                            <button
+                              className={`add-to-cart-combo-btn ${selectedIds.length > 0 ? "active" : "disabled"}`}
+                              onClick={handleAddWithAnimation}
+                              disabled={selectedIds.length === 0 || addingToCart}
+                            >
+                              {addingToCart ? (
+                                <><i className="fas fa-spinner fa-spin"></i> Adding...</>
+                              ) : (
+                                <>
+                                  <i className="fas fa-shopping-basket"></i> 
+                                  {selectedIds.length === 0 
+                                    ? " Add Selected Items" 
+                                    : ` Add ${selectedIds.length} ${selectedIds.length === 1 ? "Item" : "Items"} To Cart`}
+                                </>
+                              )}
+                            </button>
                         </div>
-                        <button
-                          className={`add-to-cart-combo-btn ${selectedIds.length > 0 ? "active" : "disabled"}`}
-                          onClick={handleAddWithAnimation}
-                          disabled={selectedIds.length === 0 || addingToCart}
-                        >
-                          {addingToCart ? (
-                            <><i className="fas fa-spinner fa-spin"></i> Adding...</>
-                          ) : (
-                            <>
-                              <i className="fas fa-shopping-basket"></i> 
-                              {selectedIds.length === 0 
-                                ? " Add Selected Items" 
-                                : ` Add ${selectedIds.length} ${selectedIds.length === 1 ? "Item" : "Items"} To Cart`}
-                            </>
-                          )}
-                        </button>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
       </section>
 
@@ -268,7 +281,7 @@ const CustomerFeedback = () => {
                       position: "fixed",
                       top: flyCoords.startY,
                       left: flyCoords.startX,
-                      width: "80px", // উড়ন্ত ইমেজের শুরুর সাইজ ছোট রাখলে চ্যাপ্টা ভাব কম হবে
+                      width: "80px",
                       height: "80px",
                       zIndex: 99999,
                       borderRadius: "10px",

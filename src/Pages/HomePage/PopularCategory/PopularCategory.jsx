@@ -11,7 +11,6 @@ const PopularCategory = () => {
     const [loading, setLoading] = useState(true);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0);
 
-    // Window resize track kora jate slider dynamic width pay
     useEffect(() => {
         const handleResize = () => setWindowWidth(window.innerWidth);
         window.addEventListener("resize", handleResize);
@@ -34,7 +33,6 @@ const PopularCategory = () => {
         return () => window.removeEventListener("resize", handleResize);
     }, [API_URL]);
 
-    // Responsive settings alada variable e
     const settings = {
         dots: false,
         arrows: true,
@@ -43,18 +41,6 @@ const PopularCategory = () => {
         slidesToShow: windowWidth <= 480 ? 2 : windowWidth <= 768 ? 2 : windowWidth <= 1024 ? 3 : 6,
         slidesToScroll: 1,
     };
-    // const settings = {
-    //     infinite: true,
-    //     slidesToShow: windowWidth <= 480 ? 2 : windowWidth <= 768 ? 2 : windowWidth <= 1024 ? 3 : 6,
-    //     slidesToScroll: 1,
-    //     autoplay: true,
-    //     speed: 5000, // Continuous motion er jonno speed besi hobe
-    //     autoplaySpeed: 0,
-    //     cssEase: "linear", // Smooth continuous movement
-    //     pauseOnHover: false,
-    // };
-
-    if (loading) return <div className="loading-shimmer">Loading Categories...</div>;
 
     return (
         <section className="popular-category-section">
@@ -63,7 +49,12 @@ const PopularCategory = () => {
                     <h2>Explore By Categories</h2>
                 </div>
                 <div className="category-slider-wrapper">
-                    {categories.length > 0 ? (
+                    {loading ? (
+                        <div className="full-page-loader">
+                            <div className="spinner"></div>
+                            <p>Loading...</p>
+                        </div>
+                    ) : categories.length > 0 ? (
                         <Slider key={`${windowWidth}-${categories.length}`} {...settings}>
                             {categories.map((cat) => (
                                 <div key={cat.id} className="category-slide-item">

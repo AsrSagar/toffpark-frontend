@@ -1,5 +1,5 @@
 import React, {  useEffect, useState } from "react";
-import { useNavigate, Link, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import config from "../../../config";
 import "./RecentlyViewedProducts.css";
 import { getProductById } from "../../../api/products";
@@ -61,6 +61,12 @@ const RecentlyViewedProducts = () => {
         ).then(res => setProducts(res.filter(Boolean)));
     }, [API_URL, slug]);
 
+    const decodeHtml = (html) => {
+        const txt = document.createElement("textarea");
+        txt.innerHTML = html;
+        return txt.value;
+    };
+
     if (!products.length) return null;
 
     return (
@@ -72,53 +78,63 @@ const RecentlyViewedProducts = () => {
                     <div className="title-underline"></div>
                 </div>
             </div>
-            <div className="inner-wrapper">
-                <div className="products-inner-wrapper clear-fix section-carousel-enabled byapr-carousel">
-                    {products.map(product => {
-                        const isOutOfStock = !product.is_in_stock || !product.is_purchasable;
-                        const regularPrice = parseInt(product.prices.regular_price);
-                        const salePrice = parseInt(product.prices.sale_price);
-                        const isSale = salePrice < regularPrice;
-                        const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
-                        return(
-                            <div key={product.id} className="product-item col-grid-3">
-                                <div className="product-item-wrapper zoom-effect-hover-container">
-                                    <div className="product-thumb zoom-effect">
-                                        {isSale && (
-                                        <>
+
+
+            <div className="products-grid-container">
+                {products.map((product) => {
+                    const isOutOfStock = !product.is_in_stock || !product.is_purchasable;
+                    const regularPrice = parseInt(product.prices.regular_price);
+                    const salePrice = parseInt(product.prices.sale_price);
+                    const isSale = salePrice < regularPrice;
+                    const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
+
+                    return (
+                        <div key={product.id} className="custom-product-card">
+                            <div className="product-card-inner" onClick={() => goToProduct(product.permalink)}>
+                                {/* Thumbnail */}
+                                <div className="product-image-box">
+                                    {isSale && savePercent > 0 && (
+                                        <div className="badge-wrap">
                                             <span className="ribbon-offered">{savePercent}% Off</span>
                                             <span className="ribbon-save">Offered items</span>
-                                        </>
-                                        )}
-                                        <Link className="thumbnail" to={`/product/${product.slug}`}>
-                                            <img alt={product.name} src={product.images[0].src} />
-                                        </Link>
-                                        {isOutOfStock && (
-                                            <span className="ribbon-rotated onsale">Out of Stock</span>
-                                        )}
-                                        
-                                    </div>
-                                    <div className="product-item-details">
-                                        <h3 className="product-title">
-                                            <Link to={`/product/${product.slug}`}>
-                                                {product.name.length > 45 
-                                                ? product.name.substring(0, 45) + "..." 
-                                                : product.name}
-                                            </Link>
-                                        </h3>
-                                        <div className="product-price-container">
-                                        {isSale && <span className="sale-price">৳{(salePrice / 100).toFixed(0)}</span>}
-                                        {isSale && <del className="regular-price">৳{(regularPrice / 100).toFixed(0)}</del>}
-                                        {isSale && <span className="save-amount"> Save ৳{((regularPrice - salePrice) / 100).toFixed(0)}</span>}
-                                        {!isSale && <span className="regular-price sale-price">৳{(regularPrice / 100).toFixed(0)}</span>}
                                         </div>
-                                        <div className="button-group">
+                                    )}
+                                    <img alt={product.name} src={product.images[0]?.src || ""} />
+                                     {isOutOfStock && (
+                                        <span className="ribbon-rotated onsale">Out of Stock</span>
+                                    )}
+                                        
+                                </div>
+
+                                {/* Details */}
+                                <div className="product-info">
+                                    <h3 className="product-title product-title-desktop">
+                                        {decodeHtml(product.name.length > 60 ? product.name.substring(0, 60) + "..." : product.name)}
+                                    </h3>
+                                    <h3 className="product-title product-title-mobile">
+                                        {decodeHtml(product.name.length > 40 ? product.name.substring(0, 40) + "..." : product.name)}
+                                    </h3>
+                                    
+                                    <div className="product-price">
+                                        {isSale ? (
+                                            <>
+                                                <span className="price-new">৳{(salePrice / 100).toFixed(0)}</span>
+                                                <del className="price-old">৳{(regularPrice / 100).toFixed(0)}</del>
+                                                <div className="save-tag">Save ৳{((regularPrice - salePrice) / 100).toFixed(0)}</div>
+                                            </>
+                                        ) : (
+                                            <span className="price-new">৳{(regularPrice / 100).toFixed(0)}</span>
+                                        )}
+                                    </div>
+
+                                    {/* Buttons */}
+                                    <div className="card-button-group">
                                         <button 
                                             className="btn-cart" 
                                             disabled={quickLoading === product.id}
                                             onClick={(e) => {
-                                            e.stopPropagation(); // 2. Eta card-er click event-ke thamay dibe
-                                            handleQuickView(product.id);
+                                                e.stopPropagation(); // 2. Eta card-er click event-ke thamay dibe
+                                                handleQuickView(product.id);
                                             }}
                                             >
                                             {quickLoading === product.id ? (
@@ -129,17 +145,15 @@ const RecentlyViewedProducts = () => {
                                             CART
                                         </button>
                                         <button 
-                                            className="btn-buy-now" onClick={(e) => { e.stopPropagation(); 
-                                            goToProduct(product.permalink); }}>
+                                            className="btn-buy-now" onClick={() => goToProduct(product.permalink)}>
                                             Buy Now
                                         </button>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
         <QuickViewModal

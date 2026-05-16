@@ -54,6 +54,7 @@
 .popular-category-section {
     padding: 30px 0;
     background: #fff;
+    margin-top: 10px;
 }
 
 /* Slider Wrapper */
@@ -99,7 +100,7 @@
     left: 50%;
     transform: translateX(-50%);
     background: transparent;
-    padding: 2px 20px;
+    padding: 0px 9px;
     border-radius: 50px;
     z-index: 10;
     transition: all 0.3s ease;
@@ -108,7 +109,7 @@
 
 .label-text {
     color: #fff;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
 }
@@ -196,12 +197,7 @@
     text-align: center;
 }
 
-.label-text {
-    color: #ffffff;
-    font-size: 16px;
-    font-weight: 600;
-    text-transform: capitalize;
-}
+
 
 /* স্লাইডারের অ্যারো বাটন দুটোর কমন স্টাইল */
 .slick-prev:before, 

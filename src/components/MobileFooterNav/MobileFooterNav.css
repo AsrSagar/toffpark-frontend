@@ -14,7 +14,7 @@
     align-items: center;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
     border-top: 1px solid #f1f1f1;
-    z-index: 1000;
+    z-index: 9999;
   }
   .nav-item {
     text-decoration: none;
@@ -32,6 +32,7 @@
   .nav-item span {
     font-size: 11px;
     font-weight: 500;
+    line-height: 10px;
   }
   .nav-item:hover, .nav-item.active {
     color: #333;
@@ -39,21 +40,46 @@
   .cart-wrapper {
     position: relative;
     display: inline-block;
+    margin-top: 9px;
   }
   .cart-badge {
     position: absolute;
-    top: -8px;
-    right: -10px;
-    background: #ff4d4d; 
+    top: -7px;
+    right: -7px;
+    background: #000;
     color: #fff;
-    font-size: 10px;
-    font-weight: bold;
-    min-width: 16px;
-    height: 16px;
+    min-width: 14px;
+    height: 14px;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    border: 2px solid #fff;
+    border: 1px solid #fff;
+  }
+  .mobile-cart-btn {
+    border: 2px solid #9E9E9E;
+    margin-top: -35px;
+    background: #000;
+    padding-top: 10px;
+    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    color: #fff !important;
+    flex: none;
+  }
+  .cart-text{
+    line-height: 10px;
+  }
+  .mobile-search-price .sale-price {
+    font-size: 15px;
+    margin-left: -9px;
+    padding-right: 6px;
+  }
+  .mobile-search-price .regular-price {
+    margin-right: 6px;
+    font-size: 12px;
+  }
+  .save-amount {
+    font-size: 11px;
   }
 }

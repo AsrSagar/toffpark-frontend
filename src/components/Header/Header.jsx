@@ -39,21 +39,21 @@ const Header = () => {
           
           {/* Left: Contact */}
           <div className="contact-info">
-            <a href="tel:+8801811877477" style={{ color: '#fff', textDecoration: 'none' }}>
+            <a href="tel:+8801811877477" style={{ color: '#000', textDecoration: 'none' }}>
               Call Us +8801811877477
             </a>
           </div>
 
           {/* Center: Marquee Notice */}
           <div className="notic-item">
-            <p>🔥 Special Offer! Get 20% discount on all products. 10% Off on Online Payment.</p>
+            <p>Orlazz ঈদ লুটপাট অফার -Up To 60% OFF!</p>
           </div>
 
           {/* Right: Social Icons */}
           <div className="header-icons">
-            <a href="/"><i className="fab fa-facebook-f"></i></a>
-            <a href="/"><i className="fab fa-instagram"></i></a>
-            <a href="/"><i className="fab fa-whatsapp"></i></a>
+            <a href="https://www.facebook.com/orlazzofficial/" target="_blank" rel="noopener noreferrer"><i className="fab fa-facebook-f"></i></a>
+            <a href="https://www.instagram.com/orlazzofficial/ " target="_blank" rel="noopener noreferrer"><i className="fab fa-instagram"></i></a>
+            <a href="https://api.whatsapp.com/send/?phone=8801811877477" target="_blank" rel="noopener noreferrer"><i className="fab fa-whatsapp"></i></a>
           </div>
 
         </div>

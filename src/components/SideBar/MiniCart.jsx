@@ -87,19 +87,12 @@ const MiniCart = () => {
       alert("Please select a size first!");
       return;
     }
-    
-    // Add item with correct properties
-    addToCart({ 
-      ...product, 
-      productId: product.id, // consistency rakhar jonno
-      image: product.images?.[0]?.src,
-      size: size 
-    });
-
-    console.log(size);
+    addToCart(
+      { ...product, size: size }, 
+      1,                          
+      null                       
+    );
   };
-
-  console.log(cartItems);
 
   return (
     <>
@@ -119,10 +112,17 @@ const MiniCart = () => {
               <div className="product-mini-cart-item" key={item.cartId}>
                 <img src={item.image} alt={item.name} className="cart-item-img" />
                 <div className="cart-item-details">
-                  <h6>{item.name}</h6>
-                  {item.size && <span className="variation-info">Size: {item.size}</span>}
-                  <div className="price-qty">
-                    <span>{item.qty} × ৳ {item.price * item.qty}</span>
+                  <h6 className="product-title-desktop">{item.name}</h6>
+                  <h6 className="product-title-mobile">{item.name.length > 20 ? item.name.substring(0, 20) + "..." : item.name}</h6>
+                  {item.size && <span className="variation-info">Size: {item.size} x {item.qty}</span>}
+                  <div className="price-qty qty-mobile">
+                    <span>৳{item.price * item.qty} </span>
+                      {
+                        item.regularPrice !== item.price && (
+                          <del className="regular-price">৳{item.regularPrice * item.qty}</del>
+                        )
+                      }
+
                   </div>
                   <div className="qty-controls">
                     <div className="quantity-selector">
@@ -150,6 +150,15 @@ const MiniCart = () => {
                         +
                         </button>
                     </div>
+                    <div className="price-qty qty-desktop">
+                      <span>৳{item.price * item.qty} </span>
+                      {
+                        item.regularPrice !== item.price && (
+                          <del className="regular-price">৳{item.regularPrice * item.qty}</del>
+                        )
+                      }
+
+                    </div>
                     <button className="mini-remove-btn" onClick={() => removeFromCart(item.cartId)}>
                       <i className="fa fa-trash-alt"></i>
                     </button>
@@ -159,7 +168,6 @@ const MiniCart = () => {
             ))
           )}
         </div>
-
         <div className="cart-footer">
           {!loading && recommendations.length > 0 && (
             <div className="recommendations-container">
@@ -220,7 +228,7 @@ const MiniCart = () => {
             </div>
           )}
           <div className="subtotal">
-            <span>Subtotal:</span>
+            <span>Cart Total:</span>
             <span>৳ {subtotal.toFixed(0)}</span>
           </div>
 

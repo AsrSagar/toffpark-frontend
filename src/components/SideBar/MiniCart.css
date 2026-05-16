@@ -27,7 +27,7 @@
   background: #fff;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
   transition: right 0.3s;
-  z-index: 1000;
+  z-index: 9999999;
   display: flex;
   flex-direction: column;
   font-family: sans-serif;
@@ -67,6 +67,8 @@
   align-items: center;
   margin-bottom: 10px;
   position: relative;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
 }
 .cart-item-img {
   width: 100px;
@@ -85,8 +87,8 @@
 }
 .price-qty {
   font-size: 13px;
-  color: green;
   margin-top: 2px;
+  margin-left: 10px;
 }
 .qty-controls {
   display: flex;
@@ -105,13 +107,18 @@
 }
 .qty-controls span {
   margin: 0 5px;
-  font-size: 13px;
+  font-size: 15px;
+  color: #000;
 }
 .quantity-selector input {
   background-color: transparent;
   width: 50px;
   margin-right: 0px;
   max-width: 50px;
+}
+.price-qty del{
+  font-size: 13px;
+  color: #888;
 }
 /* Remove button */
 .mini-remove-btn {
@@ -152,8 +159,8 @@
   text-decoration: none;
 }
 .btn-success {
-  background: #28a745;
-  color: #fff;
+  background: #000;
+  color: #fff !important;
   text-decoration: none;
 }
 .btn + .btn {
@@ -165,7 +172,6 @@
   position: fixed;
   right: 0;
   top: 50%;
-  transform: translateY(-50%);
   width: 70px;
   background-color: #fff;
   border-radius: 5px 0 0 5px;
@@ -261,16 +267,11 @@
   background-color: #ddd;
 }
 
-
-
-
-
-
 /* Recommendation Container */
 .recommendations-container {
   background: #f8f9fa;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: 5px;
   margin: 10px 0;
   border: 1px solid #eee;
 }
@@ -297,7 +298,7 @@
 .prev-el, .next-el {
   width: 22px;
   height: 22px;
-  background: #f17e28;
+  background: #000;
   color: #fff;
   border-radius: 50%;
   display: flex;
@@ -315,7 +316,7 @@
 }
 
 .rec-swiper .swiper-pagination-progressbar-fill {
-  background: #2196F3 !important; /* Blue progress bar */
+  background: #000 !important; 
 }
 
 /* Card Styling - The Main Fix */
@@ -366,7 +367,7 @@
 }
 
 .rec-add-btn {
-  background: #f17e28;
+  background: #000;
   color: #fff;
   border: none;
   padding: 3px 12px;
@@ -378,7 +379,7 @@
 }
 
 .rec-add-btn:hover {
-  background: #d46a1a;
+  background: #333;
 }
 /* Size Select Dropdown Styling */
 .size-option select {
@@ -420,7 +421,7 @@
 /* Button overlap protection */
 .rec-add-btn {
   width: 100%; 
-  background: #f17e28;
+  background: #000;
   color: #fff;
   border: none;
   padding: 6px;
@@ -439,17 +440,64 @@
   overflow: visible !important;
   min-height: 110px; 
 }
-
-
-
+.mini-cart .quantity-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #eee;
+  border-radius: 50px;
+  width: 100px;
+  height: 25px;
+  margin-bottom: 0;
+}
+.mini-cart .quantity-selector input {
+  width: 40px;
+  max-width: 40px;
+  height: 25px;
+}
+.mini-remove-btn {
+  font-size: 14px;
+  margin-top: 0px;
+  float: right;
+  position: absolute;
+  right: 0;
+}
+.qty-mobile{
+  display: none;
+}
+.product-title-mobile{
+  display: none;
+}
+.variation-info {
+  font-size: 13px;
+}
 @media only screen and (max-width: 900px) {
   .mini-cart {
-    width: 300px !important;
-  }
-  .product-mini-cart-item {
-    display: block !important;
+    width: 340px !important;
   }
   .cart-item-img {
     margin-bottom: 5px;
+  }
+  .floating-cart {
+    display: none;
+  }
+  /* .cart-footer {
+    overflow-y: scroll;
+    height: 400px;
+  } */
+  .qty-desktop {
+    display: none;
+  }
+  .qty-mobile{
+    display: block;
+  }
+  .qty-controls {
+    margin-top: 0px;
+  }
+  .product-title-desktop{
+    display: none;
+  }
+  .product-title-mobile{
+    display: block;
   }
 }

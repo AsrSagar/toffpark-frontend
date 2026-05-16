@@ -220,11 +220,11 @@ del.regular-price {
     min-width: 100%;
   }
   .ribbon-offered {
-    padding: 0px 5px;
-    font-size: 10px;
+    padding: 0px 6px;
+    font-size: 11px;
   }
   .ribbon-save {
     padding: 0px 5px;
-    font-size: 10px;
+    font-size: 11px;
   }
 }

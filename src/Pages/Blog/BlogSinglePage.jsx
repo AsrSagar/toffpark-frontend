@@ -8,7 +8,7 @@ const BlogSinglePage = () => {
   const { slug } = useParams();
 
   const [post, setPost] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -27,11 +27,15 @@ const BlogSinglePage = () => {
         setPost(null);
       }
 
-      setLoading(false);
+      // setLoading(false);
     };
 
     fetchPost();
   }, [slug]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
 
   if (!post) {
@@ -46,14 +50,14 @@ const BlogSinglePage = () => {
   const day = dateObj.getDate();
   const month = dateObj.toLocaleString("default", { month: "short" });
 
-  if (loading) {
-    return (
-      <div className="full-page-loader">
-        <div className="spinner"></div>
-        <p>Loading...</p>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="full-page-loader">
+  //       <div className="spinner"></div>
+  //       <p>Loading...</p>
+  //     </div>
+  //   );
+  // }
 
   return (
     <>

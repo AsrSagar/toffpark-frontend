@@ -35,7 +35,7 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
                 const res = await wcApi.get("/products", {
                     params: {
                         category: categorySlug,
-                        per_page: 12,
+                        per_page: 8,
                     },
                 });
                 setProducts(res.data);
@@ -58,7 +58,15 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
         if (slug) navigate(`/product/${slug}`);
     };
 
-    if (loading || products.length === 0) return null;
+    const decodeHtml = (html) => {
+        const txt = document.createElement("textarea");
+        txt.innerHTML = html;
+        return txt.value;
+    };
+
+    if (!loading && products.length === 0) return null;
+
+    console.log("Products:", products);
 
     return (
         <aside className="section category-products">
@@ -75,73 +83,80 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
                 </div>
                 
                 <div className="products-grid-container">
-                    {products.map((product) => {
-                        const regularPrice = parseFloat(product.prices.regular_price || 0);
-                        const salePrice = parseFloat(product.prices.sale_price || 0);
-                        const isSale = product.on_sale && salePrice > 0 && regularPrice > salePrice;
-                        const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
-                        const isOutOfStock = product.stock_status === "outofstock";
+                    {loading ? (
+                        <div className="category-products-loader">
+                            <div className="full-page-loader">
+                                <div className="spinner"></div>
+                                <p>Loading {categoryTitle}...</p>
+                            </div>
+                        </div>
+                    ) : (
+                        products.map((product) => {
+                            const regularPrice = parseFloat(product.prices.regular_price || 0);
+                            const salePrice = parseFloat(product.prices.sale_price || 0);
+                            const isSale = product.on_sale && salePrice > 0 && regularPrice > salePrice;
+                            const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
+                            const isOutOfStock = product.stock_status === "outofstock";
 
-                        return (
-                            <div key={product.id} className="custom-product-card">
-                                <div 
-                                    className="product-card-inner" 
-                                    onClick={() => handleCardClick(product.permalink)}
-                                >
-                                    {/* Thumbnail */}
-                                    <div className="product-image-box">
-                                        {isSale && savePercent > 0 && (
-                                            <div className="badge-wrap">
-                                                <span className="ribbon-offered">{savePercent}% Off</span>
-                                                <span className="ribbon-save">Offered items</span>
-                                            </div>
-                                        )}
-                                        <img alt={product.name} src={product.images[0]?.src || ""} />
-                                        {isOutOfStock && <span className="ribbon-out-stock">Out of Stock</span>}
-                                    </div>
-
-                                    {/* Details */}
-                                    <div className="product-info">
-                                        <h3 className="product-title">
-                                            {product.name.length > 45 ? product.name.substring(0, 45) + "..." : product.name}
-                                        </h3>
-                                        
-                                        <div className="product-price">
-                                            {isSale ? (
-                                                <>
-                                                    <span className="price-new">৳{(salePrice / 100).toFixed(0)}</span>
-                                                    <del className="price-old">৳{(regularPrice / 100).toFixed(0)}</del>
-                                                    <div className="save-tag">Save ৳{((regularPrice - salePrice) / 100).toFixed(0)}</div>
-                                                </>
-                                            ) : (
-                                                <span className="price-new">৳{(regularPrice / 100).toFixed(0)}</span>
+                            return (
+                                <div key={product.id} className="custom-product-card">
+                                    <div 
+                                        className="product-card-inner" 
+                                        onClick={() => handleCardClick(product.permalink)}
+                                    >
+                                        <div className="product-image-box">
+                                            {isSale && savePercent > 0 && (
+                                                <div className="badge-wrap">
+                                                    <span className="ribbon-offered">{savePercent}% Off</span>
+                                                    <span className="ribbon-save">Offered items</span>
+                                                </div>
                                             )}
+                                            <img alt={product.name} src={product.images[0]?.src || ""} />
+                                            {isOutOfStock && <span className="ribbon-out-stock">Out of Stock</span>}
                                         </div>
+                                        <div className="product-info">
+                                            <h3 className="product-title product-title-desktop">
+                                                {decodeHtml(product.name.length > 60 ? product.name.substring(0, 60) + "..." : product.name)}
+                                            </h3>
+                                            <h3 className="product-title product-title-mobile">
+                                                {decodeHtml(product.name.length > 40 ? product.name.substring(0, 40) + "..." : product.name)}
+                                            </h3>
+                                            <div className="product-price">
+                                                {isSale ? (
+                                                    <>
+                                                        <span className="price-new">৳{(salePrice / 100).toFixed(0)}</span>
+                                                        <del className="price-old">৳{(regularPrice / 100).toFixed(0)}</del>
+                                                        <div className="save-tag">Save ৳{((regularPrice - salePrice) / 100).toFixed(0)}</div>
+                                                    </>
+                                                ) : (
+                                                    <span className="price-new">৳{(regularPrice / 100).toFixed(0)}</span>
+                                                )}
+                                            </div>
 
-                                        {/* Buttons */}
-                                        <div className="card-button-group">
-                                            <button 
-                                                className="btn-cart-action"
-                                                disabled={quickLoading === product.id}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleQuickView(product.id);
-                                                }}
-                                            >
-                                                {quickLoading === product.id ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-shopping-cart"></i>} CART
-                                            </button>
-                                            <button 
-                                                className="btn-buy-action" 
-                                                onClick={(e) => { e.stopPropagation(); handleCardClick(product.permalink); }}
-                                            >
-                                                BUY NOW
-                                            </button>
+                                            <div className="card-button-group">
+                                                <button 
+                                                    className="btn-cart-action"
+                                                    disabled={quickLoading === product.id}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleQuickView(product.id);
+                                                    }}
+                                                >
+                                                    {quickLoading === product.id ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-shopping-cart"></i>} CART
+                                                </button>
+                                                <button 
+                                                    className="btn-buy-action" 
+                                                    onClick={(e) => { e.stopPropagation(); handleCardClick(product.permalink); }}
+                                                >
+                                                    BUY NOW
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })
+                    )}
                 </div>
             </div>
 

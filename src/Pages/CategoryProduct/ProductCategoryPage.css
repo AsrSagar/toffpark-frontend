@@ -19,9 +19,9 @@
   animation: fa-spin 2s infinite linear;
   display: inline-block;
 }
-/* সার্চ বার স্টাইল */
 .category-search-container {
-    margin-bottom: 20px;
+  margin-bottom: 20px;
+  display: none
 }
 
 .search-box {
@@ -96,34 +96,21 @@
   border: 1px solid #eee;
 }
 .chip-count {
-    color: #999;
-    font-size: 11px;
-    margin-left: 4px;
+  color: #999;
+  font-size: 11px;
+  margin-left: 4px;
 }
 
 .sub-chip:hover {
-    border-color: #3b5998;
-    color: #3b5998;
+  border-color: #3b5998;
+  color: #3b5998;
 }
 
-/* একটিভ ফিল্টার */
 .active-filter-row {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
-
-.filter-tag {
-    background: #f1f1f1;
-    padding: 5px 12px;
-    border-radius: 4px;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
 .clear-all-btn {
     background: none;
     border: none;
@@ -144,6 +131,12 @@
   width: 250px;
   flex-shrink: 0;
 }
+.category-sidebar .widget-title {
+  color: #000;
+  font-weight: 500;
+  margin-bottom: 0;
+  border-bottom: 1px solid #eee;
+}
 
 #primary {
   flex-grow: 1;
@@ -160,28 +153,24 @@
   border-radius: 5px;
 }
 
-/* Categories টেক্সট স্টাইল */
 .widget-title {
   font-size: 18px;
   font-weight: 700;
-  color: #d63384; /* আপনার স্ক্রিনশটের মেজেন্টা/পিঙ্ক কালার */
+  color: #d63384; 
   margin: 0;
   padding: 0;
   text-transform: capitalize;
   padding: 10px 15px !important;
 }
 
-/* উইজেট হেডারের মেইন কন্টেইনার */
 .widget-header {
   display: flex;
-  justify-content: space-between; /* Categories বামে আর Clear All ডানে সরাবে */
-  align-items: center; /* দুইটাকেই ভার্টিক্যালি মাঝখানে রাখবে */
-  padding: 15px 10px;
-  border-bottom: 1px solid #eee; /* নিচের চিকন বর্ডার */
-  margin-bottom: 10px;
+  justify-content: space-between;
+  align-items: center;
+  margin-right: 15px;
+  border-bottom: 1px solid #eee;
 }
 
-/* CLEAR ALL বাটন স্টাইল */
 .clear-filter {
   background: none;
   border: none;
@@ -242,18 +231,19 @@
 .widget-special-links ul {
   list-style: none;
   padding: 10px 0;
+  margin-bottom: 0;
 }
 
 .widget-special-links li a {
   display: block;
-  padding: 10px 15px;
+  padding: 5px 15px;
   color: #333;
   transition: 0.3s;
 }
 
 .widget-special-links li a:hover {
-  background: #fff0f5;
-  color: #d11e5d;
+  background: #f8f9fa;
+  color: #000;
 }
 
 /* Responsive Sidebar */
@@ -263,7 +253,9 @@
   }
   .category-sidebar {
     width: 100%;
-    order: 2; /* Sidebar goes down on mobile */
+    order: 2; 
+    padding: 0 15px;
+    display: none;
   }
 }
 
@@ -373,19 +365,13 @@
   transition: transform 0.3s;
 }
 
-/* হোভারে অ্যারো একটু উজ্জ্বল হবে */
 .category-item:hover .arrow-icon {
   color: #999;
 }
 
-/* উইজেট টাইটেল স্টাইল (স্ক্রিনশট অনুযায়ী) */
 .widget-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #d63384; /* স্ক্রিনশটের মেজেন্টা কালার */
   text-transform: capitalize;
-  border-bottom: 2px solid #eee;
-  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -398,4 +384,260 @@
   border: none;
   cursor: pointer;
   font-weight: normal;
+}
+
+
+
+
+.category-filter-container {
+  padding: 20px;
+  background: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Parent Tabs */
+.parent-category-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.tab-btn {
+  padding: 10px 25px;
+  border-radius: 25px;
+  border: 1px solid #eee;
+  background: #fff;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+/* Dynamic Colors */
+.tab-btn.men.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+.tab-btn.women { color: #db2777; background: #fff1f2; border-color: #fce7f3; }
+.tab-btn.kids { color: #059669; background: #f0fdf4; border-color: #dcfce7; }
+.tab-btn.teens { color: #7c3aed; background: #f5f3ff; border-color: #ede9fe; }
+
+.divider {
+  border-top: 1px dashed #e5e7eb;
+  margin: 20px 0;
+}
+
+/* Sub-category Pills */
+.sub-category-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.pill {
+  padding: 8px 18px;
+  border-radius: 30px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 14px;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.pill small {
+  color: #9ca3af;
+  margin-left: 5px;
+}
+
+.pill:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+/* Active Filter Tag */
+.active-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.filter-tag {
+  background: #f3f4f6;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #4b5563;
+}
+
+.filter-tag i {
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+/* Container Fix */
+.category-filter-container {
+    width: 100%;
+    display: block !important; /* নিশ্চিত করা যাতে হাইড না থাকে */
+    overflow: visible;
+}
+
+/* Parent Tabs Mobile Fix */
+.parent-category-tabs {
+    display: flex !important; /* মোবাইলে অবশ্যই ফ্লেক্স হবে */
+    flex-wrap: nowrap; /* এক লাইনে থাকবে */
+    overflow-x: auto; /* মোবাইলে ডানে-বামে স্ক্রল হবে */
+    -webkit-overflow-scrolling: touch; /* স্মুথ স্ক্রলিং */
+    gap: 10px;
+    padding: 10px 5px;
+    margin-bottom: 15px;
+    scrollbar-width: none; /* ফায়ারফক্সের জন্য স্ক্রলবার হাইড */
+}
+
+/* হাইড স্ক্রলবার ফর ক্রোম/সাফারি */
+.parent-category-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.tab-btn {
+    flex: 0 0 auto; 
+    justify-content: center;
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #000;
+}
+
+/* Divider Fix */
+.divider {
+    width: 100%;
+    height: 1px;
+    border-top: 1px dashed #e5e7eb;
+    margin: 15px 0;
+    display: block;
+}
+.top-category-list {
+  display: none;
+}
+
+.tab-btn.active {
+  background: #000;
+  color: #fff;
+}
+.bottom-pagination {
+  margin-left: 15px;
+}
+/* Mobile Responsive Fixes */
+@media only screen and (max-width: 768px) {
+  .category-filter-container {
+    padding: 10px 0;
+  }
+  .top-category-list {
+    display: block !important;
+  }
+  .parent-category-tabs {
+    display: flex;
+    overflow-x: auto; 
+    white-space: nowrap;
+    padding-bottom: 10px;
+    gap: 8px;
+    scrollbar-width: none; 
+  }
+  
+  .parent-category-tabs::-webkit-scrollbar {
+    display: none; 
+  }
+
+  .tab-btn {
+    padding: 8px 15px; 
+    font-size: 13px;
+    flex: 0 0 auto;
+  }
+
+  /* Sub-category Pills Fix */
+  .sub-category-pills {
+    display: flex;
+    flex-wrap: wrap; 
+    gap: 6px; 
+    justify-content: flex-start;
+  }
+
+  .pill {
+    padding: 6px 12px;
+    font-size: 12px; /* টেক্সট সাইজ কমানো */
+    line-height: 1.4;
+  }
+
+  .pill small {
+    font-size: 10px;
+    margin-left: 3px;
+  }
+
+  /* Active Filter Row */
+  .active-filter-row {
+    margin-top: 15px;
+    flex-direction: row; /* পাশাপাশি রাখা */
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .filter-tag {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .parent-category-tabs {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .tab-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .products-grid-row {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .category-search-container {
+    padding: 0 15px;
+  }
+  .pruduct-filter-row {
+    padding: 10px 15px;
+  }
+  .product-category-layout {
+    margin-top: 0px;
+    gap: 0px;
+  }
+  .category-page-content{
+    padding: 0 !important;
+  }
+  .category-products-wrapper{
+    padding: 0 15px !important;
+  }
+  .sort-by-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    align-items: center;
+    vertical-align: middle;
+  }
+  .filter-row-box.navigation.pagination {
+    float: right;
+    width: 100%;
+    text-align: right;
+    margin-top: 0;
+  }
+  .pagination .nav-links {
+    text-align: right;
+  }
 }
