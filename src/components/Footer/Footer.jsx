@@ -16,7 +16,11 @@ const Footer = () => {
                                 <a href="https://www.instagram.com/orlazzofficial/" target="_blank" rel="noopener noreferrer"><i className="fab fa-instagram"></i></a>
                                 <a href="https://api.whatsapp.com/send/?phone=8801811877477" target="_blank" rel="noopener noreferrer"><i className="fab fa-whatsapp"></i></a>
                                 <a href="https://www.youtube.com/@orlazzofficial/" target="_blank" rel="noopener noreferrer"><i className="fab fa-youtube"></i></a>
-                                <a href="https://www.tiktok.com/@orlazzofficial/" target="_blank" rel="noopener noreferrer"><i className="fab fa-tiktok"></i></a>
+                                <a href="https://www.tiktok.com/@orlazzofficial/" target="_blank" rel="noopener noreferrer" className="tiktok-link">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" style={{ width: '16px', height: '16px', fill: 'currentColor', verticalAlign: 'middle' }}>
+                                        <path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0l88,0a121.18,121.18,0,0,0,1.86,22.17h0A122.18,122.18,0,0,0,381,102.39a121.43,121.43,0,0,0,67,20.14Z"/>
+                                    </svg>
+                                </a>
                             </div>
                         </aside>
                         <aside className="col-grid-3 footer-widget-area">
@@ -25,7 +29,7 @@ const Footer = () => {
                                 <li><Link to="/shop">Shop</Link></li>
                                 <li><Link to="/offers">Offers</Link></li>
                                 <li><Link to="/about-us">About Us</Link></li>
-                                <li><a href="/">My Account</a></li>
+                                <li><Link to="/my-account">My Account</Link></li>
                                 <li><Link to="/product-category/84">Top Selling Items</Link></li>
                             </ul>
                         </aside>

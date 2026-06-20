@@ -38,6 +38,15 @@ const NavBar = () => {
     }
   };
 
+  // Logo button click scroll to top logic
+  const handleLogoClick = () => {
+    closeMenu(); // Mobile-er jonno menu open thakle ta auto close hobe
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth", // Instant top-e jete smooth bad diye "auto" likhte paren
+    });
+  };
+
   // Resize Listener to update isDesktop state
   useEffect(() => {
     const handleResize = () => {
@@ -254,7 +263,8 @@ const NavBar = () => {
         <div className="site-branding pull-left">
           <div id="site-identity">
             <h1 className="site-title">
-              <Link to="/" rel="home">
+              {/* Desktop Logo Link Click Logic Added */}
+              <Link to="/" rel="home" onClick={handleLogoClick}>
                 <img
                   src="/images/logo-black.png"
                   alt="logo"
@@ -415,7 +425,8 @@ const NavBar = () => {
       <div className="site-branding pull-left">
         <div id="site-identity">
           <h1 className="site-title">
-            <Link to="/" rel="home">
+            {/* Mobile Logo Link Click Logic Added */}
+            <Link to="/" rel="home" onClick={handleLogoClick}>
               <img
                 src="https://toffpark.com/wp-content/uploads/2021/08/Toffpark-Logo-Black-1.png"
                 alt="logo"

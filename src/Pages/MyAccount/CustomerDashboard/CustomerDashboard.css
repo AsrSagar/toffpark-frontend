@@ -1,0 +1,183 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+/* মেইন কন্টেইনার ওভাররাইড */
+.ow-custom-dashboard {
+  font-family: 'Poppins', sans-serif !important;
+  max-width: 1200px !important;
+  margin: 60px auto !important;
+  padding: 0 20px !important;
+  box-sizing: border-box !important;
+}
+
+/* 📦 উ-কমার্স মেইন গ্রিড লেআউট */
+.ow-custom-dashboard .woocommerce {
+  display: grid !important;
+  grid-template-columns: 280px 1fr !important;
+  gap: 50px !important;
+  align-items: flex-start !important;
+}
+
+/* ⬅️ সাইডবার ও প্রোফাইল ডিজাইন */
+.ow-custom-dashboard .woocommerce-MyAccount-tabs {
+  display: flex !important;
+  flex-direction: column !important;
+  background: #ffffff !important;
+}
+
+.ow-custom-dashboard .oceanwp-user-profile {
+  display: flex !important;
+  align-items: center !important;
+  gap: 15px !important;
+  padding-bottom: 25px !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  margin-bottom: 15px !important;
+}
+
+.ow-custom-dashboard .oceanwp-user-profile .image img {
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+}
+
+.ow-custom-dashboard .oceanwp-user-profile .user-info .name {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: #222222 !important;
+  margin: 0 !important;
+}
+
+.ow-custom-dashboard .oceanwp-user-profile .user-info .logout {
+  font-size: 13px !important;
+  color: #777777 !important;
+  text-decoration: none !important;
+  transition: color 0.2s;
+}
+
+.ow-custom-dashboard .oceanwp-user-profile .user-info .logout:hover {
+  text-decoration: underline !important;
+  color: #000000 !important;
+}
+
+/* 📋 নেভিগেশন মেনু আইটেম */
+.ow-custom-dashboard .woocommerce-MyAccount-navigation ul {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.ow-custom-dashboard .woocommerce-MyAccount-navigation-link {
+  border-bottom: 1px solid #f4f4f4 !important;
+  padding: 12px 0 !important;
+}
+
+.ow-custom-dashboard .woocommerce-MyAccount-navigation-link a {
+  display: block !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: #444444 !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+}
+
+/* হোভার এবং একটিভ ট্র্যাকিং */
+.ow-custom-dashboard .woocommerce-MyAccount-navigation-link a:hover,
+.ow-custom-dashboard .woocommerce-MyAccount-navigation-link.is-active a {
+  color: #000000 !important;
+  font-weight: 600 !important;
+  padding-left: 5px !important;
+}
+
+.ow-custom-dashboard .woocommerce-MyAccount-navigation-link--customer-logout {
+  border-bottom: none !important;
+}
+
+/* ➡️ ডানপাশের কন্টেন্ট কার্ড */
+.ow-custom-dashboard .woocommerce-MyAccount-content {
+  background: #ffffff !important;
+}
+
+.ow-custom-dashboard .ow-welcome-card {
+  border: 1px solid #e9e9e9 !important;
+  padding: 35px !important;
+  border-radius: 4px !important;
+  background-color: #fafafa !important;
+}
+
+.ow-custom-dashboard .ow-welcome-text {
+  font-size: 16px !important;
+  color: #333333 !important;
+  margin-top: 0 !important;
+  margin-bottom: 20px !important;
+  line-height: 1.5 !important;
+}
+
+.ow-custom-dashboard .ow-dashboard-info {
+  font-size: 14px !important;
+  color: #666666 !important;
+  line-height: 1.8 !important;
+  margin: 0 !important;
+}
+
+/* কন্টেন্টের ভেতরের লিংকগুলোর কালার ফিক্স */
+.ow-custom-dashboard .woocommerce-MyAccount-content a {
+  color: #000000 !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid #000000 !important;
+  transition: opacity 0.2s;
+}
+
+.ow-custom-dashboard .woocommerce-MyAccount-content a:hover {
+  opacity: 0.7 !important;
+}
+
+.ow-custom-dashboard .ow-logout-link {
+  border-bottom: none !important;
+  color: #ff4d4f !important;
+  font-weight: 500 !important;
+}
+
+.ow-dashboard-loading { text-align: center; padding: 100px; font-size: 18px; color: #555; }
+.ow-alert { padding: 12px; margin-bottom: 20px; border-radius: 4px; font-size: 14px; }
+.ow-alert.success { background: #e6f4ea; color: #137333; }
+.ow-alert.error { background: #fce8e6; color: #c5221f; }
+
+/* 📊 টেবিল ডিজাইন */
+.ow-table-wrapper { width: 100%; overflow-x: auto; }
+.ow-data-table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; }
+.ow-data-table th, .ow-data-table td { padding: 14px; border-bottom: 1px solid #eee; font-size: 14px; }
+.ow-data-table th { background-color: #fafanya; font-weight: 600; color: #333; }
+.status-completed { background: #e6f4ea; color: #137333; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+.status-processing { background: #fef7e0; color: #b06000; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+
+/* 📍 অ্যাড্রেস গ্রিড */
+.ow-address-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.address-card { border: 1px solid #e0e0e0; padding: 20px; border-radius: 6px; background: #fff; }
+.address-card h3 { margin-top: 0; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+.address-card p { font-size: 14px; color: #666; margin: 4px 0; }
+
+/* ⚙️ ফর্ম স্টাইল */
+.ow-account-form .form-row { display: flex; gap: 20px; }
+.ow-account-form .form-group { display: flex; flex-direction: column; margin-bottom: 15px; width: 100%; }
+.ow-account-form label { font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #444; }
+.ow-account-form input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+.ow-account-form fieldset { border: 1px solid #eee; padding: 15px; margin: 20px 0; border-radius: 6px; }
+.ow-btn-download { display: inline-block; background: #000; color: #fff !important; padding: 6px 12px; border-radius: 4px; font-size: 13px; text-decoration: none; }
+
+/* 📱 রেসপন্সিভনেস (মোবাইল ও ট্যাবলেট ভিউ) */
+@media (max-width: 768px) {
+  .ow-custom-dashboard .woocommerce {
+    grid-template-columns: 1fr !important;
+    gap: 30px !important;
+  }
+  
+  .ow-custom-dashboard .woocommerce-MyAccount-tabs {
+    border-bottom: 2px solid #eeeeee !important;
+    padding-bottom: 20px !important;
+  }
+  
+  .ow-custom-dashboard .ow-welcome-card {
+    padding: 20px !important;
+  }
+}

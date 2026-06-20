@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import axios from "axios";
 import { useCart } from "../../context/CartContext";
 import ThankYouPopup from "../ThankYouPopup/ThankYouPopup";
@@ -28,16 +28,60 @@ const getTrackingData = () => {
   };
 };
 
+const generateSHA256Hash = async (string) => {
+  if (!string) return "";
+  const msgBuffer = new TextEncoder().encode(string.trim().toLowerCase());
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+};
+
+const BD_CITIES = [
+  "Dhaka", "Chattogram", "Chittagong", "Sylhet", "Rajshahi", "Khulna", "Barishal", "Barisal", "Rangpur", "Mymensingh",
+  "Gazipur", "Narayanganj", "Cumilla", "Comilla", "Feni", "Noakhali", "Cox's Bazar", "Coxs Bazar", "Brahmanbaria", 
+  "Chandpur", "Lakshmipur", "Laxmipur", "Rangamati", "Khagrachhari", "Bandarban", "Narsingdi", "Manikganj", 
+  "Munshiganj", "Narail", "Gopalganj", "Shariatpur", "Madaripur", "Rajbari", "Faridpur", "Tangail", "Kishoreganj", 
+  "Netrokona", "Sherpur", "Jamalpur", "Sunamganj", "Habiganj", "Moulvibazar", "Jessore", "Jashore", "Satkhira", 
+  "Meherpur", "Chuadanga", "Kushtia", "Magura", "Bagerhat", "Jhenaidah", "Pirojpur", "Jhalokathi", "Jhalakati", 
+  "Barguna", "Bhola", "Patuakhali", "Pabna", "Sirajganj", "Bogra", "Bogura", "Joypurhat", "Naogaon", "Natore", 
+  "Chapai Nawabganj", "Chapainawabganj", "Nawabganj", "Gaibandha", "Dinajpur", "Panchagarh", "Thakurgaon", 
+  "Nilphamari", "Kurigram", "Lalmonirhat", "Savar", "Uttara", "Mirpur", "Banani", "Gulshan"
+];
+
+const extractCityFromAddress = (address) => {
+  if (!address) return "Dhaka";
+  const cleanAddress = address.toLowerCase();
+  
+  for (const city of BD_CITIES) {
+    if (cleanAddress.includes(city.toLowerCase())) {
+      if (city.toLowerCase() === "chittagong") return "Chattogram";
+      if (city.toLowerCase() === "comilla") return "Cumilla";
+      if (city.toLowerCase() === "barisal") return "Barishal";
+      if (city.toLowerCase() === "jessore") return "Jashore";
+      if (city.toLowerCase() === "bogra") return "Bogura";
+      return city; 
+    }
+  }
+  return "Dhaka";
+};
+
 const CheckoutPage = () => {
   const API_URL = config.API_URL;
   const { cartItems, cartTotal, clearCart } = useCart();
   const location = useLocation();
-  const processedRef = useRef(false); // prevents infinite useEffect loop
+  const processedRef = useRef(false);
+  const checkoutTrackedRef = useRef(false); 
+  const purchaseTrackedRef = useRef(false); 
+  const paymentInfoTrackedRef = useRef({}); 
+
+  const user = JSON.parse(localStorage.getItem("user")) || null;
+  const currentCustomerId = user && user.id ? parseInt(user.id, 10) : 0;
 
   const [billing, setBilling] = useState({
-    first_name: "",
+    first_name: "", 
     address_1: "",
     phone: "",
+    email: "",
     order_note: "",
   });
 
@@ -65,10 +109,133 @@ const CheckoutPage = () => {
     window.scrollTo(0, 0);
   }, []);
 
+  // GA4/GTM: begin_checkout
+  useEffect(() => {
+    if (!cartItems || cartItems.length === 0) return;
+    if (checkoutTrackedRef.current) return;
+
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ ecommerce: null });
+    window.dataLayer.push({
+      event: "begin_checkout",
+      ecommerce: {
+        currency: "BDT",
+        value: Number(cartTotal || 0),
+        items: cartItems.map((item) => ({
+          item_id: item.productId?.toString(),
+          item_name: item.name,
+          price: Number(item.price || 0),
+          quantity: Number(item.qty || 1),
+          item_variant: item.size || undefined,
+        })),
+      },
+    });
+
+    checkoutTrackedRef.current = true;
+  }, [cartItems, cartTotal]);
+
+  // GA4/GTM: add_payment_info
+  useEffect(() => {
+    if (cartItems.length > 0 && paymentMethod && !paymentInfoTrackedRef.current[paymentMethod]) {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "add_payment_info",
+        ecommerce: {
+          currency: "BDT",
+          value: parseFloat(finalTotal || 0),
+          payment_type: paymentMethod === "cod" ? "Cash on Delivery" : "Online Payment",
+          items: cartItems.map((item) => ({
+            item_id: item.productId?.toString(),
+            item_name: item.name,
+            price: parseFloat(item.price || 0),
+            quantity: parseInt(item.qty || 1, 10),
+            item_variant: item.size || undefined
+          }))
+        }
+      });
+      paymentInfoTrackedRef.current[paymentMethod] = true;
+    }
+  }, [paymentMethod, cartItems, finalTotal]);
+
+  // 🎯 GA4/GTM & Facebook Pixel/CAPI: Purchase Event
+  const trackPurchaseEvent = useCallback(async (orderId, totalValue, itemsList, couponUsed, extId, billingData) => {
+    if (purchaseTrackedRef.current) return;
+
+    let hashedEmail = "";
+    let hashedPhone = "";
+    let hashedFirstName = "";
+    let hashedLastName = "";
+    let hashedCity = "";
+    let hashedCountry = "";
+    let hashedCountryCode = "";
+
+    if (billingData) {
+      const fullName = (billingData.first_name || "").trim();
+      const nameParts = fullName.split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+      const cityVal = billingData.city || "Dhaka";
+
+      try {
+        if (billingData.email) hashedEmail = await generateSHA256Hash(billingData.email);
+        if (billingData.phone) hashedPhone = await generateSHA256Hash(billingData.phone);
+        if (firstName) hashedFirstName = await generateSHA256Hash(firstName);
+        if (lastName) hashedLastName = await generateSHA256Hash(lastName);
+        if (cityVal) hashedCity = await generateSHA256Hash(cityVal);
+        hashedCountry = await generateSHA256Hash("Bangladesh");
+        hashedCountryCode = await generateSHA256Hash("BD");
+      } catch (hashError) {
+        console.error("Facebook tracking data hashing failed:", hashError);
+      }
+    }
+    
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ ecommerce: null }); 
+    window.dataLayer.push({
+      event: "purchase",
+      customer_information: billingData ? {
+        first_name: billingData.first_name?.split(" ")[0] || "",
+        last_name: billingData.first_name?.split(" ").slice(1).join(" ") || "",
+        phone: billingData.phone || "",
+        address_1: billingData.address_1 || "",
+        city: billingData.city || "Dhaka",
+        country: "Bangladesh",
+        country_code: "BD"
+      } : undefined,
+
+      user_data: {
+        external_id: extId || undefined,
+        em: hashedEmail || undefined,
+        ph: hashedPhone || undefined,
+        fn: hashedFirstName || undefined,
+        ln: hashedLastName || undefined,
+        ct: hashedCity || undefined,
+        country: hashedCountry || undefined,
+        country_code: hashedCountryCode || undefined
+      },
+
+      ecommerce: {
+        transaction_id: orderId?.toString(),
+        value: parseFloat(totalValue || 0),
+        currency: "BDT",
+        coupon: couponUsed || undefined,
+        shipping: parseFloat(deliveryFee),
+        items: itemsList.map((item) => ({
+          item_id: item.productId?.toString() || item.product_id?.toString(),
+          item_name: item.name || "Product", 
+          price: parseFloat(item.price || 0),
+          quantity: parseInt(item.qty || item.quantity || 1, 10),
+          item_variant: item.size || undefined
+        }))
+      }
+    });
+
+    purchaseTrackedRef.current = true; 
+  }, [deliveryFee]);
+
   // Apply Promo Code
   const applyPromoCode = async () => {
     if (!promoCode) return;
-
     setPromoLoading(true);
 
     try {
@@ -105,42 +272,92 @@ const CheckoutPage = () => {
     setPromoLoading(false);
   };
 
-  // Promo code remove korar function
   const removePromoCode = () => {
     setPromoCode("");
     setDiscountAmount(0);
     setPromoMessage("");
   };
+
   // ==========================
   // PLACE ORDER
   // ==========================
   const placeOrder = async (e) => {
     e.preventDefault();
-
     if (cartItems.length === 0) return alert("Cart is empty or invalid product data");
 
     setLoading(true);
 
     const line_items = cartItems.map(item => ({
       product_id: item.productId,
-      variation_id: item.variationId || undefined, // undefined instead of 0 to avoid WC error
+      variation_id: item.variationId || undefined,
       quantity: item.qty,
     }));
 
+    const orderCustomerId = currentCustomerId > 0 ? currentCustomerId : 0;
+
+    const fullName = billing.first_name.trim();
+    const nameParts = fullName.split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
+    const detectedCity = extractCityFromAddress(billing.address_1);
+
+    const cleanPhone = billing.phone ? billing.phone.trim() : "";
+    const phoneSuffix = cleanPhone.slice(-2);
+    const uniqueSuffix = Date.now().toString().slice(-2);
+
+    let finalEmail = billing.email.trim();
+    if (!finalEmail) {
+      const cleanName = fullName.toLowerCase().replace(/[^a-z0-9]/g, "");
+      finalEmail = cleanName 
+        ? `${cleanName}_${phoneSuffix || uniqueSuffix}@gmail.com` 
+        : `guest_${uniqueSuffix}@gmail.com`;
+    }
+
+    let hashedExternalId = "";
+    try {
+      hashedExternalId = await generateSHA256Hash(cleanPhone || `guest_${uniqueSuffix}`);
+    } catch (hashError) {
+      console.error("Hash generation failed, using fallback string", hashError);
+      hashedExternalId = `fallback_${uniqueSuffix}_${phoneSuffix}`;
+    }
+
+    const customTrackingBilling = {
+      first_name: fullName,
+      phone: cleanPhone,
+      email: finalEmail,
+      address_1: billing.address_1,
+      city: detectedCity
+    };
+
+    const formattedBilling = {
+      first_name: firstName,
+      last_name: lastName,
+      company: "",
+      address_1: billing.address_1,
+      address_2: "",
+      city: detectedCity, 
+      state: detectedCity, 
+      postcode: "",
+      country: "BD",
+      email: finalEmail, 
+      phone: billing.phone
+    };
+
     try {
       // --------------------------
-      // SSLCommerz Payment
+      // 1. SSLCommerz Payment
       // --------------------------
       if (paymentMethod === "sslcommerz") {
-        // Create WooCommerce Order
         const orderResponse = await axios.post(
           `${API_URL}/wc/v3/orders`,
           {
             payment_method: "sslcommerz",
             payment_method_title: "SSLCommerz",
             set_paid: false,
-            billing,
-            shipping: billing,
+            customer_id: orderCustomerId,
+            billing: formattedBilling,   
+            shipping: formattedBilling,  
             line_items,
             shipping_lines: [
               {
@@ -150,6 +367,9 @@ const CheckoutPage = () => {
               },
             ],
             coupon_lines: discountAmount > 0 ? [{ code: promoCode }] : [],
+            meta_data: [
+              { key: "external_id", value: hashedExternalId }
+            ]
           },
           {
             auth: {
@@ -161,14 +381,19 @@ const CheckoutPage = () => {
 
         const orderID = orderResponse.data.id;
 
-        // Call SSL Sandbox API
+        sessionStorage.setItem("pending_pur_items", JSON.stringify(cartItems));
+        sessionStorage.setItem("pending_pur_total", finalTotal.toString());
+        sessionStorage.setItem("pending_pur_coupon", discountAmount > 0 ? promoCode : "");
+        sessionStorage.setItem("pending_pur_ext_id", hashedExternalId); 
+        sessionStorage.setItem("pending_pur_billing", JSON.stringify(customTrackingBilling)); 
+
         const sslResponse = await axios.post(
-          "https://dev.toffpark.com/wp-json/sslcommerz/v1/create-payment",
+          "https://backend.orlass.com/wp-json/sslcommerz/v1/create-payment",
           {
             order_id: orderID,
             amount: finalTotal,
-            name: `${billing.first_name} ${billing.last_name}`,
-            email: billing.email,
+            name: fullName, 
+            email: finalEmail, 
             phone: billing.phone,
             address: billing.address_1,
           }
@@ -177,144 +402,65 @@ const CheckoutPage = () => {
         if (sslResponse.data?.GatewayPageURL) {
           window.location.href = sslResponse.data.GatewayPageURL;
         } else {
-          console.log("SSL ERROR:", sslResponse.data);
           alert("SSL Payment initiation failed");
         }
 
         setLoading(false);
         return;
       }
+      
       // --------------------------
+      // 3. COD (Cash on Delivery)
       // --------------------------
-      // --------------------------
-      // bKash Payment Logic
-      // --------------------------
-      if (paymentMethod === "bkash") {
-        setLoading(true);
-        try {
-          const orderResponse = await axios.post(
-            `${API_URL}/wc/v3/orders`,
+      if (paymentMethod === "cod") {
+        const orderData = {
+          payment_method: "cod",
+          payment_method_title: "Cash on Delivery",
+          set_paid: false,
+          customer_id: orderCustomerId,
+          billing: formattedBilling,   
+          shipping: formattedBilling,  
+          customer_note: billing.order_note,
+          line_items,
+          shipping_lines: [
             {
-              payment_method: "bkash-for-woocommerce", 
-              payment_method_title: "bKash",
-              set_paid: false,
-              billing: {
-                ...billing,
-                last_name: "", 
-              },
-              shipping: billing,
-              line_items: cartItems.map((item) => ({
-                product_id: item.productId,
-                variation_id: item.variationId || undefined,
-                quantity: item.qty,
-              })),
-              shipping_lines: [
-                {
-                  method_id: deliveryMethod,
-                  method_title: deliveryMethod === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka",
-                  total: deliveryFee.toString(),
-                },
-              ],
-              coupon_lines: discountAmount > 0 ? [{ code: promoCode }] : [],
+              key: "shipping_method_line",
+              method_id: deliveryMethod,
+              method_title: deliveryMethod === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka",
+              total: deliveryFee.toString(),
             },
-            {
-              auth: {
-                username: "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
-                password: "cs_2029a263378e25918c8886931b530f0ab82ff9e1",
-              },
-            }
-          );
+          ],
+          coupon_lines: discountAmount > 0 ? [{ code: promoCode }] : [],
+          meta_data: [
+            { key: "external_id", value: hashedExternalId }, 
+            { key: "device_type", value: getTrackingData().deviceType },
+            { key: "utm_source", value: getTrackingData().utmSource },
+            { key: "utm_medium", value: getTrackingData().utmMedium },
+            { key: "utm_campaign", value: getTrackingData().utmCampaign },
+            { key: "page_views", value: getTrackingData().pageViews },
+          ],
+        };
 
-          const orderID = orderResponse.data.id;
-
-          const bkashRes = await axios.post(
-            "https://dev.toffpark.com/wp-json/bkash/v1/create-payment",
-            {
-              order_id: orderID,
-            }
-          );
-
-          if (bkashRes.data?.status === "success" && bkashRes.data?.bkashURL) {
-            window.location.href = bkashRes.data.bkashURL;
-          } else {
-            console.log("bKash Error Details:", bkashRes.data);
-            alert("bKash Error: " + (bkashRes.data?.message || "Payment URL generation failed."));
-          }
-        } catch (error) {
-          console.error("BKASH FULL ERROR:", error.response?.data || error.message);
-          alert("System Error: bKash পেমেন্ট শুরু করা যাচ্ছে না। দয়া করে আবার চেষ্টা করুন।");
-        }
-        setLoading(false);
-        return;
-      }
-      // --------------------------
-      // COD / BANK TRANSFER
-      // --------------------------
-      const orderData = {
-        payment_method: paymentMethod,
-        payment_method_title:
-          paymentMethod === "cod"
-            ? "Cash on Delivery"
-            : paymentMethod === "bkash"
-            ? "bKash"
-            : "Card Payment",
-        set_paid: false,
-        billing: {
-          first_name: billing.first_name,
-          last_name: "", // optional
-          phone: billing.phone,
-          address_1: billing.address_1,
-          address_2: "",
-          city: "",
-          state: "",
-          postcode: "",
-          country: "",
-        },
-        shipping: {
-          first_name: billing.first_name,
-          last_name: "",
-          address_1: billing.address_1,
-          address_2: "",
-          city: "",
-          state: "",
-          postcode: "",
-          country: "",
-        },
-        customer_note: billing.order_note,
-        line_items: cartItems.map((item) => ({
-          product_id: item.productId,
-          variation_id: item.variationId || undefined,
-          quantity: item.qty,
-        })),
-        shipping_lines: [
-          {
-            method_id: deliveryMethod,
-            method_title: deliveryMethod === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka",
-            total: deliveryFee.toString(),
+        const response = await axios.post(`${API_URL}/wc/v3/orders`, orderData, {
+          auth: {
+            username: "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
+            password: "cs_2029a263378e25918c8886931b530f0ab82ff9e1",
           },
-        ],
-        coupon_lines: discountAmount > 0 ? [{ code: promoCode }] : [],
-        meta_data: [
-          { key: "device_type", value: getTrackingData().deviceType },
-          { key: "utm_source", value: getTrackingData().utmSource },
-          { key: "utm_medium", value: getTrackingData().utmMedium },
-          { key: "utm_campaign", value: getTrackingData().utmCampaign },
-          { key: "page_views", value: getTrackingData().pageViews },
-        ],
-      };
+        });
 
-      const response = await axios.post(`${API_URL}/wc/v3/orders`, orderData, {
-        auth: {
-          username: "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
-          password: "cs_2029a263378e25918c8886931b530f0ab82ff9e1",
-        },
-      });
+        await trackPurchaseEvent(
+          response.data.id, 
+          finalTotal, 
+          cartItems, 
+          discountAmount > 0 ? promoCode : "", 
+          hashedExternalId,
+          customTrackingBilling
+        );
 
-      const orderID = response.data.id;
-      setOrderId(orderID);
-
-      clearCart();
-      setShowThankYou(true);
+        setOrderId(response.data.id);
+        clearCart();
+        setShowThankYou(true);
+      }
     } catch (error) {
       console.error("ORDER ERROR:", error.response?.data || error.message);
       alert("Order failed. Check console for details.");
@@ -323,27 +469,53 @@ const CheckoutPage = () => {
     setLoading(false);
   };
 
-  // Payment success query params handling
   useEffect(() => {
-    if (processedRef.current) return; // prevent re-run
+    if (processedRef.current) return;
 
     const params = new URLSearchParams(location.search);
     const paymentStatus = params.get("payment");
     const order = params.get("order_id");
 
-    if (paymentStatus === "success") {
+    if (paymentStatus === "success" && order) {
       processedRef.current = true;
       setOrderId(order);
       setShowThankYou(true);
+
+      const savedItems = JSON.parse(sessionStorage.getItem("pending_pur_items")) || [];
+      const savedTotal = sessionStorage.getItem("pending_pur_total") || cartTotal;
+      const savedCoupon = sessionStorage.getItem("pending_pur_coupon") || "";
+      const savedExtId = sessionStorage.getItem("pending_pur_ext_id") || ""; 
+      
+      // সেশন থেকে পেমেন্ট করা ইউজারের কাস্টমার ট্র্যাকিং ডেটা রিকভারি
+      const savedBilling = JSON.parse(sessionStorage.getItem("pending_pur_billing")) || {
+        first_name: "Guest Customer",
+        phone: "",
+        email: "",
+        address_1: "",
+        city: "Dhaka"
+      };
+
+      // ✅ SSLCommerz এ পেমেন্ট সাকসেসফুল হয়ে পেজে ব্যাক করলে পারচেজ ইভেন্ট ফায়ার হবে
+      trackPurchaseEvent(order, savedTotal, savedItems, savedCoupon, savedExtId, savedBilling);
+
+      // ক্লিনআপ সেশন স্টোরেজ
+      sessionStorage.removeItem("pending_pur_items");
+      sessionStorage.removeItem("pending_pur_total");
+      sessionStorage.removeItem("pending_pur_coupon");
+      sessionStorage.removeItem("pending_pur_ext_id");
+      sessionStorage.removeItem("pending_pur_billing");
+
       clearCart();
+      // URL থেকে কুয়েরি প্যারামিটার ক্লিন করা যাতে রিফ্রেশ দিলে ডুপ্লিকেট হিট না হয়
       window.history.replaceState({}, document.title, "/checkout");
     }
+    
     if (paymentStatus === "fail") {
       alert("Payment Failed");
       processedRef.current = true;
       window.history.replaceState({}, document.title, "/checkout");
     }
-  }, [location.search, clearCart]);
+  }, [location.search, clearCart, cartTotal, trackPurchaseEvent]);
 
   return (
     <div>
@@ -352,15 +524,10 @@ const CheckoutPage = () => {
         <div className="custom-header-content">
           <div className="container">
             <div id="breadcrumb">
-              <div
-                aria-label="Breadcrumbs"
-                className="breadcrumbs breadcrumb-trail"
-              >
+              <div aria-label="Breadcrumbs" className="breadcrumbs breadcrumb-trail">
                 <ul className="trail-items">
                   <li className="trail-item trail-begin">
-                    <a href="/" rel="home">
-                      <span>Home</span>
-                    </a>
+                    <a href="/" rel="home"><span>Home</span></a>
                   </li>
                   <li className="trail-item trail-end">
                     <span>Checkout</span>
@@ -383,7 +550,7 @@ const CheckoutPage = () => {
                     <div className="col2-set" id="customer_details">
                       <div className="col-1 checkout-billing">
                         <div className="product-billing-fields_field-wrapper">
-                          <h3>Contact & Shipping Details:</h3>
+                          <h3>Contact & Shipping Details</h3>
                           <div className="form-row">
                             <label>Full Name *</label>
                             <input
@@ -415,7 +582,6 @@ const CheckoutPage = () => {
                               value={billing.email}
                               placeholder="Your email address"
                               onChange={handleBillingChange}
-                              required
                             />
                           </div>
 
@@ -425,7 +591,7 @@ const CheckoutPage = () => {
                               type="text"
                               name="address_1"
                               value={billing.address_1}
-                              placeholder="House/Flat, Road, Area, Thana/Upazila, District"
+                              placeholder="House/Flat, Road, Area, Thana/Upazila, District/City"
                               onChange={handleBillingChange}
                               required
                             />
@@ -441,6 +607,7 @@ const CheckoutPage = () => {
                           </div>
                         </div>
                       </div>
+                      
                       {/* Order Review & Payment */}
                       <div className="col-2 checkout-review">
                         <div className="order-summary-card">
@@ -473,7 +640,6 @@ const CheckoutPage = () => {
                               <span>৳{cartTotal.toFixed(0)}</span>
                             </div>
                             
-                            {/* Discount Amount show korbe jodi discount thake */}
                             {discountAmount > 0 && (
                               <div className="calc-row discount-row">
                                 <span>Discount ({promoCode})</span>
@@ -491,13 +657,13 @@ const CheckoutPage = () => {
                             </div>
                           </div>
 
-                          {/* Promo Section-e clear button jog kora hoyeche */}
+                          {/* Promo Section */}
                           <div className="promo-section">
                             <input 
                               type="text" 
                               placeholder="Enter coupon code" 
                               value={promoCode} 
-                              disabled={discountAmount > 0} // Discount apply thakle input lock thakbe
+                              disabled={discountAmount > 0} 
                               onChange={(e) => setPromoCode(e.target.value)} 
                             />
                             {discountAmount > 0 ? (
@@ -513,17 +679,12 @@ const CheckoutPage = () => {
                               {promoMessage}
                             </p>
                           )}
-
-                          {/* <div className="delivery-badge">
-                            <span className="truck-icon">🚚</span>
-                            <p>Delivery <strong>within 2-3 Days</strong> after confirmation</p>
-                          </div> */}
                         </div>
+                        
                         {/* Delivery Method Section */}
                         <div className="payment-method-section">
                           <h3>Delivery Area</h3>
                           <div className="payment-options">
-                            {/* Inside Dhaka */}
                             <label className={`payment-card ${deliveryMethod === 'inside_dhaka' ? 'selected' : ''}`}>
                               <input 
                                 type="radio" 
@@ -539,11 +700,10 @@ const CheckoutPage = () => {
                                     <span className="method-title">Inside Dhaka City</span>
                                   </div>
                                 </div>
-                                <span className="price-tag">Tk 80</span>
+                                <span className="price-tag">Tk 60</span>
                               </div>
                             </label>
 
-                            {/* Outside Dhaka */}
                             <label className={`payment-card ${deliveryMethod === 'outside_dhaka' ? 'selected' : ''}`}>
                               <input 
                                 type="radio" 
@@ -559,22 +719,21 @@ const CheckoutPage = () => {
                                     <span className="method-title">Outside Dhaka City</span>
                                   </div>
                                 </div>
-                                <span className="price-tag">Tk 150</span>
+                                <span className="price-tag">Tk 120</span>
                               </div>
                             </label>
                           </div>
                         </div>
 
+                        {/* Payment Method Section */}
                         <div className="payment-method-section">
                           <h3>Payment Method</h3>
                           <div className="payment-options">
-                            {/* Cash on Delivery */}
                             <label className={`payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
                               <input type="radio" value="cod" checked={paymentMethod === 'cod'} onChange={(e) => setPaymentMethod(e.target.value)} />
                               <div className="payment-content">
                                 <div className="payment-main">
                                   <span className="radio-circle"></span>
-                                  {/* <img src="/images/icons/cod-icon.png" alt="COD" className="method-icon" /> */}
                                   <div className="text-group">
                                     <span className="method-title">Cash on Delivery</span>
                                     <span className="method-subtitle">Pay when you receive your order</span>
@@ -582,36 +741,23 @@ const CheckoutPage = () => {
                                 </div>
                               </div>
                             </label>
+                            
                             <label className={`payment-card ${paymentMethod === 'sslcommerz' ? 'selected' : ''}`}>
                               <input type="radio" value="sslcommerz" checked={paymentMethod === 'sslcommerz'} onChange={(e) => setPaymentMethod(e.target.value)} />
                               <div className="payment-content">
                                 <div className="payment-main">
                                   <span className="radio-circle"></span>
-                                  {/* <img src="/images/icons/card-icon.png" alt="Card" className="method-icon" /> */}
                                   <div className="text-group">
-                                    <span className="method-title">Card Payment</span>
-                                    <span className="method-subtitle">Visa, Mastercard, Amex</span>
+                                    <span className="method-title">Online Payment</span>
+                                    <span className="method-subtitle">Visa, Mastercard, Amex, bkash, Nagad</span>
                                   </div>
                                 </div>
                                 <img src="/images/sslcz-verified.png" alt="SSLCommerz" className="provider-logo" />
                               </div>
                             </label>
-                            <label className={`payment-card ${paymentMethod === 'bkash' ? 'selected' : ''}`}>
-                              <input type="radio" value="bkash" checked={paymentMethod === 'bkash'} onChange={(e) => setPaymentMethod(e.target.value)} />
-                              <div className="payment-content">
-                                <div className="payment-main">
-                                  <span className="radio-circle"></span>
-                                  {/* <img src="/images/bkash-logo.png" alt="bKash" className="method-icon" /> */}
-                                  <div className="text-group">
-                                    <span className="method-title">bKash</span>
-                                    <span className="method-subtitle">Pay with bKash</span>
-                                  </div>
-                                </div>
-                                <img src="/images/bkash.png" alt="bKash Logo" className="provider-logo" />
-                              </div>
-                            </label>
                           </div>
                         </div>
+                        
                         <div className="checkout-footer">
                           <div className="terms-container">
                             <div className="terms-wrapper">
@@ -633,7 +779,7 @@ const CheckoutPage = () => {
           </div>
         </div>
       </div>
-     <ThankYouPopup
+      <ThankYouPopup
         show={showThankYou}
         orderId={orderId}
         onClose={() => setShowThankYou(false)}

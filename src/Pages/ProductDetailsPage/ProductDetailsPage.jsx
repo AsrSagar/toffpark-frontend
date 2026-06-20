@@ -14,6 +14,9 @@ import QuickViewModal from "../../components/QuickViewModal/QuickViewModal";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import { pushDataLayer } from "../../utils/gtm";
+
+
 const getSafeImage = (src) => {
     return typeof src === "string" && src.trim() !== ""
         ? src
@@ -43,13 +46,32 @@ const ProductDetailsPage = () => {
     const [flyCoords, setFlyCoords] = useState({ startX: 0, startY: 0, endX: 0, endY: 0 });
     const API_URL = config.API_URL;
     const navigate = useNavigate();
-    const [isOpen, setIsOpen] = useState(false);
 
     const mainSliderRef = useRef(null);
     const thumbSliderRef = useRef(null);
     const [activeIndex, setActiveIndex] = useState(0);
 
-    // থাম্বনেইলে ক্লিক করলে বড় ইমেজ এবং স্লাইডার দুইটাই চেঞ্জ হবে
+    useEffect(() => {
+        if (!product) return;
+
+        pushDataLayer({
+            event: "view_item",
+            ecommerce: {
+                currency: "BDT",
+                value: Number(product.price),
+                items: [
+                    {
+                        item_id: String(product.id),
+                        item_name: product.name,
+                        item_category: product.categories?.[0]?.name || "",
+                        price: Number(product.price),
+                        quantity: 1,
+                    },
+                ],
+            },
+        });
+    }, [product]);
+
     const handleThumbClick = (index) => {
         setActiveIndex(index);
         if (mainSliderRef.current) {
@@ -60,11 +82,7 @@ const ProductDetailsPage = () => {
         }
     };
 
-    const toggleAccordion = () => {
-        setIsOpen(!isOpen);
-    };
-
-        // Handle Add to Cart with Animation
+    // Handle Add to Cart with Animation
     const handleAddWithAnimation = async (e) => {
         e.preventDefault();
         
@@ -110,7 +128,7 @@ const ProductDetailsPage = () => {
             ]);
 
             setSelectedProduct(product);
-            setIsQuickViewOpen(true); // Ekhon modal open hobe
+            setIsQuickViewOpen(true); 
         } catch (error) {
             console.error("Error loading product:", error);
         } finally {
@@ -127,7 +145,6 @@ const ProductDetailsPage = () => {
 
         if (!slug) return;
 
-        // Instant scroll top
         window.scrollTo({
             top: 0,
             behavior: "instant"
@@ -145,7 +162,6 @@ const ProductDetailsPage = () => {
 
         const fetchProduct = async () => {
             try {
-                // Reset state instantly
                 setLoading(true);
                 setProduct(null);
                 setSelectedVariation(null);
@@ -154,7 +170,6 @@ const ProductDetailsPage = () => {
                 setRelatedProducts([]);
                 setActiveImage("");
 
-                // STEP 1: Fetch Product First
                 const productRes = await wcApiV3.get("/products", {
                     params: { slug }
                 });
@@ -171,7 +186,6 @@ const ProductDetailsPage = () => {
                 setProduct(p);
                 setActiveImage(getSafeImage(p?.images?.[0]?.src) || "");
 
-                // STEP 2: Parallel API Calls
                 const relatedPromise =
                     p.categories?.length > 0
                         ? wcApiV3.get("/products", {
@@ -194,14 +208,12 @@ const ProductDetailsPage = () => {
 
                 if (!isMounted) return;
 
-                // Related Products
                 setRelatedProducts(
                     relatedRes.data
                         .filter((item) => item.id !== p.id)
                         .slice(0, 4)
                 );
 
-                // Variations
                 setVariations(variationRes.data);
 
             } catch (err) {
@@ -221,21 +233,13 @@ const ProductDetailsPage = () => {
     }, [slug]);
 
     useEffect(() => {
-        if (!product?.id) return; // ensure product is loaded
+        if (!product?.id) return; 
 
-        // Get existing recently viewed IDs
         let viewed = JSON.parse(localStorage.getItem("recently_viewed") || "[]");
-
-        // Remove current product if already in list
         viewed = viewed.filter(id => id !== product.id);
-
-        // Add current product at the beginning
         viewed.unshift(product.id);
 
-        // Keep only last 10
         if (viewed.length > 10) viewed = viewed.slice(0, 10);
-
-        // Save back to localStorage
         localStorage.setItem("recently_viewed", JSON.stringify(viewed));
     }, [product]);
 
@@ -257,63 +261,175 @@ const ProductDetailsPage = () => {
 
     const isOutOfStock = product?.stock_status !== "instock";
 
-    // ✅ Add main product + selected FBT products
     const handleAddAllToCart = async () => {
         if (!product || isOutOfStock) return;
 
-        // ✅ Main product validation
         if (product.type === "variable" && !selectedVariation) {
             alert("Please select a size");
             return;
         }
 
-        const mainProduct = product.type === "variable" ? selectedVariation : product;
+        const mainProduct =
+            product.type === "variable" ? selectedVariation : product;
+
         setLoadingId(mainProduct.id);
 
         try {
-            // ✅ Add Main Product
-            addToCart(product, quantity, mainProduct);
+            const itemsToAdd = [];
+            const dataLayerItems = [];
 
-            // ✅ Add Selected FBT Products
+            // ---------------------------
+            // MAIN PRODUCT
+            // ---------------------------
+            const mainPrice = parseFloat(
+                mainProduct.price || product.price || 0
+            );
+
+            itemsToAdd.push({
+                product,
+                qty: quantity,
+                variation:
+                    product.type === "variable"
+                        ? selectedVariation
+                        : null,
+            });
+
+            dataLayerItems.push({
+                item_id: product.id.toString(),
+                item_name: product.name,
+                item_category: product.categories?.[0]?.name || "",
+                item_variant:
+                    product.type === "variable"
+                        ? selectedVariation?.attributes?.[0]?.option
+                        : undefined,
+                price: mainPrice,
+                quantity: quantity,
+            });
+
+            // ---------------------------
+            // FBT PRODUCTS
+            // ---------------------------
             for (const p of fbtProducts) {
-
                 if (!fbtSelected[p.id]) continue;
 
-                // SIMPLE PRODUCT
-                if (p.type !== "variable") {
-                    addToCart(p, 1);
+                try {
+                    if (p.type !== "variable") {
+                        const price = parseFloat(p.price || 0);
+
+                        itemsToAdd.push({
+                            product: p,
+                            qty: 1,
+                            variation: null,
+                        });
+
+                        dataLayerItems.push({
+                            item_id: p.id.toString(),
+                            item_name: p.name,
+                            item_category: p.categories?.[0]?.name || "",
+                            price,
+                            quantity: 1,
+                        });
+
+                        continue;
+                    }
+
+                    const selectedSize = fbtSelectedSize[p.id];
+
+                    if (!selectedSize) {
+                        alert(`Please select size for ${p.name}`);
+                        continue;
+                    }
+
+                    const variationRes = await wcApiV3.get(
+                        `/products/${p.id}/variations`
+                    );
+
+                    const matchedVariation = variationRes.data.find((v) =>
+                        v.attributes.some(
+                            (attr) =>
+                                attr.option.toLowerCase() ===
+                                selectedSize.toLowerCase()
+                        )
+                    );
+
+                    if (!matchedVariation) {
+                        alert(
+                            `Selected size not available for ${p.name}`
+                        );
+                        continue;
+                    }
+
+                    const price = parseFloat(
+                        matchedVariation.price || p.price || 0
+                    );
+
+                    itemsToAdd.push({
+                        product: p,
+                        qty: 1,
+                        variation: matchedVariation,
+                    });
+
+                    dataLayerItems.push({
+                        item_id: p.id.toString(),
+                        item_name: p.name,
+                        item_category: p.categories?.[0]?.name || "",
+                        item_variant: selectedSize,
+                        price,
+                        quantity: 1,
+                        variation_id: matchedVariation.id, // 🔥 useful for WooCommerce tracking
+                    });
+                } catch (err) {
+                    console.error("FBT item error:", err);
                     continue;
                 }
-
-                // VARIABLE PRODUCT
-                const selectedSize = fbtSelectedSize[p.id];
-
-                if (!selectedSize) {
-                    alert(`Please select size for ${p.name}`);
-                    return;
-                }
-
-                // Fetch variations of this FBT product
-                const variationRes = await wcApiV3.get(`/products/${p.id}/variations`);
-                const variations = variationRes.data;
-
-                const matchedVariation = variations.find(v =>
-                    v.attributes.some(attr =>
-                        attr.option.toLowerCase() === selectedSize.toLowerCase()
-                    )
-                );
-
-                if (!matchedVariation) {
-                    alert(`Selected size not available for ${p.name}`);
-                    return;
-                }
-
-                addToCart(p, 1, matchedVariation);
             }
 
+            // ---------------------------
+            // ADD TO CART ACTION
+            // ---------------------------
+            for (const item of itemsToAdd) {
+                if (item.variation) {
+                    await addToCart(
+                        item.product,
+                        item.qty,
+                        item.variation
+                    );
+                } else {
+                    await addToCart(item.product, item.qty);
+                }
+            }
 
+            // ---------------------------
+            // TOTAL VALUE (SAFE)
+            // ---------------------------
+            const totalValue = dataLayerItems.reduce(
+                (sum, item) =>
+                    sum + (item.price || 0) * (item.quantity || 0),
+                0
+            );
+
+            // ---------------------------
+            // GA4 EVENT
+            // ---------------------------
+            window.dataLayer = window.dataLayer || [];
+
+            window.dataLayer.push({
+                ecommerce: null,
+            });
+
+            window.dataLayer.push({
+                event: "add_to_cart",
+                ecommerce: {
+                    currency: "BDT",
+                    value: totalValue,
+                    items: dataLayerItems,
+                },
+            });
+
+            console.log("GA4 add_to_cart fired", dataLayerItems);
         } catch (error) {
             console.error("Add to cart error:", error);
+            alert("Something went wrong while adding items to cart.");
         } finally {
             setLoadingId(null);
         }
@@ -325,49 +441,58 @@ const ProductDetailsPage = () => {
         attr?.name?.toLowerCase() === "size"
     );
 
-
-
     const regularPrice = parseInt(product?.custom_price_data?.regular_price || product?.regular_price || 0);
     const salePrice = parseInt(product?.custom_price_data?.sale_price || product?.sale_price || 0);
     const isSale = salePrice < regularPrice;
     const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
+    
     const decodeHtml = (html) => {
         const txt = document.createElement("textarea");
         txt.innerHTML = html;
         return txt.value;
     };
 
-    // if (loading) {
-    //     return (
-    //     <div className="full-page-loader">
-    //         <div className="spinner"></div>
-    //         <p>Loading...</p>
-    //     </div>
-    //     );
-    // }
+    // Category filtering rules parsing
+    const productCategories = product?.categories?.map(c => c.slug) || [];
+    let ribbonText = ""; 
+    if (productCategories.includes("best-selling")) {
+        ribbonText = "Best Selling";
+    } else if (productCategories.includes("free-delivery")) {
+        ribbonText = "Free Delivery";
+    } else if (productCategories.includes("new-arrival")) {
+        ribbonText = "New Arrival";
+    }
 
     return (
         <>
             {loading || !product ? (
                 <div className="full-page-loader">
-                    <div className="spinner"></div>
-                    <p>Loading...</p>
+                    <img src="/images/loader.gif" alt="loader"/>
                 </div>
             ) : (
             <div className="product-single-page">
                 <div id="custom-header">
                     <div className="custom-header-content">
                         <div className="container">
-                            <div id="breadcrumb">
-                                <div  aria-label="Breadcrumbs" className="breadcrumbs breadcrumb-trail">
-                                    <ul className="trail-items">
-                                    <li className="trail-item trail-begin"><a href="/" rel="home"><span>Home</span></a></li>
-                                    <li className="trail-item"><span>Shop</span></li>
-                                        <li className="trail-item trail-end desktop-view"><span>{product.name}</span></li>
-                                        <li className="trail-item trail-end mobile-view"><span>{product?.name?.length > 30 ? product.name.substring(0, 30) + "..." : product?.name}</span></li>
-                                    </ul>
-                                </div> 
+                        <div id="breadcrumb">
+                            <div aria-label="Breadcrumbs" className="breadcrumbs breadcrumb-trail">
+                            <ul className="trail-items">
+                                <li className="trail-item trail-begin">
+                                <a href="/" rel="home"><span>Home</span></a>
+                                </li>
+                                <li className="trail-item">
+                                <a href="/shop"><span>Shop</span></a>
+                                </li>
+                                <li className="trail-item trail-end">
+                                <span>
+                                    {window.innerWidth <= 768 && product?.name && product.name.length > 30
+                                    ? product.name.substring(0, 30) + "..."
+                                    : product?.name}
+                                </span>
+                                </li>
+                            </ul>
                             </div> 
+                        </div> 
                         </div>
                     </div>
                 </div>
@@ -386,7 +511,7 @@ const ProductDetailsPage = () => {
                                                         {isSale && (
                                                             <>
                                                             <span className="ribbon-offered">{savePercent}% Off</span>
-                                                            <span className="ribbon-save">Offered items</span>
+                                                            {ribbonText && <span className="ribbon-save">{ribbonText}</span>}
                                                             </>
                                                         )}
                                                         <Slider
@@ -560,45 +685,21 @@ const ProductDetailsPage = () => {
                                                     </form>
                                                 </div>
                                                 <div className="product-info-wrapper">
-                                                    <div className={`policy-accordion ${isOpen ? 'active' : ''}`}>
-                                                        <div className="accordion-header" onClick={toggleAccordion} style={{ cursor: 'pointer' }}>
+                                                    <div className="policy-accordion">
+                                                        <div className="accordion-header">
                                                             <div className="terms-box">
                                                                 <span className="check-icon"><img src="/icons/Exchange.svg" alt="return" /></span>
                                                                 <strong>Easy Return & Exchange</strong>
                                                             </div>
                                                             <div className="terms-box">
-                                                                <span className="check-icon"><img src="/icons/Fast-Delivery.svg" alt="Fast Delivery" /></span>
+                                                                <span className="check-icon fast-delivery-icon"><img src="/icons/Fast-Delivery.svg" alt="Fast Delivery" /></span>
                                                                 <strong>Fast Home Delivery</strong>
                                                             </div>
                                                             <div className="terms-box">
                                                                 <span className="check-icon"><img src="/icons/Quality.svg" alt="Quality" /></span>
-                                                                <strong>Best Quality</strong>
+                                                                <strong>Premium Design & Quality</strong>
                                                             </div>
-                                                            {/* <span className={`arrow-down ${isOpen ? 'rotate' : ''}`}>▼</span> */}
                                                         </div>
-                                                        {isOpen && (
-                                                            <div className="accordion-content">
-                                                                <div className="policy-details">
-                                                                    orlazz
-                                                                    {/* <p>Your satisfaction is our priority. If something isn't right with your order, returning it is simple.</p>
-                                                                    
-                                                                    <h4>Return Window</h4>
-                                                                    <p>Request a return within <strong>7 days</strong> of receiving your order.</p>
-                                                                    
-                                                                    <h4>Free Return Shipping</h4>
-                                                                    <p>We cover return shipping for defective products, size/color mismatch, print issues, or wrong item sent.</p>
-                                                                    
-                                                                    <h4>How to Return</h4>
-                                                                    <ul>
-                                                                        <li>Call our hotline +8809677666888, email support@fabrilife.com, or message us on Facebook</li>
-                                                                        <li>Items must be unused, unwashed, with original tags and packaging</li>
-                                                                        <li>We'll arrange pickup for eligible returns</li>
-                                                                    </ul>
-                                                                    
-                                                                    <a href="/" className="view-policy-link">View Full Return & Refund Policy</a> */}
-                                                                </div>
-                                                            </div>
-                                                        )}
                                                     </div>
                                                     <div className="product_meta">
                                                         <span className="sku_wrapper">SKU: <span className="sku">{product.sku}</span></span>    
@@ -626,6 +727,7 @@ const ProductDetailsPage = () => {
                                         </div>
                                     </div>
 
+                                    {/* Related Products Section */}
                                     <div className="section-products related-product clear-fix top-space">
                                         {relatedProducts && relatedProducts.length > 0 && (
                                             <div className="underline-title-section-title-wrap">
@@ -648,15 +750,24 @@ const ProductDetailsPage = () => {
                                                 const isSale = salePrice < regularPrice;
                                                 const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
 
+                                                const itemCategories = item?.categories?.map(c => c.slug) || [];
+                                                let itemRibbonText = "";
+                                                if (itemCategories.includes("best-selling")) {
+                                                    itemRibbonText = "Best Selling";
+                                                } else if (itemCategories.includes("free-delivery")) {
+                                                    itemRibbonText = "Free Delivery";
+                                                } else if (itemCategories.includes("new-arrival")) {
+                                                    itemRibbonText = "New Arrival";
+                                                }
+
                                                 return (
                                                     <div key={item.id} className="custom-product-card">
                                                         <div className="product-card-inner" onClick={() => goToProduct(item.permalink)}>
-                                                            {/* Thumbnail */}
                                                             <div className="product-image-box">
                                                                 {isSale && savePercent > 0 && (
                                                                     <div className="badge-wrap">
                                                                         <span className="ribbon-offered">{savePercent}% Off</span>
-                                                                        <span className="ribbon-save">Offered items</span>
+                                                                        {itemRibbonText && <span className="ribbon-save">{itemRibbonText}</span>}
                                                                     </div>
                                                                 )}
                                                                 <img
@@ -666,7 +777,6 @@ const ProductDetailsPage = () => {
                                                                 {isOutOfStock && <span className="ribbon-out-stock">Out of Stock</span>}
                                                             </div>
 
-                                                            {/* Details */}
                                                             <div className="product-info">
                                                                 <h3 className="product-title product-title-desktop">
                                                                     {decodeHtml((item?.name || "").length > 60 ? item.name.substring(0, 60) + "..." : item.name)}
@@ -686,13 +796,12 @@ const ProductDetailsPage = () => {
                                                                     )}
                                                                 </div>
 
-                                                                {/* Buttons */}
                                                                 <div className="card-button-group">
                                                                     <button 
                                                                         className="btn-cart" 
                                                                         disabled={quickLoading === item.id}
                                                                         onClick={(e) => {
-                                                                            e.stopPropagation(); // 2. Eta card-er click event-ke thamay dibe
+                                                                            e.stopPropagation(); 
                                                                             handleQuickView(item.id);
                                                                         }}
                                                                         >

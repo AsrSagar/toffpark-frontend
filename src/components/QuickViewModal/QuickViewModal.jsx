@@ -76,16 +76,70 @@ const QuickViewModal = ({ isOpen, onClose, product }) => {
 
     const handleAddToCart = async () => {
         if (isOutOfStock) return;
+
         if (product.type === "variable" && !selectedVariation) {
             alert("Please select a size");
             return;
         }
 
-        const checkId = product.type === "variable" ? selectedVariation?.id : product.id;
+        const checkId =
+            product.type === "variable"
+                ? selectedVariation?.id
+                : product.id;
+
         if (!isInCart(checkId)) {
             setLoadingId(checkId);
+
             try {
-                addToCart(product, 1, product.type === "variable" ? selectedVariation : product);
+                const price = parseFloat(
+                    product.type === "variable"
+                        ? selectedVariation?.price || 0
+                        : product.price || 0
+                );
+
+                const item = {
+                    item_id: String(checkId),
+                    item_name: product.name,
+                    item_category: product.categories?.[0]?.name || "",
+                    price: price,
+                    item_variant:
+                        product.type === "variable"
+                            ? selectedSize
+                            : undefined,
+                    quantity: 1,
+                };
+
+                // 1. Add to cart (backend/local state)
+                await addToCart(
+                    product,
+                    1,
+                    product.type === "variable"
+                        ? selectedVariation
+                        : product
+                );
+
+                // 2. GA4 tracking
+                window.dataLayer = window.dataLayer || [];
+
+                // clear previous ecommerce object (best practice)
+                window.dataLayer.push({
+                    ecommerce: null,
+                });
+
+                window.dataLayer.push({
+                    event: "add_to_cart",
+                    ecommerce: {
+                        currency: "BDT",
+                        value: price,
+                        items: [item],
+                    },
+                });
+
+            } catch (error) {
+                console.error(
+                    "Error adding to cart:",
+                    error
+                );
             } finally {
                 setLoadingId(null);
             }
@@ -310,20 +364,20 @@ const styles = {
         zIndex: 20,
         color: "white",
         opacity: 0.9,
-        boxShadow: "none", // 'shas' কে boxShadow এ পরিবর্তন করা হয়েছে
-        fontSize: "14px",   // font-size -> fontSize
-        fontWeight: 400,    // Number হিসেবে রাখা যায়
+        boxShadow: "none", 
+        fontSize: "14px",   
+        fontWeight: 400,    
         padding: 0,
         margin: 0,
         width: "28px",
         height: "28px",
         background: "rgba(0, 0, 0, 0.25)",
-        borderRadius: "50%", // border-radius -> borderRadius
+        borderRadius: "50%", 
         transition: "all 0.15s ease",
         display: "flex",
-        alignItems: "center",     // align-items -> alignItems
-        justifyContent: "center", // justify-content -> justifyContent
-        lineHeight: 1,            // line-height -> lineHeight
+        alignItems: "center",     
+        justifyContent: "center", 
+        lineHeight: 1,          
     },
     body: {
         padding: "20px",
@@ -363,7 +417,7 @@ const styles = {
         border: "none",
         cursor: "pointer",
         display: "block",
-        margin: "0 auto 15px auto", // মাঝখানে রাখার জন্য
+        margin: "0 auto 15px auto", 
         padding: 0
     },
     PriceLabel: {
