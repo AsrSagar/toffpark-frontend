@@ -21,64 +21,131 @@ const CustomerFeedback = () => {
 
     const handleAddToCart = async () => {
       if (selectedIds.length === 0) return;
-  
+
       setAddingToCart(true);
-  
+
       try {
-        const selectedProducts = products.filter((p) => selectedIds.includes(p.id));
-  
+        const selectedProducts = products.filter((p) =>
+          selectedIds.includes(p.id)
+        );
+
+        const dataLayerItems = [];
+
         for (const p of selectedProducts) {
-          if (p.type !== "variable") {
+          if (p.type === "variable") {
+            const sizeForThisProduct = selectedSize[p.id];
+
+            const variationRes = await wcApiV3.get(
+              `products/${p.id}/variations`
+            );
+
+            const variations = variationRes.data;
+
+            const matchedVariation = variations.find((v) =>
+              v.attributes.some(
+                (attr) =>
+                  attr.option.toLowerCase() ===
+                  sizeForThisProduct?.toLowerCase()
+              )
+            );
+
+            if (!matchedVariation) {
+              alert(
+                `Selected size "${sizeForThisProduct}" not available for ${p.name}`
+              );
+              continue;
+            }
+
+            addToCart(p, 1, matchedVariation);
+
+            const price = parseFloat(
+              matchedVariation.price ||
+                p.custom_price_data?.regular_price ||
+                0
+            );
+
+            dataLayerItems.push({
+              item_id: p.id.toString(),
+              item_name: p.name,
+              item_category: p.categories?.[0]?.name || "",
+              item_variant: sizeForThisProduct,
+              price: price,
+              quantity: 1,
+            });
+          } else {
             addToCart(p, 1);
-            continue;
+
+            const price = parseFloat(
+              p.custom_price_data?.sale_price ||
+                p.custom_price_data?.regular_price ||
+                0
+            );
+
+            dataLayerItems.push({
+              item_id: p.id.toString(),
+              item_name: p.name,
+              item_category: p.categories?.[0]?.name || "",
+              price: price,
+              quantity: 1,
+            });
           }
-  
-          const sizeForThisProduct = selectedSize[p.id];
-  
-          if (!sizeForThisProduct) {
-            alert(`Please select a size for ${p.name}`);
-            setAddingToCart(false);
-            return;
-          }
-  
-          const variationRes = await wcApiV3.get(`products/${p.id}/variations`);
-          const variations = variationRes.data;
-  
-          const matchedVariation = variations.find(v =>
-            v.attributes.some(attr =>
-              attr.option.toLowerCase() === sizeForThisProduct.toLowerCase()
-            )
-          );
-  
-          if (!matchedVariation) {
-            alert(`Selected size "${sizeForThisProduct}" not available for ${p.name}`);
-            continue;
-          }
-  
-          addToCart(p, 1, matchedVariation);
         }
+
+        // total value calculation (IMPORTANT)
+        const totalValue = dataLayerItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        );
+
+        window.dataLayer = window.dataLayer || [];
+
+        // prevent duplication (GA4 best practice)
+        window.dataLayer.push({
+          ecommerce: null,
+        });
+
+        window.dataLayer.push({
+          event: "add_to_cart",
+          ecommerce: {
+            currency: "BDT",
+            value: totalValue,
+            items: dataLayerItems,
+          },
+        });
+
       } catch (error) {
         console.error("FBT Add to cart error:", error);
-        alert("কার্টে যোগ করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
+        alert(
+          "কার্টে যোগ করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
+        );
       } finally {
         setAddingToCart(false);
       }
     };
 
+    
     const handleAddWithAnimation = async (e) => {
       e.preventDefault();
 
+      if (selectedIds.length === 0) return;
+
+      // 🎯 ১. শুরুতে কঠোর ভ্যালিডেশন: সিলেক্ট করা সব ভেরিয়েবল প্রোডাক্টের সাইজ চেক করা হচ্ছে
+      const selectedProducts = products.filter((p) => selectedIds.includes(p.id));
+      
+      for (const p of selectedProducts) {
+        if (p.type === "variable") {
+          const sizeForThisProduct = selectedSize[p.id];
+          if (!sizeForThisProduct || sizeForThisProduct.trim() === "") {
+            alert(`Please select a size for "${p.name}"`);
+            return; // ❌ এখানেই ফাংশন স্টপ হয়ে যাবে
+          }
+        }
+      }
+
+      // ২. ভ্যালিডেশন সফল হলে ফ্লাইং অ্যানিমেশন লজিক শুরু হবে
       const cartIcon = document.getElementById('cart-icon');
       const firstSelectedId = selectedIds[0];
       const productImageElement = imageRefs.current[firstSelectedId];
-
-      const sizeForThisProduct = selectedSize[selectedIds[0]];
-  
-      if (!sizeForThisProduct) {
-        alert(`Please select a size`);
-        setAddingToCart(false);
-        return;
-      }
 
       if (cartIcon && productImageElement) {
         const startRect = productImageElement.getBoundingClientRect();
@@ -98,6 +165,8 @@ const CustomerFeedback = () => {
           setTimeout(() => cartIcon.classList.remove('cart-icon-bounce'), 400);
         }, 800); 
       }
+
+      // ৩. কার্টে প্রোডাক্ট পুশ করার মেইন ফাংশন কল
       await handleAddToCart();
     };
 
@@ -109,8 +178,6 @@ const CustomerFeedback = () => {
                 
                 if (Array.isArray(data)) {
                     setProducts(data);
-                    // ডিফল্টভাবে সব প্রোডাক্ট সিলেক্ট করে রাখতে চাইলে নিচের লাইনটি ব্যবহার করতে পারেন
-                    // setSelectedIds(data.map(p => p.id));
                 }
                 setLoading(false);
             } catch (err) {
@@ -156,7 +223,7 @@ const CustomerFeedback = () => {
                             {!playVideo ? (
                                 <div className="video-box-custom" onClick={() => setPlayVideo(true)}>
                                     <img
-                                        src="/images/testimonials/Thumbnail-OVC-Nadia-2.jpg"
+                                        src="/images/testimonials/video-thumbnail.jpeg"
                                         alt="Customer Feedback"
                                         className="video-thumb-custom"
                                         style={{ objectFit: "cover" }}
@@ -168,10 +235,10 @@ const CustomerFeedback = () => {
                             ) : (
                                 <div className="iframe-container">
                                     <iframe
-                                        src="https://www.youtube.com/embed/Weh-dTfljgA?autoplay=1"
+                                        src="https://www.youtube.com/embed/dqs8fx2hn6M?autoplay=1&mute=0&playsinline=1&enablejsapi=1"
                                         title="Customer Feedback"
                                         frameBorder="0"
-                                        allow="autoplay; encrypted-media"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         allowFullScreen
                                         className="video-iframe-custom"
                                     ></iframe>

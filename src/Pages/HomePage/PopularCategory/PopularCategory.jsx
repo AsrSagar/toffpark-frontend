@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom"; // ১. Link ইম্পোর্ট করা হয়েছে
 import Slider from "react-slick";
 import config from "../../../config";
 import "slick-carousel/slick/slick.css";
@@ -20,6 +21,11 @@ const PopularCategory = () => {
                 const response = await fetch(`${API_URL}/wc/store/v1/products/categories?per_page=20`);
                 const data = await response.json();
                 if (Array.isArray(data)) {
+                    const excludedSlugs = ["sale", "mega-deal", "new-arrival", "top-selling", "best-selling", "free-delivery", "new-arrivals"];
+          
+                    const filteredData = data.filter(cat => !excludedSlugs.includes(cat.slug));
+                    setCategories(filteredData);
+                } else {
                     setCategories(data);
                 }
                 setLoading(false);
@@ -58,17 +64,19 @@ const PopularCategory = () => {
                         <Slider key={`${windowWidth}-${categories.length}`} {...settings}>
                             {categories.map((cat) => (
                                 <div key={cat.id} className="category-slide-item">
-                                    <div className="category-card">
-                                        <div className="category-image">
-                                            <img 
-                                                src={cat.image?.src || "/images/shop/cat1.jpg"} 
-                                                alt={cat.name} 
-                                            />
+                                    <Link to={`/product-category/${cat.slug}`} className="category-card-link">
+                                        <div className="category-card">
+                                            <div className="category-image">
+                                                <img 
+                                                    src={cat.image?.src || "/images/shop/cat1.jpg"} 
+                                                    alt={cat.name} 
+                                                />
+                                            </div>
+                                            <div className="category-label-overlay">
+                                                <span className="label-text">{cat.name}</span>
+                                            </div>
                                         </div>
-                                        <div className="category-label-overlay">
-                                            <span className="label-text">{cat.name}</span>
-                                        </div>
-                                    </div>
+                                    </Link>
                                 </div>
                             ))}
                         </Slider>

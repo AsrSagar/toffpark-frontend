@@ -2535,7 +2535,7 @@ body.home-boxed {
 }
 
 #content {
-    padding: 50px 0;
+    padding: 30px 0;
     background: #fff;
 }
 
@@ -6788,9 +6788,9 @@ select.orderby {
 .pagination.filter-row-box .nav-links a:hover,
 .pagination.filter-row-box .nav-links a:active,
 .pagination.filter-row-box .nav-links a:focus {
-    background: #656565;
-    color: #fff;
-    border-color: #656565;
+    background: #eee;
+    color: #000;
+    border-color: #000;
 }
 
 .filter-row-box.product-view > a {
@@ -7326,7 +7326,7 @@ td.product-remove {
 --------------------------------------------------------------*/
 
 .section-checkout h3, .checkout h3 {
-    font-size: 20px;
+    font-size: 18px;
     border-bottom: 1px solid #efefef;
     clear: both;
     margin-bottom: 12px;
@@ -8218,7 +8218,21 @@ form.checkout {
 	list-style: disc;
 }
 
-
+.sort-by ul li button {
+    background: transparent;
+    color: #000;
+    padding: 10px;
+    width: 100%;
+    text-align: left;
+    font-size: 12px;
+    line-height: 10px;
+}
+.sort-by ul li button:hover {
+	background: #f5f5f5;
+}
+.sort-by ul li button:last-child {
+	border-bottom: none;
+}
 /* ================= RESPONSIVE ================= */
 @media (max-width: 600px) {
     .popup-custom-coupon {

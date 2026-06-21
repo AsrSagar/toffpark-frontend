@@ -318,6 +318,53 @@ span.total-label {
     font-size: 16px;
 }
 
+.iframe-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+    height: 0;
+    overflow: hidden;
+    background: #000; /* ভিডিও লোড হওয়ার সময় কালো ব্যাকগ্রাউন্ড রাখবে */
+    border-radius: 8px;
+}
+
+.video-iframe-custom {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* ভিডিওর মেইন কন্টেইনার */
+.left-video-side {
+    width: 100%; /* মোবাইলে পুরো স্ক্রিন জুড়ে থাকবে */
+    max-width: 100%;
+    display: block;
+}
+
+/* আইফ্রেমের বাইরের ডিভ */
+.iframe-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* ১৬:৯ অ্যাসপেক্ট রেশিও (ভিডিওর স্ট্যান্ডার্ড সাইজ) */
+    height: 0;             /* এটি অত্যন্ত গুরুত্বপূর্ণ */
+    overflow: hidden;
+    background-color: #000000; /* ভিডিও লোড হওয়ার আগ পর্যন্ত কালো দেখাবে */
+    border-radius: 12px;       /* আপনার ডিজাইন অনুযায়ী কোণা গোল করার জন্য */
+}
+
+/* আসল আইফ্রেম ট্যাগ */
+.video-iframe-custom {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
+    display: block;
+}
 @keyframes bounce {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.3); }

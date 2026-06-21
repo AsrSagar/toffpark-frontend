@@ -6,6 +6,7 @@ import QuickViewModal from "../../components/QuickViewModal/QuickViewModal";
 import { getProductById } from "../../api/products";
 import SalesPopup from "../../components/SalesPopup/SalesPopup";
 import debounce from "lodash.debounce";
+import axios from "axios";
 
 const CategoryProducts = () => {
   const API_URL = config.API_URL;
@@ -14,15 +15,18 @@ const CategoryProducts = () => {
   
   const [products, setProducts] = useState([]);
   const [allCategories, setAllCategories] = useState([]);
+  const [SpecialCategories, setSpecialCategories] = useState([]); 
   const [loading, setLoading] = useState(true);
+  const [catsLoading, setCatsLoading] = useState(true); 
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quickLoading, setQuickLoading] = useState(false);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [sortBy, setSortBy] = useState("date");
-  const [sortOrder, setSortOrder] = useState("desc");
+  
+  const [sortBy, setSortBy] = useState("title");
+  const [sortOrder, setSortOrder] = useState("asc");
 
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,7 +37,12 @@ const CategoryProducts = () => {
   const categoryPath = location.pathname.replace("/product-category/", "").replace(/\/$/, "");
   const slug = categoryPath.split("/").pop();
 
-  // ১. সল্যুশন: যখনই ক্যাটাগরি (slug) চেঞ্জ হবে, পেজ নাম্বার ১-এ রিসেট হবে
+  // নতুন পেজে বা অন্য কোনো ক্যাটাগরিতে ক্লিক করলে স্ক্রিন একদম টপ থেকে লোড হবে
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname, currentPage]);
+
+  // যখনই ক্যাটাগরি (slug) চেঞ্জ হবে, পেজ নাম্বার ১-এ রিসেট হবে
   useEffect(() => {
     setCurrentPage(1);
     setSearchInput(""); 
@@ -71,30 +80,73 @@ const CategoryProducts = () => {
     return tree;
   };
 
+  // 1. Fetch All Categories Tree (Filtering out exclusive/special categories)
   useEffect(() => {
     fetch(`${API_URL}/wc/store/v1/products/categories?per_page=32`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-          const tree = buildCategoryTree(data);
+          const excludedSlugs = ["sale", "mega-deal", "new-arrival", "top-selling", "best-selling", "free-delivery", "new-arrivals"];
+          const filteredData = data.filter(cat => !excludedSlugs.includes(cat.slug));
+          const tree = buildCategoryTree(filteredData);
           setAllCategories(tree);
         }
       })
       .catch(err => console.error("Categories Fetch Error:", err));
   }, [API_URL]);
 
-  const findCurrentCategoryDetails = (categories, currentSlug) => {
-    for (let cat of categories) {
-      if (cat.slug === currentSlug) return { parent: cat, children: cat.children };
-      if (cat.children) {
-        const childMatch = cat.children.find(c => c.slug === currentSlug);
-        if (childMatch) return { parent: cat, children: cat.children };
-      }
-    }
-    return { parent: null, children: [] };
-  };
+  // 2. Fetch Special Categories (Using config keys for safety)
+  useEffect(() => {
+    const fetchSpecialCategories = async () => {
+      setCatsLoading(true);
+      try {
+        const targetSlugs = ["sale", "mega-deal", "top-selling", "new-arrivals"];
+        
+        const requests = targetSlugs.map(slug => 
+          axios.get(`${API_URL}/wc/v3/products/categories`, {
+            params: { slug, per_page: 1 },
+            auth: {
+              username: config.WC_CONSUMER_KEY || "ck_f43a06935403d58d90635d22f1db7e10570e2b73",
+              password: config.WC_CONSUMER_SECRET || "cs_2029a263378e25918c8886931b530f0ab82ff9e1",
+            },
+          })
+        );
 
-  const { parent: currentParent, children: subCategories } = findCurrentCategoryDetails(allCategories, slug);
+        const responses = await Promise.all(requests);
+        const fetchedCategories = responses
+          .map(res => res.data[0]) 
+          .filter(Boolean); 
+
+        const slugOrder = ["sale", "mega-deal", "top-selling", "new-arrivals"];
+        const sortedCategories = fetchedCategories.sort(
+          (a, b) => slugOrder.indexOf(a.slug) - slugOrder.indexOf(b.slug)
+        );
+
+        setSpecialCategories(sortedCategories);
+      } catch (error) {
+        console.error("Error fetching special categories:", error);
+      } finally {
+        setCatsLoading(false);
+      }
+    };
+
+    fetchSpecialCategories();
+  }, [API_URL]);
+
+  // ডাইনামিক ক্যাটাগরি এবং সাব-ক্যাটাগরি খোঁজার লজিক (useMemo দিয়ে অপ্টিমাইজড)
+  const { currentParent, subCategories } = useMemo(() => {
+    const findDetails = (categories, currentSlug) => {
+      for (let cat of categories) {
+        if (cat.slug === currentSlug) return { currentParent: cat, subCategories: cat.children || [] };
+        if (cat.children && cat.children.length > 0) {
+          const childMatch = cat.children.find(c => c.slug === currentSlug);
+          if (childMatch) return { currentParent: cat, subCategories: cat.children };
+        }
+      }
+      return { currentParent: null, subCategories: [] };
+    };
+    return findDetails(allCategories, slug);
+  }, [allCategories, slug]);
 
   const getSlugFromPermalink = (permalink) => {
     if (!permalink) return "";
@@ -119,6 +171,20 @@ const CategoryProducts = () => {
       const product = await getProductById(id);
       setSelectedProduct(product);
       setIsQuickViewOpen(true);
+
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "view_content",
+        ecommerce: {
+          currency: "BDT",
+          items: [{
+            item_id: product.id?.toString(),
+            item_name: product.name,
+            price: parseFloat(product.price || 0)
+          }]
+        }
+      });
+
     } catch (error) {
       console.error("Error loading product:", error);
     } finally {
@@ -132,10 +198,11 @@ const CategoryProducts = () => {
       case "popularity": setSortBy("popularity"); setSortOrder("desc"); break;
       case "price_low": setSortBy("price"); setSortOrder("asc"); break;
       case "price_high": setSortBy("price"); setSortOrder("desc"); break;
-      default: setSortBy("date"); setSortOrder("desc");
+      default: setSortBy("title"); setSortOrder("asc");
     }
   };
 
+  // 3. Fetch Products Based on Current Category Slug / Special Slug
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
@@ -183,6 +250,32 @@ const CategoryProducts = () => {
     );
   };
 
+  // ডাইনামিক রিবন টেক্সট লজিক ফিক্স
+  const getRibbonText = (productCategories, currentSlug) => {
+    if (!Array.isArray(productCategories) || productCategories.length === 0) {
+      return null;
+    }
+
+    const productSlugs = productCategories.map(c => c.slug);
+
+    if (productSlugs.includes("best-selling") && currentSlug !== "best-selling") {
+      return "Best Selling";
+    }
+    if (productSlugs.includes("free-delivery") && currentSlug !== "free-delivery") {
+      return "Free Delivery";
+    }
+    if (productSlugs.includes("new-arrival") && currentSlug !== "new-arrival") {
+      return "New Arrival";
+    }
+    return null;
+  };
+
+  const decodeHtml = (html) => {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
+  };
+
   return (
     <>
       <div id="custom-header">
@@ -194,11 +287,24 @@ const CategoryProducts = () => {
                   <li className="trail-item trail-begin">
                     <Link to="/" rel="home"><span>Home</span></Link>
                   </li>
-                  {categoryPath.split("/").map((item, index) => (
-                    <li key={index} className="trail-item">
-                      <span style={{textTransform: 'capitalize'}}>{item.replace(/-/g, " ")}</span>
-                    </li>
-                  ))}
+                  {categoryPath.split("/").filter(Boolean).map((item, index, array) => {
+                    const isLast = index === array.length - 1;
+                    return (
+                      <li key={index} className={`trail-item ${isLast ? 'trail-end' : ''}`}>
+                        {isLast ? (
+                          <span className="last-menu-text">
+                            {item.replace(/-/g, " ")}
+                          </span>
+                        ) : (
+                          <Link to={`/product-category/${array.slice(0, index + 1).join("/")}`}>
+                            <span className="mid-menu-text">
+                              {item.replace(/-/g, " ")}
+                            </span>
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </div>
@@ -210,25 +316,40 @@ const CategoryProducts = () => {
         <div className="container">
           <div className="inner-wrapper product-category-layout">
             <aside id="secondary" className="widget-area category-sidebar">
-               <section className="widget widget-special-links">
-                  <h2 className="widget-title">Special Offers</h2>
-                  <ul>
-                    <li><Link to="/product-category/up-to-60-off/">Up To 60% Off</Link></li>
-                    <li><Link to="/product-category/new-arrivals/">New Arrival</Link></li>
-                    <li><Link to="/product-category/top-selling-items/">Top Selling</Link></li>
-                  </ul>
-               </section>
-               <section className="widget widget-categories-list">
-                 <div className="widget-header">
-                   <h2 className="widget-title">Categories</h2>
-                   <button className="clear-filter" onClick={() => navigate('/shop')}>
-                     CLEAR ALL
-                   </button>
-                 </div>
-                 <div className="all-categories-wrapper">
-                   {allCategories.length > 0 ? renderCategoryList(allCategories) : <div className="loading-cats">Loading...</div>}
-                 </div>
-               </section>
+              <section className="widget widget-special-links">
+                <h2 className="widget-title">Exclusive Offers</h2>
+                <ul className="special-categories-list">
+                  {catsLoading ? (
+                    <li key="loading-offers">Loading offers...</li>
+                  ) : SpecialCategories.length > 0 ? (
+                    SpecialCategories.map((cat) => (
+                      <li key={cat.id}>
+                        <Link to={`/product-category/${cat.slug}/`} className={slug === cat.slug ? "active" : ""}>
+                          {cat.name}
+                        </Link>
+                      </li>
+                    ))
+                  ) : (
+                    <>
+                      <li key="def-sale"><Link to="/product-category/sale/">60% Off</Link></li>
+                      <li key="def-mega"><Link to="/product-category/mega-deal/">Mega Deal</Link></li>
+                      <li key="def-new"><Link to="/product-category/new-arrivals/">New Arrivals</Link></li>
+                      <li key="def-top"><Link to="/product-category/top-selling/">Top Selling</Link></li>
+                    </>
+                  )}
+                </ul>
+              </section>
+              <section className="widget widget-categories-list">
+                <div className="widget-header">
+                  <h2 className="widget-title">Categories</h2>
+                  <button className="clear-filter" onClick={() => navigate('/shop')}>
+                    CLEAR ALL
+                  </button>
+                </div>
+                <div className="all-categories-wrapper">
+                  {allCategories.length > 0 ? renderCategoryList(allCategories) : <div className="loading-cats">Loading...</div>}
+                </div>
+              </section>
             </aside>
 
             <div id="primary" className="content-area category-content-area">
@@ -238,17 +359,35 @@ const CategoryProducts = () => {
                     <i className="fas fa-search"></i>
                     <input 
                       type="text" 
-                      placeholder={`Search in ${slug.replace(/-/g, " ")}...`} 
+                      placeholder={`Search in ${slug ? slug.replace(/-/g, " ") : "category"}...`} 
                       value={searchInput}
                       onChange={handleSearchChange}
                     />
                   </div>
                 </div>
-
                 <div className="section-products">
                   <div className="pruduct-filter-row clear-fix">
                     <div className="top-category-list">
                       <div className="category-filter-container">
+                        <div className="parent-category-tabs special-tabs">
+                          {catsLoading ? (
+                            <span key="loading-tabs">Loading offers...</span>
+                          ) : SpecialCategories.length > 0 ? (
+                            SpecialCategories.map((cat) => (
+                              <button key={cat.id} className={`tab-btn ${slug === cat.slug ? "active" : ""}`} onClick={() => navigate(`/product-category/${cat.slug}/`)}>
+                                {cat.name}
+                              </button>
+                            ))
+                          ) : (
+                            <>
+                              <button key="tab-sale" className={`tab-btn ${slug === "sale" ? "active" : ""}`} onClick={() => navigate("/product-category/sale/")}>60% Off</button>
+                              <button key="tab-mega" className={`tab-btn ${slug === "mega-deal" ? "active" : ""}`} onClick={() => navigate("/product-category/mega-deal/")}>Mega Deal</button>
+                              <button key="tab-new" className={`tab-btn ${slug === "new-arrivals" ? "active" : ""}`} onClick={() => navigate("/product-category/new-arrivals/")}>New Arrivals</button>
+                              <button key="tab-top" className={`tab-btn ${slug === "top-selling" ? "active" : ""}`} onClick={() => navigate("/product-category/top-selling/")}>Top Selling</button>
+                            </>
+                          )}
+                        </div>
+                        <div className="divider"></div>
                         <div className="parent-category-tabs">
                           {allCategories.map(cat => (
                             <button 
@@ -260,10 +399,8 @@ const CategoryProducts = () => {
                             </button>
                           ))}
                         </div>
-
                         <div className="divider"></div>
-
-                        {subCategories.length > 0 && (
+                        {subCategories && subCategories.length > 0 && (
                           <div className="sub-category-pills">
                             {subCategories.map(sub => (
                               <span 
@@ -277,10 +414,9 @@ const CategoryProducts = () => {
                             ))}
                           </div>
                         )}
-
                         <div className="active-filter-row">
                           <div className="filter-tag">
-                            {slug.replace(/-/g, " ")} <i className="fas fa-times" onClick={() => navigate('/shop')}></i>
+                            {slug ? slug.replace(/-/g, " ") : ""} <i className="fas fa-times" onClick={() => navigate('/shop')}></i>
                           </div>
                           <button className="clear-btn" onClick={() => navigate('/shop')}>Clear</button>
                         </div>
@@ -291,6 +427,7 @@ const CategoryProducts = () => {
                         <div className="sort-by">
                           <span className="sort-by-list">Sort by</span>
                           <ul>
+                            <li><button className="sort-btn" onClick={()=>handleSort("default")}>Default (A-Z)</button></li>
                             <li><button className="sort-btn" onClick={()=>handleSort("popularity")}>Popularity</button></li>
                             <li><button className="sort-btn" onClick={()=>handleSort("price_low")}>Price: Low to High</button></li>
                             <li><button className="sort-btn" onClick={()=>handleSort("price_high")}>Price: High to Low</button></li>
@@ -299,9 +436,9 @@ const CategoryProducts = () => {
                       </div>
                       <nav className="filter-row-box navigation pagination pull-right">
                         <div className="nav-links">
-                          {currentPage > 1 && <span className="page-numbers" onClick={() => setCurrentPage(currentPage - 1)}>« Prev</span>}
+                          {currentPage > 1 && <span className="page-numbers" style={{cursor: 'pointer'}} onClick={() => setCurrentPage(currentPage - 1)}>« Prev</span>}
                           <span className="page-numbers current">{currentPage}</span>
-                          {currentPage < totalPages && <span className="page-numbers" onClick={() => setCurrentPage(currentPage + 1)}>Next »</span>}
+                          {currentPage < totalPages && <span className="page-numbers" style={{cursor: 'pointer'}} onClick={() => setCurrentPage(currentPage + 1)}>Next »</span>}
                         </div>
                       </nav>
                     </div>
@@ -309,85 +446,93 @@ const CategoryProducts = () => {
 
                   <div className="products-inner-wrapper clear-fix">
                     {loading ? (
-                      <div className="grid-message"><p><i className="fas fa-spinner fa-spin"></i> Loading...</p></div>
+                      <div className="grid-message"><p><i className="fas fa-spinner fa-spin"></i> Loading Products...</p></div>
                     ) : products.length === 0 ? (
                       <div className="grid-message">
                         <p>No products found in <strong>{slug}</strong> {searchQuery && `for "${searchQuery}"`}.</p>
                       </div>
                     ) : (
-                    <div className="products-grid-container category-products-wrapper">
-                      {products.map((product) => {
-                        const regularPrice = parseFloat(product.prices.regular_price || 0);
-                        const salePrice = parseFloat(product.prices.sale_price || 0);
-                        const isSale = product.on_sale && salePrice > 0 && regularPrice > salePrice;
-                        const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
-                        const isOutOfStock = product.stock_status === "outofstock";
-                        
-                        return(
-                          <div key={product.id} className="custom-product-card">
-                            <div className="product-card-inner" onClick={() => navigate(`/product/${product.slug}`)}>
-                              <div className="product-image-box">
-                                {isSale && savePercent > 0 && (
-                                  <div className="badge-wrap">
-                                    <span className="ribbon-offered">{savePercent}% Off</span>
-                                    <span className="ribbon-save">Offered items</span>
-                                  </div>
-                                )}
-                                <img alt={product.name} src={product.images[0]?.src || ""} />
-                                {isOutOfStock && <span className="ribbon-out-stock">Out of Stock</span>}
-                              </div>
-                              <div className="product-item-details">
-                                <h3 className="product-title product-title-desktop">
-                                  {product.name.length > 42 ? product.name.substring(0, 42) + "..." : product.name}
-                                </h3>
-                                <h3 className="product-title product-title-mobile">
-                                  {product.name.length > 35 ? product.name.substring(0, 35) + "..." : product.name}
-                                </h3>
-                                <div className="product-price">
-                                  {isSale ? (
-                                    <>
-                                      <span className="price-new">৳{(salePrice / 100).toFixed(0)}</span>
-                                      <del className="price-old">৳{(regularPrice / 100).toFixed(0)}</del>
-                                      <div className="save-tag">Save ৳{((regularPrice - salePrice) / 100).toFixed(0)}</div>
-                                    </>
-                                  ) : (
-                                    <span className="price-new">৳{(regularPrice / 100).toFixed(0)}</span>
+                      <div className="products-grid-container category-products-wrapper">
+                        {products.map((product) => {
+                          const regularPrice = parseFloat(product.prices?.regular_price || 0);
+                          const salePrice = parseFloat(product.prices?.sale_price || 0);
+                          const isSale = product.on_sale && salePrice > 0 && regularPrice > salePrice;
+                          const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
+                          const isOutOfStock = product.stock_status === "outofstock";
+                          
+                          const dynamicRibbonText = getRibbonText(product.categories, slug);
+
+                          return(
+                            <div key={product.id} className="custom-product-card">
+                              <div className="product-card-inner" onClick={() => navigate(`/product/${product.slug}`)}>
+                                <div className="product-image-box">
+                                  {isSale && savePercent > 0 && (
+                                    <div className="badge-wrap">
+                                      <span className="ribbon-offered">{savePercent}% Off</span>
+                                      {dynamicRibbonText && (
+                                        <span className="ribbon-save">{dynamicRibbonText}</span>
+                                      )}
+                                    </div>
                                   )}
+                                  <img alt={product.name} src={product.images?.[0]?.src || ""} />
+                                  {isOutOfStock && <span className="ribbon-out-stock">Out of Stock</span>}
                                 </div>
-                                <div className="button-group">
-                                <button 
-                                  className="btn-cart" 
-                                  disabled={quickLoading === product.id}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleQuickView(product.id);
-                                  }}
-                                  >
-                                    {quickLoading === product.id ? (
-                                      <i className="fas fa-spinner fa-spin"></i> 
+                                <div className="product-item-details">
+                                  <h3 className="product-title product-title-desktop">
+                                    {decodeHtml(product.name.length > 100 ? product.name.substring(0, 100) + "..." : product.name)}
+                                  </h3>
+                                  <h3 className="product-title product-title-mobile">
+                                    {decodeHtml(product.name.length > 35 ? product.name.substring(0, 35) + "..." : product.name)}
+                                  </h3>
+                                  <div className="product-price">
+                                    {isSale ? (
+                                      <>
+                                        <span className="price-new">৳{(salePrice / 100).toFixed(0)}</span>
+                                        <del className="price-old">৳{(regularPrice / 100).toFixed(0)}</del>
+                                        <div className="save-tag">Save ৳{((regularPrice - salePrice) / 100).toFixed(0)}</div>
+                                      </>
                                     ) : (
-                                      <i className="fas fa-shopping-cart"></i> 
+                                      <span className="price-new">৳{(regularPrice / 100).toFixed(0)}</span>
                                     )}
-                                    CART
-                                </button>
-                                <button 
-                                  className="btn-buy-now" onClick={(e) => { e.stopPropagation(); 
-                                  goToProduct(product.permalink); }}>
-                                    Buy Now
-                                </button>
-                              </div>
+                                  </div>
+                                  <div className="button-group">
+                                    <button 
+                                      className="btn-cart" 
+                                      disabled={quickLoading === product.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleQuickView(product.id);
+                                      }}
+                                    >
+                                      {quickLoading === product.id ? (
+                                        <i className="fas fa-spinner fa-spin"></i> 
+                                      ) : (
+                                        <i className="fas fa-shopping-cart"></i> 
+                                      )}
+                                      CART
+                                    </button>
+                                    <button 
+                                      className="btn-buy-now" 
+                                      onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        goToProduct(product.permalink); 
+                                      }}
+                                    >
+                                      Buy Now
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )
-                      })}
-                    </div>
+                          )
+                        })}
+                      </div>
                     )}
                     <nav className="filter-row-box navigation pagination pull-left bottom-pagination">
                       <div className="nav-links">
-                        {currentPage > 1 && <span className="page-numbers" onClick={() => setCurrentPage(currentPage - 1)}>« Prev</span>}
+                        {currentPage > 1 && <span className="page-numbers" style={{cursor: 'pointer'}} onClick={() => setCurrentPage(currentPage - 1)}>« Prev</span>}
                         <span className="page-numbers current">{currentPage}</span>
-                        {currentPage < totalPages && <span className="page-numbers" onClick={() => setCurrentPage(currentPage + 1)}>Next »</span>}
+                        {currentPage < totalPages && <span className="page-numbers" style={{cursor: 'pointer'}} onClick={() => setCurrentPage(currentPage + 1)}>Next »</span>}
                       </div>
                     </nav>
                   </div>
@@ -405,6 +550,3 @@ const CategoryProducts = () => {
 };
 
 export default CategoryProducts;
-
-
-

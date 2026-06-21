@@ -20,8 +20,24 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
                 getProductById(id),
                 new Promise((resolve) => setTimeout(resolve, 1000))
             ]);
+            
             setSelectedProduct(product);
             setIsQuickViewOpen(true);
+
+            // ✅ সফলভাবে ডেটা লোড হওয়ার পর GTM view_content Event Trigger করা হলো
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+                event: "view_content",
+                ecommerce: {
+                    currency: "BDT", // আপনার সাইটের কারেন্সি অনুযায়ী চেঞ্জ করতে পারেন
+                    items: [{
+                        item_id: product.id?.toString(), // ID স্ট্রিং ফরম্যাটে পাঠানো বেস্ট প্র্যাকটিস
+                        item_name: product.name,
+                        price: parseFloat(product.price || 0) // প্রাইস ফ্লোট/নাম্বার ফরম্যাটে কনভার্ট করা হলো
+                    }]
+                }
+            });
+
         } catch (error) {
             console.error("Error loading product:", error);
         } finally {
@@ -92,11 +108,22 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
                         </div>
                     ) : (
                         products.map((product) => {
-                            const regularPrice = parseFloat(product.prices.regular_price || 0);
-                            const salePrice = parseFloat(product.prices.sale_price || 0);
-                            const isSale = product.on_sale && salePrice > 0 && regularPrice > salePrice;
+                            const regularPrice = parseFloat(product.prices?.regular_price || product.regular_price || 0);
+                            const salePrice = parseFloat(product.prices?.sale_price || product.sale_price || 0);
+                            const isSale = (product.on_sale || product.sale_price) && salePrice > 0 && regularPrice > salePrice;
                             const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
                             const isOutOfStock = product.stock_status === "outofstock";
+
+                            // Priority dynamic category mapping
+                            const productCategories = product.categories?.map(c => c.slug) || [];
+                            let ribbonText = "";
+                            if (productCategories.includes("best-selling")) {
+                                ribbonText = "Best Selling";
+                            } else if (productCategories.includes("free-delivery")) {
+                                ribbonText = "Free Delivery";
+                            } else if (productCategories.includes("new-arrival")) {
+                                ribbonText = "New Arrival";
+                            }
 
                             return (
                                 <div key={product.id} className="custom-product-card">
@@ -108,7 +135,8 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
                                             {isSale && savePercent > 0 && (
                                                 <div className="badge-wrap">
                                                     <span className="ribbon-offered">{savePercent}% Off</span>
-                                                    <span className="ribbon-save">Offered items</span>
+                                                    {/* Shudhu condition matched content text thaklei display hobe */}
+                                                    {ribbonText && <span className="ribbon-save">{ribbonText}</span>}
                                                 </div>
                                             )}
                                             <img alt={product.name} src={product.images[0]?.src || ""} />

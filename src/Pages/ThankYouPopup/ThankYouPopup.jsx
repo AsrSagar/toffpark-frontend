@@ -17,7 +17,7 @@ const ThankYouPopup = ({ show, orderId, onClose }) => {
     return (
         <div className="thankyou-overlay">
             <div className="thankyou-popup">
-                <h2>🎉 Thank You!</h2>
+                <h2>Thank You!</h2>
                 <p>Your order has been placed successfully.</p>
                 {orderId && (
                 <p className="order-id">

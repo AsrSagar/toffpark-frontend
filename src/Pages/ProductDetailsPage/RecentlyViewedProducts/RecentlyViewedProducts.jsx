@@ -88,6 +88,17 @@ const RecentlyViewedProducts = () => {
                     const isSale = salePrice < regularPrice;
                     const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
 
+                    // WooCommerce store API version product response categories mapping
+                    const productCategories = product.categories?.map(c => c.slug) || [];
+                    let ribbonText = "";
+                    if (productCategories.includes("best-selling")) {
+                        ribbonText = "Best Selling";
+                    } else if (productCategories.includes("free-delivery")) {
+                        ribbonText = "Free Delivery";
+                    } else if (productCategories.includes("new-arrival")) {
+                        ribbonText = "New Arrival";
+                    }
+
                     return (
                         <div key={product.id} className="custom-product-card">
                             <div className="product-card-inner" onClick={() => goToProduct(product.permalink)}>
@@ -96,7 +107,8 @@ const RecentlyViewedProducts = () => {
                                     {isSale && savePercent > 0 && (
                                         <div className="badge-wrap">
                                             <span className="ribbon-offered">{savePercent}% Off</span>
-                                            <span className="ribbon-save">Offered items</span>
+                                            {/* Dynamic category ribbon string checked */}
+                                            {ribbonText && <span className="ribbon-save">{ribbonText}</span>}
                                         </div>
                                     )}
                                     <img alt={product.name} src={product.images[0]?.src || ""} />
@@ -159,8 +171,8 @@ const RecentlyViewedProducts = () => {
         <QuickViewModal
             isOpen={isQuickViewOpen}
             onClose={() => {
-            setIsQuickViewOpen(false);
-            setSelectedProduct(null);
+                setIsQuickViewOpen(false);
+                setSelectedProduct(null);
             }}
             product={selectedProduct}
         />

@@ -1,0 +1,278 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+/* গ্লোবাল ক্ল্যাশ এড়াতে প্রতিটা ক্লাসের আগে orl- প্রিফিক্স ব্যবহার করা হয়েছে */
+.orl-auth-wrapper {
+  font-family: 'Poppins', sans-serif !important;
+  max-width: 650px !important;
+  margin: 60px auto !important;
+  padding: 0 20px !important;
+  box-sizing: border-box !important;
+}
+
+/* 🎯 ট্যাব বার রিসেট ও ডিজাইন */
+.orl-tab-bar {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin-bottom: 30px !important;
+  gap: 15px !important;
+}
+
+.orl-tab-btn {
+  background: none !important;
+  border: none !important;
+  font-size: 42px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  line-height: 1 !important;
+}
+
+.orl-tab-btn.orl-active {
+  color: #222222 !important;
+}
+
+.orl-tab-btn.orl-inactive {
+  color: #b0b0b0 !important;
+}
+
+.orl-tab-circle {
+  font-size: 14px !important;
+  color: #777777 !important;
+  border: 1.5px solid #b0b0b0 !important;
+  border-radius: 50% !important;
+  width: 30px !important;
+  height: 30px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 500 !important;
+  background-color: #fff !important;
+}
+
+/* 📦 কার্ড এরিয়া */
+.orl-auth-card {
+  border: 1px solid #e2e2e2 !important;
+  background-color: #ffffff !important;
+  padding: 40px !important;
+  border-radius: 0px !important;
+  box-sizing: border-box !important;
+}
+
+.orl-auth-form {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.orl-form-group {
+  margin-bottom: 25px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+}
+
+.orl-form-label {
+  display: block !important;
+  font-size: 14px !important;
+  color: #444444 !important;
+  margin-bottom: 8px !important;
+  font-weight: 400 !important;
+  text-align: left !important;
+}
+
+.orl-required {
+  color: #ff4d4f !important;
+}
+
+/* 🔓 ইনপুট ফিল্ডের হালকা নীল ব্যাকগ্রাউন্ড */
+.orl-form-input {
+  width: 100% !important;
+  padding: 14px 15px !important;
+  border: 1px solid #e2e8f5 !important;
+  background-color: #edf2fc !important;
+  font-size: 15px !important;
+  color: #333333 !important;
+  border-radius: 4px !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+  transition: all 0.3s ease !important;
+}
+
+/* পাসওয়ার্ড কন্টেইনার ফিক্স */
+.orl-password-field-container {
+  position: relative !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.orl-password-input {
+  padding-right: 45px !important; /* চোখের আইকনের জন্য জায়গা */
+}
+
+.orl-password-toggle {
+  position: absolute !important;
+  right: 15px !important;
+  background: none !important;
+  border: none !important;
+  color: #8c8c8c !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  z-index: 2 !important;
+}
+
+/* 🤖 গুগল রিক্যাপচা ফিক্স */
+.orl-captcha-box {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background: #f9f9f9 !important;
+  border: 1px solid #d3d3d3 !important;
+  border-radius: 3px !important;
+  padding: 10px 12px !important;
+  width: 300px !important;
+  margin-bottom: 25px !important;
+  box-sizing: border-box !important;
+}
+
+.orl-captcha-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.orl-captcha-left input[type="checkbox"] {
+  width: 22px !important;
+  height: 22px !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+}
+
+.orl-captcha-left label {
+  font-size: 14px !important;
+  color: #222222 !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  font-weight: 400 !important;
+}
+
+.orl-captcha-right {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  line-height: 1 !important;
+}
+
+.orl-captcha-right img {
+  width: 26px !important;
+  height: 26px !important;
+  margin: 0 !important;
+}
+
+.orl-captcha-right span {
+  font-size: 8px !important;
+  color: #555555 !important;
+  margin-top: 3px !important;
+}
+
+/* ⬇️ লোয়ার অ্যাকশন লেআউট ফিক্স */
+.orl-form-footer {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin-top: 30px !important;
+}
+
+.orl-footer-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 20px !important;
+}
+
+.orl-remember-me {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.orl-remember-me input[type="checkbox"] {
+  margin: 0 8px 0 0 !important;
+  width: 16px !important;
+  height: 16px !important;
+  cursor: pointer !important;
+}
+
+.orl-remember-me label {
+  font-size: 14px !important;
+  color: #555555 !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+  font-weight: 400 !important;
+}
+
+/* 🔘 লগইন বাটন ডিজাইন */
+.orl-submit-btn {
+  background-color: #767676 !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 12px 26px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  border-radius: 0px !important;
+  transition: background 0.2s ease !important;
+  text-transform: uppercase !important;
+  line-height: 1.2 !important;
+  box-shadow: none !important;
+}
+
+.orl-submit-btn:hover {
+  background-color: #555555 !important;
+}
+
+/* পাসওয়ার্ড লিংক */
+.orl-lost-password {
+  font-size: 14px !important;
+  color: #333333 !important;
+  text-decoration: none !important;
+  font-weight: 400 !important;
+}
+
+.orl-lost-password:hover {
+  text-decoration: underline !important;
+}
+
+/* 📱 মোবাইল রেসপন্সিভনেস */
+@media (max-width: 540px) {
+  .orl-tab-btn {
+    font-size: 32px !important;
+  }
+  .orl-auth-card {
+    padding: 20px !important;
+  }
+  .orl-form-footer {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 20px !important;
+  }
+  .orl-footer-left {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+    gap: 15px !important;
+  }
+  .orl-submit-btn {
+    width: 100% !important;
+    text-align: center !important;
+  }
+  .orl-captcha-box {
+    width: 100% !important;
+  }
+}

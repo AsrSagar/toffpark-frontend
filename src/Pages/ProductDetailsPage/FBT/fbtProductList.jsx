@@ -65,12 +65,10 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
   useEffect(() => {
     if (onChange && !loading && products.length > 0) {
       const selectedProducts = products.filter((p) => selectedIds.includes(p.id));
-      // সরাসরি কল না করে একটি নির্দিষ্ট কন্ডিশনে কল করুন
       onChange(selectedProducts, selectedIds, selectedSize);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIds, selectedSize]); 
-  // এখানে products বা onChange দিলে লুপ হওয়ার সম্ভাবনা থাকে।
 
   if (loading || !Array.isArray(products) || products.length === 0) return null;
 
@@ -80,45 +78,97 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
     );
   };
 
-  const handleAddToCart = async () => {
-    if (selectedIds.length === 0) return;
-
+  const handleAddToCart = async (selectedProducts) => {
     setAddingToCart(true);
 
     try {
-      const selectedProducts = products.filter((p) => selectedIds.includes(p.id));
+      const dataLayerItems = [];
 
       for (const p of selectedProducts) {
-
         if (p.type !== "variable") {
           addToCart(p, 1);
+
+          const productPrice = parseFloat(
+            p.custom_price_data?.sale_price ||
+            p.custom_price_data?.regular_price ||
+            0
+          );
+
+          dataLayerItems.push({
+            item_id: String(p.id),
+            item_name: p.name,
+            item_category: p.categories?.[0]?.name || "",
+            price: productPrice,
+            quantity: 1,
+          });
+
           continue;
         }
 
         const sizeForThisProduct = selectedSize[p.id];
 
-        if (!sizeForThisProduct) {
-          alert(`Please select a size for ${p.name}`);
-          setAddingToCart(false);
-          return;
-        }
+        const variationRes = await wcApiV3.get(
+          `products/${p.id}/variations`
+        );
 
-        const variationRes = await wcApiV3.get(`products/${p.id}/variations`);
         const variations = variationRes.data;
 
-        const matchedVariation = variations.find(v =>
-          v.attributes.some(attr =>
-            attr.option.toLowerCase() === sizeForThisProduct.toLowerCase()
+        const matchedVariation = variations.find((v) =>
+          v.attributes.some(
+            (attr) =>
+              attr.option.toLowerCase() ===
+              sizeForThisProduct?.toLowerCase()
           )
         );
 
         if (!matchedVariation) {
-          alert(`Selected size "${sizeForThisProduct}" not available for ${p.name}`);
+          alert(
+            `Selected size "${sizeForThisProduct}" not available for ${p.name}`
+          );
           continue;
         }
 
         addToCart(p, 1, matchedVariation);
+
+        const productPrice = parseFloat(
+          matchedVariation.price ||
+          p.custom_price_data?.regular_price ||
+          0
+        );
+
+        dataLayerItems.push({
+          item_id: String(p.id),
+          item_name: p.name,
+          item_category: p.categories?.[0]?.name || "",
+          item_variant: sizeForThisProduct,
+          price: productPrice,
+          quantity: 1,
+        });
       }
+
+      // ✅ Total value calculation (IMPORTANT for GA4)
+      const totalValue = dataLayerItems.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+
+      window.dataLayer = window.dataLayer || [];
+
+      // clear previous ecommerce object
+      window.dataLayer.push({
+        ecommerce: null,
+      });
+
+      // single GA4 event (BEST PRACTICE)
+      window.dataLayer.push({
+        event: "add_to_cart",
+        ecommerce: {
+          currency: "BDT",
+          value: totalValue,
+          items: dataLayerItems,
+        },
+      });
+
     } catch (error) {
       console.error("FBT Add to cart error:", error);
       alert("কার্টে যোগ করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
@@ -129,18 +179,25 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
 
   const handleAddWithAnimation = async (e) => {
     e.preventDefault();
+    if (selectedIds.length === 0) return;
 
+    // ১. প্রথমে ফিল্টার করে সিলেক্টেড প্রোডাক্টগুলো বের করা হচ্ছে
+    const selectedProducts = products.filter((p) => selectedIds.includes(p.id));
+
+    // ২. চেক করা হচ্ছে কোনো ভেরিয়েবল প্রোডাক্টের সাইজ সিলেক্ট করা বাকি আছে কিনা
+    const missingSizeProduct = selectedProducts.find(
+      (p) => p.type === "variable" && !selectedSize[p.id]
+    );
+
+    if (missingSizeProduct) {
+      alert(`Please select a size for: ${missingSizeProduct.name}`);
+      return; // সাইজ না থাকলে এখানেই কোড এক্সিকিউশন স্টপ হবে
+    }
+
+    // ৩. সবকিছু ঠিক থাকলে ফ্লাইং অ্যানিমেশন স্টার্ট হবে
     const cartIcon = document.getElementById('cart-icon');
     const firstSelectedId = selectedIds[0];
     const productImageElement = imageRefs.current[firstSelectedId];
-
-    const sizeForThisProduct = selectedSize[selectedIds[0]];
-
-    if (!sizeForThisProduct) {
-      alert(`Please select a size`);
-      setAddingToCart(false);
-      return;
-    }
 
     if (cartIcon && productImageElement) {
       const startRect = productImageElement.getBoundingClientRect();
@@ -160,7 +217,9 @@ const FrequentlyBoughtTogether = ({ productId, onChange }) => {
         setTimeout(() => cartIcon.classList.remove('cart-icon-bounce'), 400);
       }, 800); 
     }
-    await handleAddToCart();
+
+    // ৪. কার্ট এপিআই ও স্টেট হ্যান্ডলার কল করা হচ্ছে
+    await handleAddToCart(selectedProducts);
   };
 
   const flyingImage = products.find(p => selectedIds.includes(p.id))?.images[0]?.src || "/images/placeholder.png";

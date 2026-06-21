@@ -48,27 +48,38 @@ const SalesPopup = () => {
 
     const getSlug = (url) => {
         if (!url) return "";
-        
         const baseUrl = url.split("?")[0];
-        
         const slug = baseUrl.split("/").filter(Boolean).pop();
-        
         return slug;
     };
 
     const slug = getSlug(currentSale.permalink);
 
+    const getCleanProductName = (name) => {
+        if (!name) return "";
+        
+        const nameParts = name.split(" - ");
+        
+        if (nameParts.length > 1) {
+            return `${nameParts[0]} - ${nameParts[1]}`.trim();
+        }
+        
+        return name.trim();
+    };
+
+    const displayProductName = getCleanProductName(currentSale.product_name);
+
     return (
         <div className={`sales-popup-wrapper ${show ? 'show' : 'hide'}`}>
             <div className="sales-popup-container">
                 <Link to={`/product/${slug}`} className="sales-popup-image">
-                    <img src={currentSale.product_image} alt={currentSale.product_name} />
+                    <img src={currentSale.product_image} alt={displayProductName} />
                 </Link>
                 
                 <div className="sales-popup-content">
                     <p className="status-text">Someone liked and purchased</p>
                     <h4 className="product-name">
-                        <Link to={`/product/${slug}`}>{currentSale.product_name}</Link>
+                        <Link to={`/product/${slug}`}>{displayProductName}</Link>
                     </h4>
                     <p className="location-time">{currentSale.time} From {currentSale.location}</p>
                 </div>

@@ -371,6 +371,7 @@
 }
 .trail-items li span {
   font-size: 12px;
+  text-transform: capitalize;
 }
 .product-single .product-title {
   font-size: 25px;
@@ -416,6 +417,14 @@ span.sku_wrapper {
 .sku{
   font-weight: normal;
 }
+.fast-delivery-icon img {
+  width: 32px;
+  height: 32px;
+}
+/* .full-page-loader img {
+  width: 200px;
+  height: 200px;
+} */
 @media only screen and (max-width: 900px) {
   .product-single .single-cart input, .product-single .custom-button.button-small {
     width: 100%;
@@ -440,7 +449,7 @@ span.sku_wrapper {
     display: none !important;
   }
   .mobile-view {
-    display: block;
+    display: block !important;
   }
   #breadcrumb li {
     padding-right: 5px;

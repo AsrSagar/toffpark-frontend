@@ -83,15 +83,41 @@ const MiniCart = () => {
 
   const handleAddToCart = (product) => {
     const size = selectedSizes[product.id];
+
     if (product.type === "variable" && !size) {
       alert("Please select a size first!");
       return;
     }
-    addToCart(
-      { ...product, size: size }, 
-      1,                          
-      null                       
-    );
+
+    const price = parseFloat(product.price || 0);
+
+    const item = {
+      item_id: String(product.id),
+      item_name: product.name,
+      item_category: product.categories?.[0]?.name || "",
+      price: price,
+      quantity: 1,
+      item_variant: product.type === "variable" ? size : undefined,
+    };
+
+    // Add to cart logic
+    addToCart({ ...product, size }, 1, null);
+
+    window.dataLayer = window.dataLayer || [];
+
+    // GA4 recommended: clear ecommerce object first
+    window.dataLayer.push({
+      ecommerce: null,
+    });
+
+    window.dataLayer.push({
+      event: "add_to_cart",
+      ecommerce: {
+        currency: "BDT",
+        value: price * 1,
+        items: [item],
+      },
+    });
   };
 
   return (
