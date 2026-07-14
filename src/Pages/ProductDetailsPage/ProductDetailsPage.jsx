@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { wcApiV3 } from "../../api/woocommerce";
 import { useCart } from "../../context/CartContext";
 import BuyNowPopupCheckout from "../../components/BuyNowPopupCheckout/BuyNowPopupCheckout";
@@ -42,6 +42,7 @@ const ProductDetailsPage = () => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
     const mainImageRef = useRef(null); 
+    const [variationLoading, setVariationLoading] = useState(false);
     const [isFlying, setIsFlying] = useState(false);
     const [flyCoords, setFlyCoords] = useState({ startX: 0, startY: 0, endX: 0, endY: 0 });
     const API_URL = config.API_URL;
@@ -122,10 +123,7 @@ const ProductDetailsPage = () => {
     const handleQuickView = async (id) => {
         setQuickLoading(id); 
         try {
-            const [product] = await Promise.all([
-                getProductById(id),
-                new Promise((resolve) => setTimeout(resolve, 1000)) // Artificial delay
-            ]);
+            const product = await getProductById(id);
 
             setSelectedProduct(product);
             setIsQuickViewOpen(true); 
@@ -163,58 +161,25 @@ const ProductDetailsPage = () => {
         const fetchProduct = async () => {
             try {
                 setLoading(true);
+
                 setProduct(null);
                 setSelectedVariation(null);
                 setSelectedSize(null);
                 setVariations([]);
-                setRelatedProducts([]);
                 setActiveImage("");
 
                 const productRes = await wcApiV3.get("/products", {
-                    params: { slug }
+                    params: { slug },
                 });
 
                 if (!isMounted) return;
 
-                const p = productRes.data[0];
+                const p = productRes.data?.[0];
 
-                if (!p) {
-                    setLoading(false);
-                    return;
-                }
+                if (!p) return;
 
                 setProduct(p);
-                setActiveImage(getSafeImage(p?.images?.[0]?.src) || "");
-
-                const relatedPromise =
-                    p.categories?.length > 0
-                        ? wcApiV3.get("/products", {
-                            params: {
-                                category: p.categories[0].id,
-                                per_page: 8,
-                            },
-                        })
-                        : Promise.resolve({ data: [] });
-
-                const variationPromise =
-                    p.type === "variable"
-                        ? wcApiV3.get(`/products/${p.id}/variations`)
-                        : Promise.resolve({ data: [] });
-
-                const [relatedRes, variationRes] = await Promise.all([
-                    relatedPromise,
-                    variationPromise,
-                ]);
-
-                if (!isMounted) return;
-
-                setRelatedProducts(
-                    relatedRes.data
-                        .filter((item) => item.id !== p.id)
-                        .slice(0, 4)
-                );
-
-                setVariations(variationRes.data);
+                setActiveImage(getSafeImage(p.images?.[0]?.src) || "");
 
             } catch (err) {
                 console.error("Product fetch error:", err);
@@ -232,6 +197,51 @@ const ProductDetailsPage = () => {
         };
     }, [slug]);
 
+
+    useEffect(() => {
+        if (!product || product.type !== "variable") return;
+
+        let cancelled = false;
+
+        const fetchVariations = async () => {
+            try {
+                setVariationLoading(true);
+
+                const variationRes = await wcApiV3.get(
+                    `/products/${product.id}/variations`
+                );
+
+                if (!cancelled) {
+                    setVariations(variationRes.data);
+                }
+            } catch (err) {
+                console.error("Variation fetch error:", err);
+            } finally {
+                if (!cancelled) {
+                    setVariationLoading(false);
+                }
+            }
+        };
+
+        let idleId;
+
+        if ("requestIdleCallback" in window) {
+            idleId = window.requestIdleCallback(fetchVariations);
+        } else {
+            idleId = setTimeout(fetchVariations, 500);
+        }
+
+        return () => {
+            cancelled = true;
+
+            if ("cancelIdleCallback" in window) {
+                window.cancelIdleCallback(idleId);
+            } else {
+                clearTimeout(idleId);
+            }
+        };
+    }, [product]);
+
     useEffect(() => {
         if (!product?.id) return; 
 
@@ -241,6 +251,53 @@ const ProductDetailsPage = () => {
 
         if (viewed.length > 10) viewed = viewed.slice(0, 10);
         localStorage.setItem("recently_viewed", JSON.stringify(viewed));
+    }, [product]);
+
+    useEffect(() => {
+        if (!product?.categories?.length) return;
+
+        let cancelled = false;
+
+        const fetchRelatedProducts = async () => {
+            try {
+                const res = await wcApiV3.get("/products", {
+                    params: {
+                        category: product.categories[0].id,
+                        per_page: 8,
+                    },
+                });
+
+                if (cancelled) return;
+
+                setRelatedProducts(
+                    res.data
+                        .filter(item => item.id !== product.id)
+                        .slice(0, 4)
+                );
+
+            } catch (err) {
+                console.log(err);
+            }
+        };
+
+        let idleId;
+
+        if ("requestIdleCallback" in window) {
+            idleId = window.requestIdleCallback(fetchRelatedProducts);
+        } else {
+            idleId = setTimeout(fetchRelatedProducts, 1500);
+        }
+
+        return () => {
+            cancelled = true;
+
+            if ("cancelIdleCallback" in window) {
+                window.cancelIdleCallback(idleId);
+            } else {
+                clearTimeout(idleId);
+            }
+        };
+
     }, [product]);
 
     const handleSizeSelect = (size) => {
@@ -441,10 +498,27 @@ const ProductDetailsPage = () => {
         attr?.name?.toLowerCase() === "size"
     );
 
-    const regularPrice = parseInt(product?.custom_price_data?.regular_price || product?.regular_price || 0);
-    const salePrice = parseInt(product?.custom_price_data?.sale_price || product?.sale_price || 0);
-    const isSale = salePrice < regularPrice;
-    const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
+    const currentPrice = parseFloat(product?.price || 0);
+
+    const regularPrice = parseFloat(
+        product?.regular_price ||
+        product?.custom_price_data?.regular_price ||
+        currentPrice
+    );
+
+    const isSale =
+        product?.on_sale &&
+        regularPrice > currentPrice;
+
+    const salePrice = currentPrice;
+
+    const saveAmount = isSale
+        ? regularPrice - currentPrice
+        : 0;
+
+    const savePercent = isSale
+        ? Math.round((saveAmount / regularPrice) * 100)
+        : 0;
     
     const decodeHtml = (html) => {
         const txt = document.createElement("textarea");
@@ -467,7 +541,7 @@ const ProductDetailsPage = () => {
         <>
             {loading || !product ? (
                 <div className="full-page-loader">
-                    <img src="/images/loader.gif" alt="loader"/>
+                    <img src="/images/Logo-loading-main1.gif" alt="loader" style={{ width: "200px" }} />
                 </div>
             ) : (
             <div className="product-single-page">
@@ -485,8 +559,8 @@ const ProductDetailsPage = () => {
                                 </li>
                                 <li className="trail-item trail-end">
                                 <span>
-                                    {window.innerWidth <= 768 && product?.name && product.name.length > 30
-                                    ? product.name.substring(0, 30) + "..."
+                                    {window.innerWidth <= 768 && product?.name && product.name.length > 38
+                                    ? product.name.substring(0, 38) + "..."
                                     : product?.name}
                                 </span>
                                 </li>
@@ -595,10 +669,26 @@ const ProductDetailsPage = () => {
                                                     <div className="product-item-details">
                                                         <h2 className="product-title">{product.name}</h2>
                                                         <div className="product-price-container">
-                                                            {isSale && <span className="sale-price">৳{salePrice.toFixed(0)}</span>}
-                                                            {isSale && <del className="regular-price">৳{regularPrice.toFixed(0)}</del>}
-                                                            {isSale && <span className="save-amount"> Save ৳{((regularPrice - salePrice)).toFixed(0)}</span>}
-                                                            {!isSale && <span className="regular-price sale-price">৳{regularPrice.toFixed(0)}</span>}
+                                                            {isSale ? (
+                                                                <>
+                                                                    <span className="sale-price">
+                                                                        ৳{salePrice.toFixed(0)}
+                                                                    </span>
+
+                                                                    <del className="regular-price">
+                                                                        ৳{regularPrice.toFixed(0)}
+                                                                    </del>
+
+                                                                    <span className="save-amount">
+                                                                        Save ৳{saveAmount.toFixed(0)}
+                                                                    </span>
+                                                                </>
+                                                            ) : (
+                                                                <span className="regular-price sale-price">
+                                                                    ৳{regularPrice.toFixed(0)}
+                                                                </span>
+                                                            )}
+                                                        
                                                         </div>
                                                         {product.short_description && (
                                                             <div
@@ -609,24 +699,31 @@ const ProductDetailsPage = () => {
                                                     </div>
                                                     <div className="availability">
                                                         <span>Select Size: {selectedSize}</span>
+                                        
                                                     </div>
                                                     {sizeAttribute && (
                                                         <div className="quick-filter filter-by-size">
                                                             <div className="filter-size-container">
                                                                 {(sizeAttribute?.options || []).map((size) => {
-                                                                    const available = isSizeAvailable(size);
+                                                                    const available = variationLoading
+                                                                        ? true
+                                                                        : isSizeAvailable(size);
+
                                                                     return (
                                                                         <button
                                                                             type="button"
                                                                             key={size}
-                                                                            disabled={!available}
-                                                                            className={`filter-size-box 
-                                                                                ${selectedSize === size ? "active" : ""} 
-                                                                                ${!available ? "disabled" : ""}`}
+                                                                            disabled={!variationLoading && !available}
+                                                                            className={`filter-size-box
+                                                                                ${selectedSize === size ? "active" : ""}
+                                                                                ${!variationLoading && !available ? "disabled" : ""}`}
                                                                             onClick={() => available && handleSizeSelect(size)}
                                                                         >
                                                                             {size}
-                                                                            {!available && <span className="size-cross">✕</span>}
+
+                                                                            {!variationLoading && !available && (
+                                                                                <span className="size-cross">✕</span>
+                                                                            )}
                                                                         </button>
                                                                     );
                                                                 })}
@@ -740,15 +837,27 @@ const ProductDetailsPage = () => {
 
                                         <div className="products-grid-container">
                                             {relatedProducts.map((item) => {
-                                                const regularPrice = parseInt(
-                                                    item?.custom_price_data?.regular_price || item?.regular_price || 0
+                                                const currentPrice = parseFloat(item?.price || 0);
+
+                                                const regularPrice = parseFloat(
+                                                    item?.regular_price ||
+                                                    item?.custom_price_data?.regular_price ||
+                                                    currentPrice
                                                 );
 
-                                                const salePrice = parseInt(
-                                                    item?.custom_price_data?.sale_price || item?.sale_price || 0
-                                                );
-                                                const isSale = salePrice < regularPrice;
-                                                const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
+                                                const isSale =
+                                                    item?.on_sale === true &&
+                                                    regularPrice > currentPrice;
+
+                                                const salePrice = currentPrice;
+
+                                                const saveAmount = isSale
+                                                    ? regularPrice - currentPrice
+                                                    : 0;
+
+                                                const savePercent = isSale
+                                                    ? Math.round((saveAmount / regularPrice) * 100)
+                                                    : 0;
 
                                                 const itemCategories = item?.categories?.map(c => c.slug) || [];
                                                 let itemRibbonText = "";
@@ -762,7 +871,10 @@ const ProductDetailsPage = () => {
 
                                                 return (
                                                     <div key={item.id} className="custom-product-card">
-                                                        <div className="product-card-inner" onClick={() => goToProduct(item.permalink)}>
+                                                        <Link 
+                                                            className="product-card-inner" 
+                                                            to={`/product/${getSlugFromPermalink(item.permalink)}`}
+                                                        >
                                                             <div className="product-image-box">
                                                                 {isSale && savePercent > 0 && (
                                                                     <div className="badge-wrap">
@@ -787,12 +899,22 @@ const ProductDetailsPage = () => {
                                                                 <div className="product-price">
                                                                     {isSale ? (
                                                                         <>
-                                                                            <span className="price-new">৳{salePrice.toFixed(0)}</span>
-                                                                            <del className="price-old">৳{regularPrice.toFixed(0)}</del>
-                                                                            <div className="save-tag">Save ৳{(regularPrice - salePrice).toFixed(0)}</div>
+                                                                            <span className="price-new">
+                                                                                ৳{salePrice.toFixed(0)}
+                                                                            </span>
+
+                                                                            <del className="price-old">
+                                                                                ৳{regularPrice.toFixed(0)}
+                                                                            </del>
+
+                                                                            <div className="save-tag">
+                                                                                Save ৳{saveAmount.toFixed(0)}
+                                                                            </div>
                                                                         </>
                                                                     ) : (
-                                                                        <span className="price-new">৳{regularPrice.toFixed(0)}</span>
+                                                                        <span className="price-new">
+                                                                            ৳{currentPrice.toFixed(0)}
+                                                                        </span>
                                                                     )}
                                                                 </div>
 
@@ -801,6 +923,7 @@ const ProductDetailsPage = () => {
                                                                         className="btn-cart" 
                                                                         disabled={quickLoading === item.id}
                                                                         onClick={(e) => {
+                                                                            e.preventDefault();
                                                                             e.stopPropagation(); 
                                                                             handleQuickView(item.id);
                                                                         }}
@@ -818,7 +941,7 @@ const ProductDetailsPage = () => {
                                                                     </button>
                                                                 </div>
                                                             </div>
-                                                        </div>
+                                                        </Link>
                                                     </div>
                                                 );
                                             })}

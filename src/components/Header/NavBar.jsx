@@ -5,11 +5,13 @@ import config from "../../config";
 import HeaderMiniCart from "./HeaderMiniCart";
 import "./header.css";
 import { useCart } from "../../context/CartContext";
+import { useThemeOptions } from "../../context/ThemeOptionsContext";
 
 const NavBar = () => {
   const API_URL = config.API_URL;
   const SITE_URL = config.SITE_URL;
   const { cartItems, setCartOpen } = useCart();
+  const { options } = useThemeOptions();
 
   const [menuItems, setMenuItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -266,7 +268,7 @@ const NavBar = () => {
               {/* Desktop Logo Link Click Logic Added */}
               <Link to="/" rel="home" onClick={handleLogoClick}>
                 <img
-                  src="/images/logo-black.png"
+                  src={options.site_logo_dark || "/images/logo-black.png"}
                   alt="logo"
                   className="site-logo"
                 />
@@ -428,7 +430,7 @@ const NavBar = () => {
             {/* Mobile Logo Link Click Logic Added */}
             <Link to="/" rel="home" onClick={handleLogoClick}>
               <img
-                src="https://toffpark.com/wp-content/uploads/2021/08/Toffpark-Logo-Black-1.png"
+                src={options.site_logo_dark || "/images/logo-black.png"}
                 alt="logo"
                 className="site-logo"
               />

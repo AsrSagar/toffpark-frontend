@@ -428,4 +428,10 @@ position:relative;
   .site-logo {
     width: 150px !important;
   }
+  .mobile-search-box input {
+    margin-top: 34px;
+  }
+  .search-btn-mobile {
+    top: 77px;
+  }
 }

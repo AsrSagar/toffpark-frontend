@@ -1,0 +1,147 @@
+/* মেইন কন্টেইনার ফিক্সড পজিশন */
+.social-widget-container {
+  position: fixed;
+  bottom: 100px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  font-family: sans-serif;
+}
+
+/* সোশ্যাল অপশন প্যানেল */
+.social-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s ease;
+  transform: translateY(16px) scale(0.75);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* প্যানেল ওপেন হলে স্টাইল */
+.social-options.open {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* প্রতিটি সোশ্যাল বাটন গ্লোবাল স্টাইল */
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease;
+  text-decoration: none;
+}
+
+.social-btn:hover {
+  transform: scale(1.1);
+}
+
+/* আলাদা আলাদা ব্যাকগ্রাউন্ড কালার */
+.btn-messenger { bg-color: #0084FF; background-color: #0084FF; }
+.btn-whatsapp { background-color: #25D366; }
+.btn-phone { background-color: #00C853; }
+.btn-close { background-color: #2563EB; width: 40px; height: 40px; }
+
+/* মেইন টগল বাটন */
+.social-toggle-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background-color: #ffffff;
+  border: 1px solid #f3f4f6;
+  border-radius: 50%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  padding: 0;
+  overflow: visible;
+  transition: transform 0.1s ease;
+}
+
+.social-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+/* এজেন্টের ইমেজ স্টাইল */
+.agent-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* অনলাইন গ্রিন ডট */
+.online-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  background-color: #4ade80;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+}
+
+/* ব্যাক টু টপ বাটন */
+.btn-scroll-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: #b91c1c;
+  border: none;
+  border-radius: 50%;
+  color: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-scroll-top:hover {
+  background-color: #991b1b;
+}
+
+/* আপনার বিদ্যমান `SocialContactWidget.css` ফাইলের নিচে এটি যোগ করুন */
+
+/* ১. Blink করার অ্যানিমেশনটি তৈরি করুন */
+@keyframes online-blink {
+  0% {
+    opacity: 1; /* পুরোপুরি দৃশ্যমান */
+    box-shadow: 0 0 0 0px rgba(74, 222, 128, 0.7); /* হালকা সবুজ শেডো */
+  }
+  50% {
+    opacity: 0.5; /* অর্ধেক স্বচ্ছ */
+    box-shadow: 0 0 0 4px rgba(74, 222, 128, 0); /* বড় শেডো কিন্তু অদৃশ্য */
+  }
+  100% {
+    opacity: 1; /* আবার পুরোপুরি দৃশ্যমান */
+    box-shadow: 0 0 0 0px rgba(74, 222, 128, 0.7);
+  }
+}
+
+/* ২. আপনার বিদ্যমান `.online-dot` ক্লাসে অ্যানিমেশনটি লিঙ্ক করুন */
+.online-dot {
+    position: absolute;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    background-color: #4ade80;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    animation: online-blink 1.5s infinite;
+    top: -5px;
+}

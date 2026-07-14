@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import axios from "axios";
 import ThankYouPopup from "../../Pages/ThankYouPopup/ThankYouPopup";
 import "./BuyNowPopupCheckout.css";
@@ -73,6 +73,8 @@ const BuyNowPopupCheckout = ({
 
   const [hasBegunCheckout, setHasBegunCheckout] = useState(false);
   const [hasAddedPaymentInfo, setHasAddedPaymentInfo] = useState(false);
+
+  const purchaseTrackedRef = useRef(false);
 
   const [billing, setBilling] = useState({
     name: "",
@@ -180,6 +182,124 @@ const BuyNowPopupCheckout = ({
 
     return items;
   };
+
+  const trackPurchaseEvent = useCallback(async (
+    orderId,
+    totalValue,
+    itemsList,
+    couponUsed,
+    extId,
+    billingData
+  ) => {
+
+    if (purchaseTrackedRef.current) return;
+
+    let hashedEmail = "";
+    let hashedPhone = "";
+    let hashedFirstName = "";
+    let hashedLastName = "";
+    let hashedCity = "";
+    let hashedCountry = "";
+    let hashedCountryCode = "";
+
+    if (billingData) {
+      const fullName = (billingData.name || "").trim();
+      const nameParts = fullName.split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+      const cityVal = billingData.city || "Dhaka";
+
+      try {
+        if (billingData.email)
+          hashedEmail = await generateSHA256Hash(billingData.email);
+
+        if (billingData.phone)
+          hashedPhone = await generateSHA256Hash(billingData.phone);
+
+        if (firstName)
+          hashedFirstName = await generateSHA256Hash(firstName);
+
+        if (lastName)
+          hashedLastName = await generateSHA256Hash(lastName);
+
+        if (cityVal)
+          hashedCity = await generateSHA256Hash(cityVal);
+
+        hashedCountry = await generateSHA256Hash("Bangladesh");
+        hashedCountryCode = await generateSHA256Hash("BD");
+
+      } catch (hashError) {
+        console.error("Facebook tracking data hashing failed:", hashError);
+      }
+    }
+
+    window.dataLayer = window.dataLayer || [];
+
+    window.dataLayer.push({ ecommerce: null });
+
+    const purchasePushData = {
+
+      event: "purchase",
+
+      gtm: {
+        uniqueEventId: undefined,
+        element: undefined,
+        elementClasses: undefined,
+        elementId: undefined,
+        elementTarget: undefined,
+        elementUrl: undefined,
+        interactedFormField: undefined,
+      },
+
+      customer_information: billingData
+        ? {
+            first_name: billingData.name?.split(" ")[0] || "",
+            last_name: billingData.name?.split(" ").slice(1).join(" ") || "",
+            phone: billingData.phone || "",
+            address_1: billingData.address || "",
+            city: billingData.city || "Dhaka",
+            country: "Bangladesh",
+            country_code: "BD"
+          }
+        : undefined,
+
+      user_data: {
+        external_id: extId || undefined,
+        em: hashedEmail || undefined,
+        ph: hashedPhone || undefined,
+        fn: hashedFirstName || undefined,
+        ln: hashedLastName || undefined,
+        ct: hashedCity || undefined,
+        country: hashedCountry || undefined,
+        country_code: hashedCountryCode || undefined
+      },
+
+      ecommerce: {
+        transaction_id: orderId?.toString(),
+        value: parseFloat(totalValue || 0),
+        currency: "BDT",
+        coupon: couponUsed || undefined,
+        shipping: parseFloat(shipping.cost),
+
+        items: itemsList.map((item) => ({
+          item_id: item.item_id?.toString(),
+          item_name: item.item_name || "Product",
+          price: parseFloat(item.price || 0),
+          quantity: parseInt(item.quantity || 1, 10),
+          item_variant: item.item_variant || undefined
+        }))
+      },
+
+      page_path: window.location.pathname,
+      page_location: window.location.href,
+      page_title: document.title
+    };
+
+    window.dataLayer.push(purchasePushData);
+
+    purchaseTrackedRef.current = true;
+
+  }, [shipping.cost]);
 
   const handlePaymentMethodChange = (e) => {
     const selectedMethod = e.target.value;
@@ -458,6 +578,10 @@ const BuyNowPopupCheckout = ({
         payment_method: paymentMethod,
         payment_method_title: paymentMethod === "cod" ? "Cash on Delivery" : "Card/Online Payment (SSLCommerz)",
         set_paid: false,
+        
+        // 👈 এখানে কন্ডিশনাল স্ট্যাটাস চেক করুন
+        status: paymentMethod === "cod" ? "processing" : "pending", 
+
         billing: formattedBilling,
         shipping: formattedBilling,
         line_items: lineItems,
@@ -471,7 +595,7 @@ const BuyNowPopupCheckout = ({
         coupon_lines: discountAmount > 0 ? [{ code: promoCode }] : [],
         customer_note: billing.note,
         meta_data: [
-          { key: "external_id", value: hashedExternalId } // 👈 ডেটাবেজে সাবমিট হবে
+          { key: "external_id", value: hashedExternalId }
         ]
       };
 
@@ -485,16 +609,22 @@ const BuyNowPopupCheckout = ({
       const order = response.data;
 
       // GTM Purchase Event এ হ্যাশড আইডি পাস করা
-      window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push({
-        event: "purchase",
-        user_data: {
-          external_id: hashedExternalId
-        },
-        transaction_id: order.id.toString(),
-        value: parseFloat(order.total),      
-        currency: "BDT"
-      });
+      const trackingBilling = {
+        name: billing.name,
+        phone: billing.phone,
+        email: finalEmail,
+        address: billing.address,
+        city: detectedCity
+      };
+
+      await trackPurchaseEvent(
+        order.id,
+        order.total,
+        getCartItemsForTracking(),
+        discountAmount > 0 ? promoCode : "",
+        hashedExternalId,
+        trackingBilling
+      );
 
       if (paymentMethod === "cod") {
         setOrderId(order.id);

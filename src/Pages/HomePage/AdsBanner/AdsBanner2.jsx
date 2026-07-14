@@ -2,7 +2,7 @@ import React from "react";
 import "./AdsBanner.css";
 import { useThemeOptions } from "../../../context/ThemeOptionsContext";
 
-const AdsBanner = () => {
+const AdsBanner2 = () => {
     const { options } = useThemeOptions();
     return (
         <aside className="section no-padding">
@@ -14,7 +14,7 @@ const AdsBanner = () => {
                                 <a href="/">
                                 <img
                                     alt="banner"
-                                    src={options.category_middle_banner_1 || "/images/ads-banner-1.jpg"}
+                                    src={options.category_middle_banner_3 || "/images/ads-banner-1.jpg"}
                                     style={{ width: "100%", height: "auto" }}
                                 />
                                 </a>
@@ -25,7 +25,7 @@ const AdsBanner = () => {
                                 <a href="/">
                                 <img
                                     alt="banner"
-                                    src={options.category_middle_banner_2 || "/images/ads-banner-2.jpg"}
+                                    src={options.category_middle_banner_4 || "/images/ads-banner-2.jpg"}
                                     style={{ width: "100%", height: "auto" }}
                                 />
                                 </a>
@@ -38,4 +38,4 @@ const AdsBanner = () => {
     );
 };  
 
-export default AdsBanner;
+export default AdsBanner2;

@@ -94,7 +94,7 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const [orderId, setOrderId] = useState(null);
-  const deliveryCharges = { inside_dhaka: 60, outside_dhaka: 120 };
+  const deliveryCharges = { inside_dhaka: 80, outside_dhaka: 150 };
   const deliveryFee = deliveryCharges[deliveryMethod] || 0;
   const finalTotal = Number(cartTotal - discountAmount) + deliveryFee;
 
@@ -190,9 +190,23 @@ const CheckoutPage = () => {
     }
     
     window.dataLayer = window.dataLayer || [];
+    
+    // ১. প্রথমে ই-কমার্স অবজেক্ট রি-সেট করা
     window.dataLayer.push({ ecommerce: null }); 
-    window.dataLayer.push({
+
+    // ২. অবজেক্ট তৈরি করে ডাটা লেয়ারে পুশ করা (এখানে 'gtm' প্রপার্টি এক্সপ্লিসিটলি জেনারেট হওয়া বন্ধ করা হয়েছে)
+    const purchasePushData = {
       event: "purchase",
+      // কাস্টম ফিল্ড হিসেবে gtm ডিফাইন করে ওভাররাইড করে দেওয়া যাতে নোড এলিমেন্ট বা জিমেইল ট্র্যাকিং বাস্টল না করে
+      gtm: {
+        uniqueEventId: undefined,
+        element: undefined,
+        elementClasses: undefined,
+        elementId: undefined,
+        elementTarget: undefined,
+        elementUrl: undefined,
+        interactedFormField: undefined,
+      },
       customer_information: billingData ? {
         first_name: billingData.first_name?.split(" ")[0] || "",
         last_name: billingData.first_name?.split(" ").slice(1).join(" ") || "",
@@ -227,9 +241,13 @@ const CheckoutPage = () => {
           quantity: parseInt(item.qty || item.quantity || 1, 10),
           item_variant: item.size || undefined
         }))
-      }
-    });
+      },
+      page_path: window.location.pathname,
+      page_location: window.location.href,
+      page_title: document.title
+    };
 
+    window.dataLayer.push(purchasePushData);
     purchaseTrackedRef.current = true; 
   }, [deliveryFee]);
 
@@ -388,7 +406,7 @@ const CheckoutPage = () => {
         sessionStorage.setItem("pending_pur_billing", JSON.stringify(customTrackingBilling)); 
 
         const sslResponse = await axios.post(
-          "https://backend.orlass.com/wp-json/sslcommerz/v1/create-payment",
+          "https://backend.orlazz.com/wp-json/sslcommerz/v1/create-payment",
           {
             order_id: orderID,
             amount: finalTotal,
@@ -417,6 +435,7 @@ const CheckoutPage = () => {
           payment_method: "cod",
           payment_method_title: "Cash on Delivery",
           set_paid: false,
+          status: "processing", // <-- এই লাইনটি যোগ করুন
           customer_id: orderCustomerId,
           billing: formattedBilling,   
           shipping: formattedBilling,  
@@ -618,17 +637,22 @@ const CheckoutPage = () => {
 
                           <div className="order-items">
                             {cartItems.map((item) => (
-                              <div key={item.productId} className="item-row">
+                              /* ১. এখানে key হিসেবে ইউনিক cartId ব্যবহার করা হয়েছে এরর এড়াতে */
+                              <div key={item.cartId} className="item-row">
                                 <div className="item-thumb">
                                   <img src={item.image} alt={item.name} />
                                 </div>
                                 <div className="item-info">
                                   <h4>{item.name}</h4>
-                                  <p>Size: {item.size} • Qty: {item.qty}</p>
+                                  <p>Size: {item.size || "N/A"} • Qty: {item.qty}</p>
                                 </div>
                                 <div className="item-pricing">
                                   <span className="new-price">৳{(item.price * item.qty).toFixed(0)}</span>
-                                  <del className="old-price">৳{(item.regularPrice * item.qty).toFixed(0)}</del>
+                                  
+                                  {/* ২. যদি সেল প্রাইস এবং রেগুলার প্রাইস আলাদা হয় (অর্থাৎ ডিসকাউন্ট একটিভ থাকে), কেবল তখনই পুরোনো প্রাইস দেখাবে */}
+                                  {item.regularPrice !== item.price && (
+                                    <del className="old-price">৳{(item.regularPrice * item.qty).toFixed(0)}</del>
+                                  )}
                                 </div>
                               </div>
                             ))}
@@ -680,7 +704,6 @@ const CheckoutPage = () => {
                             </p>
                           )}
                         </div>
-                        
                         {/* Delivery Method Section */}
                         <div className="payment-method-section">
                           <h3>Delivery Area</h3>
@@ -700,7 +723,7 @@ const CheckoutPage = () => {
                                     <span className="method-title">Inside Dhaka City</span>
                                   </div>
                                 </div>
-                                <span className="price-tag">Tk 60</span>
+                                <span className="price-tag">Tk 80</span>
                               </div>
                             </label>
 
@@ -719,7 +742,7 @@ const CheckoutPage = () => {
                                     <span className="method-title">Outside Dhaka City</span>
                                   </div>
                                 </div>
-                                <span className="price-tag">Tk 120</span>
+                                <span className="price-tag">Tk 150</span>
                               </div>
                             </label>
                           </div>
@@ -767,7 +790,7 @@ const CheckoutPage = () => {
                             </div>
                           </div>
                           <button type="submit" className="confirm-btn" disabled={loading}>
-                            {loading ? "Processing..." : `Confirm Order - ৳${finalTotal}`}
+                            {loading ? "Processing..." : `Confirm Order - ৳${finalTotal.toFixed(0)}`}
                           </button>
                         </div>
                       </div>
