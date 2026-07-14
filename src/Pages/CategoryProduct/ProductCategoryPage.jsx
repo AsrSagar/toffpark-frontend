@@ -133,7 +133,7 @@ const CategoryProducts = () => {
     fetchSpecialCategories();
   }, [API_URL]);
 
-  // ডাইনামিক ক্যাটাগরি এবং সাব-ক্যাটাগরি খোঁজার লজিক (useMemo দিয়ে অপ্টিমাইজড)
+  // ডাইনামিক ক্যাটাগরি এবং সাব-ক্যাটাগরি খোঁজার লজিক (useMemo দিয়ে অপ্টিমাইজড)
   const { currentParent, subCategories } = useMemo(() => {
     const findDetails = (categories, currentSlug) => {
       for (let cat of categories) {
@@ -274,6 +274,31 @@ const CategoryProducts = () => {
     const txt = document.createElement("textarea");
     txt.innerHTML = html;
     return txt.value;
+  };
+
+  // কাস্টম কঙ্কাল বা স্কেলিটন লোডার কম্পোনেন্ট (৮টি প্রোডাক্টের ডামি কার্ড গ্রিড)
+  const renderProductSkeletons = () => {
+    const skeletonCount = 8; // লোডিং অবস্থায় ৮টি কার্ড দেখাবে
+    return (
+      <div className="products-grid-container category-products-wrapper">
+        {Array.from({ length: skeletonCount }).map((_, index) => (
+          <div key={`skeleton-${index}`} className="custom-product-card skeleton-card">
+            <div className="product-card-inner">
+              <div className="product-image-box skeleton-shimmer"></div>
+              <div className="product-item-details">
+                <div className="skeleton-line skeleton-title skeleton-shimmer"></div>
+                <div className="skeleton-line skeleton-title-short skeleton-shimmer"></div>
+                <div className="skeleton-line skeleton-price skeleton-shimmer"></div>
+                <div className="skeleton-button-group">
+                  <div className="skeleton-btn skeleton-shimmer"></div>
+                  <div className="skeleton-btn skeleton-shimmer"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -434,19 +459,20 @@ const CategoryProducts = () => {
                           </ul>
                         </div>
                       </div>
-                      <nav className="filter-row-box navigation pagination pull-right">
+                      <div className="filter-row-box navigation pagination pull-right">
                         <div className="nav-links">
                           {currentPage > 1 && <span className="page-numbers" style={{cursor: 'pointer'}} onClick={() => setCurrentPage(currentPage - 1)}>« Prev</span>}
                           <span className="page-numbers current">{currentPage}</span>
                           {currentPage < totalPages && <span className="page-numbers" style={{cursor: 'pointer'}} onClick={() => setCurrentPage(currentPage + 1)}>Next »</span>}
                         </div>
-                      </nav>
+                      </div>
                     </div>
                   </div>
 
                   <div className="products-inner-wrapper clear-fix">
+                    {/* লোডিং ট্রু থাকলে কাস্টম স্কেলিটন রেন্ডার হবে */}
                     {loading ? (
-                      <div className="grid-message"><p><i className="fas fa-spinner fa-spin"></i> Loading Products...</p></div>
+                      renderProductSkeletons()
                     ) : products.length === 0 ? (
                       <div className="grid-message">
                         <p>No products found in <strong>{slug}</strong> {searchQuery && `for "${searchQuery}"`}.</p>
@@ -464,7 +490,9 @@ const CategoryProducts = () => {
 
                           return(
                             <div key={product.id} className="custom-product-card">
-                              <div className="product-card-inner" onClick={() => navigate(`/product/${product.slug}`)}>
+                              <Link 
+                              to={`/product/${product.slug}`}
+                              className="product-card-inner">
                                 <div className="product-image-box">
                                   {isSale && savePercent > 0 && (
                                     <div className="badge-wrap">
@@ -500,6 +528,7 @@ const CategoryProducts = () => {
                                       className="btn-cart" 
                                       disabled={quickLoading === product.id}
                                       onClick={(e) => {
+                                        e.preventDefault();
                                         e.stopPropagation();
                                         handleQuickView(product.id);
                                       }}
@@ -522,19 +551,19 @@ const CategoryProducts = () => {
                                     </button>
                                   </div>
                                 </div>
-                              </div>
+                              </Link>
                             </div>
                           )
                         })}
                       </div>
                     )}
-                    <nav className="filter-row-box navigation pagination pull-left bottom-pagination">
+                    <div className="filter-row-box navigation pagination pull-left bottom-pagination">
                       <div className="nav-links">
                         {currentPage > 1 && <span className="page-numbers" style={{cursor: 'pointer'}} onClick={() => setCurrentPage(currentPage - 1)}>« Prev</span>}
                         <span className="page-numbers current">{currentPage}</span>
                         {currentPage < totalPages && <span className="page-numbers" style={{cursor: 'pointer'}} onClick={() => setCurrentPage(currentPage + 1)}>Next »</span>}
                       </div>
-                    </nav>
+                    </div>
                   </div>
                 </div>
               </main>

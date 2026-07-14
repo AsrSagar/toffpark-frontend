@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
+import { ThemeOptionsProvider } from "./context/ThemeOptionsContext";
 import { Route, Routes, useLocation } from "react-router-dom";
 import Header from "./components/Header/Header";
 import Home from "./Pages/HomePage/Home";
@@ -20,22 +21,33 @@ import OffersPage from "./Pages/Offers/Offers";
 import MobileFooterNav from "./components/MobileFooterNav/MobileFooterNav";
 import TermsAndConditions from "./Pages/TermsConditions/TermsAndConditions";
 import MyAccountPage from "./Pages/MyAccount/MyAccountPage";
+import SocialContactWidget from "./components/SocialContactWidget/SocialContactWidget";
 import { pushDataLayer } from "./utils/gtm";
 
 function App() {
   const location = useLocation();
+  const firstLoad = useRef(true);
+
   useEffect(() => {
+    // optional: skip first render if you already use GTM Page View tag
+    if (firstLoad.current) {
+      firstLoad.current = false;
+      return; // 🔥 IMPORTANT FIX
+    }
+
     pushDataLayer({
       event: "page_view",
-      page_path: location.pathname,
+      page_path: location.pathname + location.search,
       page_location: window.location.href,
       page_title: document.title,
     });
-  }, [location]);
+
+  }, [location.pathname, location.search]);
+
   return (
-    <>
-      <Header/>
-      <MiniCart/>
+    <ThemeOptionsProvider>
+      <Header />
+      <MiniCart />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/shop" element={<ShopPage />} />
@@ -55,8 +67,9 @@ function App() {
         <Route path="/my-account" element={<MyAccountPage />} />
       </Routes>
       <Footer />  
-      <MobileFooterNav />
-    </>
+      <SocialContactWidget />
+      <MobileFooterNav /> 
+    </ThemeOptionsProvider>
   );
 }
 

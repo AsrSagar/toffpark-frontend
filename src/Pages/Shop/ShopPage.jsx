@@ -12,17 +12,15 @@ const ShopPage = () => {
   const location = useLocation();
   const [products, setProducts] = useState([]);
   const [allCategories, setAllCategories] = useState([]);
-  const [SpecialCategories, setSpecialCategories] = useState([]); // Special Categories
+  const [SpecialCategories, setSpecialCategories] = useState([]); 
   const [loading, setLoading] = useState(true);
-  const [catsLoading, setCatsLoading] = useState(true); // আলাদা ক্যাটাগরি লোডার
+  const [catsLoading, setCatsLoading] = useState(true); 
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quickLoading, setQuickLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [sortBy, setSortBy] = useState("popularity");
-  const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const perPage = 20;
   const navigate = useNavigate();
   const categoryPath = location.pathname.replace("/product-category/", "").replace(/\/$/, "");
@@ -30,8 +28,6 @@ const ShopPage = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-    setSearchInput(""); 
-    setSearchQuery("");
   }, [slug]);
 
   const buildCategoryTree = (categories) => {
@@ -50,8 +46,7 @@ const ShopPage = () => {
     return tree;
   };
 
-
-  // 1. Fetch All Categories Tree (Filtering out exclusive/special categories)
+  // 1. Fetch All Categories Tree
   useEffect(() => {
     fetch(`${API_URL}/wc/store/v1/products/categories?per_page=32`)
       .then(res => res.json())
@@ -66,14 +61,12 @@ const ShopPage = () => {
       .catch(err => console.error("Categories Fetch Error:", err));
   }, [API_URL]);
 
-  // 2. 🎯 Fetch Special Categories (Fixed auth and loading state)
+  // 2. Fetch Special Categories
   useEffect(() => {
     const fetchSpecialCategories = async () => {
       setCatsLoading(true);
       try {
         const targetSlugs = ["sale","mega-deal","top-selling", "new-arrivals"];
-        
-        // Proti ta slug er jonno alada alada request promise toiri kora hocche
         const requests = targetSlugs.map(slug => 
           axios.get(`${API_URL}/wc/v3/products/categories`, {
             params: { slug, per_page: 1 },
@@ -84,15 +77,11 @@ const ShopPage = () => {
           })
         );
 
-        // Shobgula request eksathe execute hobe (Parallelly)
         const responses = await Promise.all(requests);
-        
-        // Response theke data gulo niye ekti flat array-te rakha hocche
         const fetchedCategories = responses
-          .map(res => res.data[0]) // Proti request er prothom result nicchi
-          .filter(Boolean); // Jodi kono category na paowa jay sheta bad jabe
+          .map(res => res.data[0]) 
+          .filter(Boolean); 
 
-        // Apnar ager sorting logic jeta exact slugOrder onushare sajabe
         const slugOrder = ["sale", "mega-deal", "top-selling", "new-arrivals"];
         const sortedCategories = fetchedCategories.sort(
           (a, b) => slugOrder.indexOf(a.slug) - slugOrder.indexOf(b.slug)
@@ -114,7 +103,7 @@ const ShopPage = () => {
     try {
       const [product] = await Promise.all([
         getProductById(id),
-        new Promise((resolve) => setTimeout(resolve, 1000)) // Artificial delay
+        new Promise((resolve) => setTimeout(resolve, 1000)) 
       ]);
 
       setSelectedProduct(product);
@@ -228,6 +217,53 @@ const ShopPage = () => {
     return txt.value;
   };
 
+  // 🎯 SKELETON COMPONENTS
+  const ExclusiveOffersSkeleton = () => (
+    <>
+      {[1, 2, 3, 4].map((n) => (
+        <li key={`offer-sk-${n}`}>
+          <div className="skeleton skeleton-text" style={{ width: "80%", height: "18px", margin: "8px 0" }}></div>
+        </li>
+      ))}
+    </>
+  );
+
+  const CategoriesSkeleton = () => (
+    <div className="skeleton-categories-tree" style={{ padding: "10px 0" }}>
+      {[1, 2, 3, 4, 5, 6].map((n) => (
+        <div key={`cat-sk-${n}`} style={{ display: "flex", justifyContent: "between", alignItems: "center", marginBottom: "15px" }}>
+          <div className="skeleton skeleton-text" style={{ width: "65%", height: "16px" }}></div>
+          <div className="skeleton skeleton-text" style={{ width: "15%", height: "16px" }}></div>
+        </div>
+      ))}
+    </div>
+  );
+
+  // 🎯 এই স্কেলিটনটি প্রোডাক্ট গ্রিডের আসল স্ট্রাকচার বজায় রাখবে
+  const ProductGridSkeleton = () => (
+    <div className="products-grid-container category-products-wrapper">
+      {[...Array(8)].map((_, idx) => (
+        <div key={`prod-sk-${idx}`} className="custom-product-card skeleton-card">
+          <div className="product-card-inner">
+            <div className="product-image-box skeleton" style={{ height: "220px", width: "100%", borderRadius: "8px 8px 0 0" }}></div>
+            <div className="product-item-details" style={{ padding: "15px" }}>
+              {/* টাইটেল প্লেসহোল্ডার */}
+              <div className="skeleton skeleton-text" style={{ width: "90%", height: "16px", marginBottom: "8px" }}></div>
+              <div className="skeleton skeleton-text" style={{ width: "60%", height: "14px", marginBottom: "12px" }}></div>
+              {/* প্রাইস প্লেসহোল্ডার */}
+              <div className="skeleton skeleton-text" style={{ width: "45%", height: "20px", marginBottom: "15px" }}></div>
+              {/* বাটন গ্রুপ প্লেসহোল্ডার */}
+              <div style={{ display: "flex", gap: "8px", marginTop: "auto" }}>
+                <div className="skeleton" style={{ flex: 1, height: "38px", borderRadius: "4px" }}></div>
+                <div className="skeleton" style={{ flex: 1, height: "38px", borderRadius: "4px" }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <>
       <div id="custom-header">
@@ -252,7 +288,7 @@ const ShopPage = () => {
                 <h2 className="widget-title">Exclusive Offers</h2>
                 <ul>
                   {catsLoading ? (
-                    <li key="loading-offers">Loading offers...</li>
+                    <ExclusiveOffersSkeleton />
                   ) : SpecialCategories.length > 0 ? (
                     SpecialCategories.map((cat) => (
                       <li key={cat.id}>
@@ -282,7 +318,7 @@ const ShopPage = () => {
                   {allCategories.length > 0 ? (
                     renderCategoryList(allCategories)
                   ) : (
-                    <div className="loading-cats">Loading...</div>
+                    <CategoriesSkeleton />
                   )}
                 </div>
               </section>
@@ -299,7 +335,7 @@ const ShopPage = () => {
                       <div className="category-filter-container">
                         <div className="parent-category-tabs special-tabs">
                           {catsLoading ? (
-                            <span key="loading-tabs">Loading offers...</span>
+                            <span className="skeleton skeleton-text" style={{ width: "200px", height: "25px", display: "inline-block" }}></span>
                           ) : SpecialCategories.length > 0 ? (
                             SpecialCategories.map((cat) => (
                               <button key={cat.id} className={`tab-btn ${slug === cat.slug ? "active" : ""}`} onClick={() => navigate(`/product-category/${cat.slug}/`)}>
@@ -317,15 +353,19 @@ const ShopPage = () => {
                         </div>
                         <div className="divider"></div>
                         <div className="parent-category-tabs">
-                          {allCategories.map(cat => (
-                            <button 
-                              key={cat.id} 
-                              className={`tab-btn ${currentParent?.slug === cat.slug ? 'active' : ''}`}
-                              onClick={() => navigate(`/product-category/${cat.slug}`)}
-                            >
-                              {cat.name}
-                            </button>
-                          ))}
+                          {allCategories.length > 0 ? (
+                            allCategories.map(cat => (
+                              <button 
+                                key={cat.id} 
+                                className={`tab-btn ${currentParent?.slug === cat.slug ? 'active' : ''}`}
+                                onClick={() => navigate(`/product-category/${cat.slug}`)}
+                              >
+                                {cat.name}
+                              </button>
+                            ))
+                          ) : (
+                            <span className="skeleton skeleton-text" style={{ width: "350px", height: "25px", display: "inline-block" }}></span>
+                          )}
                         </div>
 
                         <div className="divider"></div>
@@ -368,18 +408,19 @@ const ShopPage = () => {
                           </ul>
                         </div>
                       </div>
-                      <nav className="filter-row-box navigation pagination pull-right">
+                      <div className="filter-row-box navigation pagination pull-right">
                         <div className="nav-links">
                           {currentPage > 1 && <span className="page-numbers" onClick={() => setCurrentPage(currentPage - 1)}>« Prev</span>}
                           <span className="page-numbers current">{currentPage}</span>
                           {currentPage < totalPages && <span className="page-numbers" onClick={() => setCurrentPage(currentPage + 1)}>Next »</span>}
                         </div>
-                      </nav>
+                      </div>
                     </div>
                   </div>
                   <div className="products-inner-wrapper clear-fix">
+                    {/* 🎯 কন্ডিশনাল রেন্ডারিং: ডাটা লোড হওয়ার সময় স্কেলিটন গ্রিড দেখাবে */}
                     {loading ? (
-                      <div className="grid-message"><p><i className="fas fa-spinner fa-spin"></i> Loading...</p></div>
+                      <ProductGridSkeleton />
                     ) : products.length === 0 ? (
                       <div className="grid-message"><p>No products found.</p></div>
                     ) : (
@@ -393,10 +434,7 @@ const ShopPage = () => {
 
                           const productCategories = product.categories?.map(c => c.slug) || [];
                           
-                          // 1. Default ribbonText empty rakhlam jeno category na match korle ribbon aslei na dynamic vabe
                           let ribbonText = ""; 
-
-                          // 2. Apnar dewa conditional order e prioritization check korlam
                           if (productCategories.includes("best-selling")) {
                             ribbonText = "Best Selling";
                           } else if (productCategories.includes("free-delivery")) {
@@ -407,14 +445,19 @@ const ShopPage = () => {
 
                           return(
                             <div key={product.id} className="custom-product-card">
-                              <div className="product-card-inner" onClick={() => navigate(`/product/${product.slug}`)}>
+                              <Link 
+                                className="product-card-inner" 
+                                to={`/product/${product.slug}`}
+                              >
                                 <div className="product-image-box">
-                                  {/* Discount details left element logic ager motoi row-te roilo */}
-                                  {isSale && savePercent > 0 && (
+                                  {((isSale && savePercent > 0) || ribbonText) && (
                                     <div className="badge-wrap">
-                                      <span className="ribbon-offered">{savePercent}% Off</span>
-                                      {/* Shudhu jodi uporero valid category match pay, tokhon e layer ribbon show hobe */}
-                                      {ribbonText && <span className="ribbon-save">{ribbonText}</span>}
+                                      {isSale && savePercent > 0 && (
+                                        <span className="ribbon-offered">{savePercent}% Off</span>
+                                      )}
+                                      {ribbonText && (
+                                        <span className="ribbon-save">{ribbonText}</span>
+                                      )}
                                     </div>
                                   )}
                                   <img alt={product.name} src={product.images?.[0]?.src || ""} />
@@ -443,6 +486,7 @@ const ShopPage = () => {
                                       className="btn-cart" 
                                       disabled={quickLoading === product.id}
                                       onClick={(e) => {
+                                        e.preventDefault();
                                         e.stopPropagation(); 
                                         handleQuickView(product.id);
                                       }}
@@ -465,7 +509,7 @@ const ShopPage = () => {
                                     </button>
                                   </div>
                                 </div>
-                              </div>
+                              </Link>
                             </div>
                           )
                         })}

@@ -24,7 +24,6 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
             setSelectedProduct(product);
             setIsQuickViewOpen(true);
 
-            // ✅ সফলভাবে ডেটা লোড হওয়ার পর GTM view_content Event Trigger করা হলো
             window.dataLayer = window.dataLayer || [];
             window.dataLayer.push({
                 event: "view_content",
@@ -127,15 +126,14 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
 
                             return (
                                 <div key={product.id} className="custom-product-card">
-                                    <div 
-                                        className="product-card-inner" 
-                                        onClick={() => handleCardClick(product.permalink)}
+                                    <Link
+                                        to={`/product/${getSlugFromPermalink(product.permalink)}`}
+                                        className="product-card-inner"
                                     >
                                         <div className="product-image-box">
                                             {isSale && savePercent > 0 && (
                                                 <div className="badge-wrap">
                                                     <span className="ribbon-offered">{savePercent}% Off</span>
-                                                    {/* Shudhu condition matched content text thaklei display hobe */}
                                                     {ribbonText && <span className="ribbon-save">{ribbonText}</span>}
                                                 </div>
                                             )}
@@ -166,6 +164,7 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
                                                     className="btn-cart-action"
                                                     disabled={quickLoading === product.id}
                                                     onClick={(e) => {
+                                                        e.preventDefault();
                                                         e.stopPropagation();
                                                         handleQuickView(product.id);
                                                     }}
@@ -180,7 +179,7 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
                                                 </button>
                                             </div>
                                         </div>
-                                    </div>
+                                    </Link>
                                 </div>
                             );
                         })

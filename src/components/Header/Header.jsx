@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useThemeOptions } from "../../context/ThemeOptionsContext";
 import NavBar from "./NavBar";
 import axios from "axios";
 import config from "../../config";
 import "./Topbar.css";
 
 const Header = () => {
+  const { options } = useThemeOptions();
   const [menuItems, setMenuItems] = useState([]);
   const [mobileMenu, setMobileMenu] = useState(false);
 
@@ -32,6 +34,8 @@ const Header = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, [mobileMenu]);
 
+  console.log("Theme Options:", options);
+
   return (
     <header className="site-header">
       <div className="top-header">
@@ -39,14 +43,14 @@ const Header = () => {
           
           {/* Left: Contact */}
           <div className="contact-info">
-            <a href="tel:+8801811877477" style={{ color: '#000', textDecoration: 'none' }}>
-              Call Us +8801811877477
+            <a href={`tel:${options.phone_number}`} style={{ color: '#000', textDecoration: 'none' }}>
+              Call Us {options.phone_number}
             </a>
           </div>
 
           {/* Center: Marquee Notice */}
           <div className="notic-item">
-            <p>Orlazz ঈদ লুটপাট অফার -Up To 60% OFF!</p>
+            <p>{options.top_bar_text}</p>
           </div>
 
           {/* Right: Social Icons */}

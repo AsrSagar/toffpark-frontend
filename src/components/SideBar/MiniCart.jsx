@@ -27,32 +27,47 @@ const MiniCart = () => {
 
   const API_URL = config.API_URL;
 
+  // ১. সেল ডেট এক্সপায়ার হয়েছে কিনা তা যাচাই করার কমন হেল্পার ফাংশন
+  const getValidPrice = (product) => {
+    const now = new Date();
+    const saleFrom = product.date_on_sale_from ? new Date(product.date_on_sale_from) : null;
+    const saleTo = product.date_on_sale_to ? new Date(product.date_on_sale_to) : null;
+
+    let isSaleActive = true;
+    if (saleFrom && now < saleFrom) isSaleActive = false;
+    if (saleTo && now > saleTo) isSaleActive = false;
+
+    const regPrice = Number(product.regular_price || product.price || 0);
+    const slPrice = product.sale_price && isSaleActive ? Number(product.sale_price) : null;
+    const finalPrice = slPrice && slPrice > 0 ? slPrice : regPrice;
+
+    return {
+      finalPrice,
+      regPrice,
+      isDiscounted: slPrice !== null && slPrice < regPrice
+    };
+  };
+
   // Logic: Cart-er prottekta product-er FBT data fetch kora
   useEffect(() => {
     const fetchAllFBTProducts = async () => {
       if (cartOpen && cartItems.length > 0) {
         setLoading(true);
         try {
-          // 1. Sob gulo Unique Product ID ber kora (jate duplicate API call na hoy)
           const uniqueProductIds = [...new Set(cartItems.map(item => item.productId))];
 
-          // 2. Sob gulo Product ID-r jonno eksathe API call kora
           const fetchPromises = uniqueProductIds.map(id =>
             fetch(`${API_URL}/fbt/v1/products/${id}`).then(res => res.json())
           );
 
           const results = await Promise.all(fetchPromises);
-
-          // 3. Sob gulo result ke ekta single array-te merge kora
           let combinedRecommendations = results.flat();
 
-          // 4. Duplicate product remove kora (jodi ekoi product multiple FBT-te thake)
           const uniqueRecommendations = combinedRecommendations.filter(
             (prod, index, self) =>
               prod && prod.id && index === self.findIndex((p) => p.id === prod.id)
           );
 
-          // 5. Cart-e already thaka product gulo ke recommendation theke bad deya
           const finalRecs = uniqueRecommendations.filter(
             (recProd) => !cartItems.some(cartItem => cartItem.productId === recProd.id)
           );
@@ -89,32 +104,27 @@ const MiniCart = () => {
       return;
     }
 
-    const price = parseFloat(product.price || 0);
+    // কার্টে অ্যাড করার সময়ও সঠিক ভ্যালিড প্রাইস পাস করছি
+    const { finalPrice } = getValidPrice(product);
 
     const item = {
       item_id: String(product.id),
       item_name: product.name,
       item_category: product.categories?.[0]?.name || "",
-      price: price,
+      price: finalPrice,
       quantity: 1,
       item_variant: product.type === "variable" ? size : undefined,
     };
 
-    // Add to cart logic
     addToCart({ ...product, size }, 1, null);
 
     window.dataLayer = window.dataLayer || [];
-
-    // GA4 recommended: clear ecommerce object first
-    window.dataLayer.push({
-      ecommerce: null,
-    });
-
+    window.dataLayer.push({ ecommerce: null });
     window.dataLayer.push({
       event: "add_to_cart",
       ecommerce: {
         currency: "BDT",
-        value: price * 1,
+        value: finalPrice * 1,
         items: [item],
       },
     });
@@ -141,50 +151,48 @@ const MiniCart = () => {
                   <h6 className="product-title-desktop">{item.name}</h6>
                   <h6 className="product-title-mobile">{item.name.length > 20 ? item.name.substring(0, 20) + "..." : item.name}</h6>
                   {item.size && <span className="variation-info">Size: {item.size} x {item.qty}</span>}
+                  
                   <div className="price-qty qty-mobile">
                     <span>৳{item.price * item.qty} </span>
-                      {
-                        item.regularPrice !== item.price && (
-                          <del className="regular-price">৳{item.regularPrice * item.qty}</del>
-                        )
-                      }
-
+                    {item.regularPrice !== item.price && (
+                      <del className="regular-price">৳{item.regularPrice * item.qty}</del>
+                    )}
                   </div>
+
                   <div className="qty-controls">
                     <div className="quantity-selector">
-                        <button 
-                          type="button" 
-                          onClick={() => updateQuantity(item.cartId, item.qty - 1)}
-                          className="qty-btn qty-minus"
-                          >
+                      <button 
+                        type="button" 
+                        onClick={() => updateQuantity(item.cartId, item.qty - 1)}
+                        className="qty-btn qty-minus"
+                      >
                         −
-                        </button>
-                        
-                        <input
-                          type="number"
-                          className="input-text"
-                          min="1"
-                          value={item.qty}
-                          onChange={(e) => updateQuantity(item.cartId, item.qty + 1)}
-                        />
-                        
-                        <button 
-                          type="button" 
-                          onClick={() => updateQuantity(item.cartId, item.qty + 1)}
-                          className="qty-btn qty-plus"
-                          >
+                      </button>
+                      
+                      <input
+                        type="number"
+                        className="input-text"
+                        min="1"
+                        value={item.qty}
+                        onChange={(e) => updateQuantity(item.cartId, Number(e.target.value))} // টাইপ করা ভ্যালু ঠিক করার জন্য ফিক্সড
+                      />
+                      
+                      <button 
+                        type="button" 
+                        onClick={() => updateQuantity(item.cartId, item.qty + 1)}
+                        className="qty-btn qty-plus"
+                      >
                         +
-                        </button>
+                      </button>
                     </div>
+
                     <div className="price-qty qty-desktop">
                       <span>৳{item.price * item.qty} </span>
-                      {
-                        item.regularPrice !== item.price && (
-                          <del className="regular-price">৳{item.regularPrice * item.qty}</del>
-                        )
-                      }
-
+                      {item.regularPrice !== item.price && (
+                        <del className="regular-price">৳{item.regularPrice * item.qty}</del>
+                      )}
                     </div>
+
                     <button className="mini-remove-btn" onClick={() => removeFromCart(item.cartId)}>
                       <i className="fa fa-trash-alt"></i>
                     </button>
@@ -194,6 +202,7 @@ const MiniCart = () => {
             ))
           )}
         </div>
+
         <div className="cart-footer">
           {!loading && recommendations.length > 0 && (
             <div className="recommendations-container">
@@ -217,39 +226,51 @@ const MiniCart = () => {
                 pagination={{ clickable: true, type: "progressbar" }}
                 className="rec-swiper"
               >
-                {recommendations.map((prod) => (
-                  <SwiperSlide key={prod.id}>
-                    <div className="rec-card">
-                      <div className="rec-img-box">
-                        <img src={prod.images?.[0]?.src} alt={prod.name} />
+                {recommendations.map((prod) => {
+                  // এখানে প্রতিটি রেকমেন্ডেশন প্রোডাক্টের বর্তমান প্রাইস ক্যালকুলেট করা হচ্ছে
+                  const { finalPrice, regPrice, isDiscounted } = getValidPrice(prod);
+
+                  return (
+                    <SwiperSlide key={prod.id}>
+                      <div className="rec-card">
+                        <div className="rec-img-box">
+                          <img src={prod.images?.[0]?.src} alt={prod.name} />
+                        </div>
+                        <div className="rec-content">
+                          <h6 className="rec-name" title={prod.name}>{prod.name}</h6>
+                          
+                          {/* সেল এক্সপায়ার হলে এখানেও রেগুলার প্রাইস দেখাবে */}
+                          <p className="rec-price">
+                            ৳ {finalPrice} {' '}
+                            {isDiscounted && (
+                              <del className="regular-price" style={{fontSize: '12px', color: '#999', marginLeft: '5px'}}>৳ {regPrice}</del>
+                            )}
+                          </p>
+                          
+                          {prod.type === "variable" && (
+                            <div className="size-option">
+                              <select
+                                value={selectedSizes[prod.id] || ""}
+                                onChange={(e) => handleSizeChange(prod.id, e.target.value)}
+                              >
+                                <option value="">Size</option>
+                                {prod.attributes
+                                  ?.find((attr) => attr.variation === true)
+                                  ?.options?.map((size) => (
+                                    <option key={size} value={size}>{size}</option>
+                                  ))}
+                              </select>
+                            </div>
+                          )}
+                          
+                          <button className="rec-add-btn" onClick={() => handleAddToCart(prod)}>
+                            <span>+ ADD</span>
+                          </button>
+                        </div>
                       </div>
-                      <div className="rec-content">
-                        <h6 className="rec-name" title={prod.name}>{prod.name}</h6>
-                        <p className="rec-price">৳ {prod.price}</p>
-                        
-                        {prod.type === "variable" && (
-                          <div className="size-option">
-                            <select
-                              value={selectedSizes[prod.id] || ""}
-                              onChange={(e) => handleSizeChange(prod.id, e.target.value)}
-                            >
-                              <option value="">Size</option>
-                              {prod.attributes
-                                ?.find((attr) => attr.variation === true)
-                                ?.options?.map((size) => (
-                                  <option key={size} value={size}>{size}</option>
-                                ))}
-                            </select>
-                          </div>
-                        )}
-                        
-                        <button className="rec-add-btn" onClick={() => handleAddToCart(prod)}>
-                          <span>+ ADD</span>
-                        </button>
-                      </div>
-                    </div>
-                  </SwiperSlide>
-                ))}
+                    </SwiperSlide>
+                  );
+                })}
               </Swiper>
             </div>
           )}

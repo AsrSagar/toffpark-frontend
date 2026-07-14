@@ -186,18 +186,8 @@
 .fbt-price-container span{
   padding: 0;
 }
-.fbt-price-container .save-amount {
-  border-radius: 99px;
-  background: #bfdb38;
-  line-height: 120%;
-  text-align: center;
-  color: #000;
-  padding: 2px 4px 2px 4px !important;
-}
-.fbt-price-container .sale-price {
-  font-size: 15px !important;
-  margin-right: 5px;
-}
+
+
 /* চেকবক্সের কন্টেইনার স্টাইল */
 .item-main-info {
     display: flex;
@@ -310,6 +300,24 @@
 }
 .fbt-mobile {
   display: none;
+}
+
+.fbt-price-container .regular-price{
+  font-size: 13px !important;
+}
+.fbt-price-container .sale-price {
+  font-size: 15px !important;
+  margin-right: 5px;
+}
+.fbt-price-container .save-amount {
+  border-radius: 99px;
+  background: #bfdb38;
+  line-height: 120%;
+  text-align: center;
+  color: #000;
+  padding: 2px 4px 2px 4px !important;
+  font-size: 10px !important;
+  top: 0 !important;
 }
 @media only screen and (max-width: 900px) {
   .fbt-wrapper {

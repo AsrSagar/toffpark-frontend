@@ -251,9 +251,21 @@ const CustomerFeedback = () => {
                         <div className="combo-card-wrapper">
                             <div className="combo-items-scroll">
                                 {products.map((product) => {
-                                    const regularPrice = parseInt(product.custom_price_data?.regular_price || 0);
-                                    const salePrice = parseInt(product.custom_price_data?.sale_price || 0);
-                                    const isSale = salePrice > 0 && salePrice < regularPrice;
+                                    const regularPrice = parseFloat(
+                                      product?.custom_price_data?.regular_price ||
+                                      product?.regular_price ||
+                                      0
+                                    );
+                                    const currentPrice = parseFloat(
+                                      product?.custom_price_data?.price ||
+                                      product?.price ||
+                                      regularPrice
+                                    );
+                                    const isSale =
+                                      regularPrice > 0 &&
+                                      currentPrice > 0 &&
+                                      currentPrice < regularPrice;
+                                    const salePrice = isSale ? currentPrice : regularPrice;
                                     const activeImage = product.images[0]?.src || "/images/placeholder.png";
 
                                     return (

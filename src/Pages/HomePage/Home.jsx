@@ -1,6 +1,7 @@
 // import React, { useEffect, useState } from "react";
 import HeroSection from "./HeroSection/HeroSection";
 import AdsBanner from "./AdsBanner/AdsBanner";
+import AdsBanner2 from "./AdsBanner/AdsBanner2";
 import CustomerFeedback from "./CustomerFeedback/CustomerFeedback";
 import CategoryProduct from "./CategoryProduct/CategoryProduct";
 // import HomeContent from "./HomeContent/HomeContent";
@@ -47,7 +48,7 @@ const Home = () => {
                             <AdsBanner />
                             <CategoryProduct categorySlug="125" categoryTitle="Kids Clogs"/>
                             <CategoryProduct categorySlug="122" categoryTitle="Kids Sandals"/>
-                            <AdsBanner />
+                            <AdsBanner2 />
                             <CategoryProduct categorySlug="119" categoryTitle="Kids Unisex Shoes"/>
                             <CategoryProduct categorySlug="126" categoryTitle="Kids Socks"/>
                             {/* <AdsBanner />

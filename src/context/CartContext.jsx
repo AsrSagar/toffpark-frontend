@@ -12,10 +12,6 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem("cartItems", JSON.stringify(cartItems));
   }, [cartItems]);
 
-  /**
-   * addToCart: Product o Variation er upor ভিত্তি kore cart-e item add kore.
-   * Ekhane Regular Price ebong Sale Price dui-i handle kora hoyeche.
-   */
   const addToCart = (product, qty = 1, selectedVariation = null) => {
     const safeQty = Math.max(1, Number(qty) || 1);
     const variationId = selectedVariation?.id || null;
@@ -26,22 +22,47 @@ export const CartProvider = ({ children }) => {
     let regPrice = 0;
     let slPrice = null;
 
+    // ১. সেল ডেট এক্সপায়ার হয়েছে কিনা তা চেক করার লজিক
+    const isSaleActive = () => {
+      const now = new Date();
+      
+      // WooCommerce API থেকে ডেট নিয়ে আসা (যদি থাকে)
+      const saleFrom = source.date_on_sale_from ? new Date(source.date_on_sale_from) : null;
+      const saleTo = source.date_on_sale_to ? new Date(source.date_on_sale_to) : null;
+
+      // যদি কোনো ডেট সেট করা না থাকে, তাহলে ধরে নেওয়া হবে সেল একটিভ আছে
+      if (!saleFrom && !saleTo) return true; 
+      
+      // যদি শুরুর ডেট বাকি থাকে
+      if (saleFrom && now < saleFrom) return false;
+      
+      // যদি শেষের ডেট পার হয়ে যায় (Expired)
+      if (saleTo && now > saleTo) return false;
+
+      return true;
+    };
+
+    const saleValid = isSaleActive();
+
     if (source?.prices) {
       // WooCommerce Store API structure handle korar jonno
-      const { price, sale_price, regular_price, currency_minor_unit } = source.prices;
+      const { sale_price, regular_price, currency_minor_unit } = source.prices;
       const divisor = Math.pow(10, currency_minor_unit || 2);
 
       regPrice = Number(regular_price) / divisor;
-      slPrice = sale_price ? Number(sale_price) / divisor : null;
-      finalPrice = Number(price) / divisor;
+      
+      // সেল ভ্যালিড হলেই কেবল sale_price কাউন্ট হবে, নয়তো null
+      slPrice = sale_price && saleValid ? Number(sale_price) / divisor : null;
+      finalPrice = slPrice !== null ? slPrice : regPrice;
     } else {
       // Fallback: Jodi structure simple hoy (Standard REST API)
       regPrice = Number(source.regular_price || source.price || 0);
-      slPrice = source.sale_price ? Number(source.sale_price) : null;
+      
+      // সেল ভ্যালিড হলেই কেবল sale_price কাউন্ট হবে
+      slPrice = source.sale_price && saleValid ? Number(source.sale_price) : null;
       finalPrice = slPrice && slPrice > 0 ? slPrice : regPrice;
     }
 
-    
     // Size attribute khuje ber kora
     const size = product.size || selectedVariation?.attributes?.find(
       (attr) => attr.name.toLowerCase() === "size" || attr.slug === "pa_size"
@@ -57,11 +78,11 @@ export const CartProvider = ({ children }) => {
       productId: product.id,
       variationId,
       name: product.name,
-      size, // Ekhon eita pathano size-ta pabe
+      size, 
       price: finalPrice,
       regularPrice: regPrice,
       salePrice: slPrice,
-      image: product.images?.[0]?.src || product.image || "", // product.image fallback add kora hoyeche
+      image: product.images?.[0]?.src || product.image || "", 
       qty: safeQty,
     };
 

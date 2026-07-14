@@ -1,5 +1,5 @@
 import React, {  useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import config from "../../../config";
 import "./RecentlyViewedProducts.css";
 import { getProductById } from "../../../api/products";
@@ -83,10 +83,23 @@ const RecentlyViewedProducts = () => {
             <div className="products-grid-container">
                 {products.map((product) => {
                     const isOutOfStock = !product.is_in_stock || !product.is_purchasable;
-                    const regularPrice = parseInt(product.prices.regular_price);
-                    const salePrice = parseInt(product.prices.sale_price);
-                    const isSale = salePrice < regularPrice;
-                    const savePercent = isSale ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0;
+
+                    const regularPrice = parseInt(product?.prices?.regular_price || 0, 10);
+                    const currentPrice = parseInt(product?.prices?.price || regularPrice, 10);
+
+                    const isSale =
+                        product?.on_sale === true &&
+                        regularPrice > currentPrice;
+
+                    const salePrice = currentPrice;
+
+                    const saveAmount = isSale
+                        ? regularPrice - currentPrice
+                        : 0;
+
+                    const savePercent = isSale
+                        ? Math.round((saveAmount / regularPrice) * 100)
+                        : 0;
 
                     // WooCommerce store API version product response categories mapping
                     const productCategories = product.categories?.map(c => c.slug) || [];
@@ -101,7 +114,10 @@ const RecentlyViewedProducts = () => {
 
                     return (
                         <div key={product.id} className="custom-product-card">
-                            <div className="product-card-inner" onClick={() => goToProduct(product.permalink)}>
+                            <Link 
+                                className="product-card-inner" 
+                                to={`/product/${getSlugFromPermalink(product.permalink)}`}
+                            >
                                 {/* Thumbnail */}
                                 <div className="product-image-box">
                                     {isSale && savePercent > 0 && (
@@ -130,12 +146,22 @@ const RecentlyViewedProducts = () => {
                                     <div className="product-price">
                                         {isSale ? (
                                             <>
-                                                <span className="price-new">৳{(salePrice / 100).toFixed(0)}</span>
-                                                <del className="price-old">৳{(regularPrice / 100).toFixed(0)}</del>
-                                                <div className="save-tag">Save ৳{((regularPrice - salePrice) / 100).toFixed(0)}</div>
+                                                <span className="price-new">
+                                                    ৳{(salePrice / 100).toFixed(0)}
+                                                </span>
+
+                                                <del className="price-old">
+                                                    ৳{(regularPrice / 100).toFixed(0)}
+                                                </del>
+
+                                                <div className="save-tag">
+                                                    Save ৳{(saveAmount / 100).toFixed(0)}
+                                                </div>
                                             </>
                                         ) : (
-                                            <span className="price-new">৳{(regularPrice / 100).toFixed(0)}</span>
+                                            <span className="price-new">
+                                                ৳{(currentPrice / 100).toFixed(0)}
+                                            </span>
                                         )}
                                     </div>
 
@@ -145,6 +171,7 @@ const RecentlyViewedProducts = () => {
                                             className="btn-cart" 
                                             disabled={quickLoading === product.id}
                                             onClick={(e) => {
+                                                e.preventDefault();
                                                 e.stopPropagation(); // 2. Eta card-er click event-ke thamay dibe
                                                 handleQuickView(product.id);
                                             }}
@@ -162,7 +189,7 @@ const RecentlyViewedProducts = () => {
                                         </button>
                                     </div>
                                 </div>
-                            </div>
+                            </Link>
                         </div>
                     );
                 })}
