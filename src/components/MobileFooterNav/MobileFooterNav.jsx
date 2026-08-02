@@ -70,7 +70,7 @@ const MobileFooterNav = () => {
         <i className="fas fa-search"></i>
         <span>Search</span>
       </Link>
-      <Link to="/login" className="nav-item">
+      <Link to="/my-account" className="nav-item">
         <i className="far fa-user"></i>
         <span>Login</span>
       </Link>

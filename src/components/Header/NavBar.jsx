@@ -443,6 +443,36 @@ const NavBar = () => {
           ✕
         </button>
       </div>
+      <div className="mobile-drawer-menu">
+        <h3 className="mobile-title">Special Offers</h3>
+        <ul className="drawer-menu-list">
+          <li className="drawer-menu-item">
+            <Link to="/product-category/sale/" className="drawer-menu-link">
+              <span className="drawer-icon green-icon"><i class="fa-solid fa-percent"></i></span>
+              <span className="drawer-text">Up To 15% Sales</span>
+            </Link>
+          </li>
+          <li className="drawer-menu-item">
+            <Link to="/product-category/mega-deal/" className="drawer-menu-link">
+              <span className="drawer-icon green-icon"><i className="fa-solid fa-star"></i></span>
+              <span className="drawer-text">Mega Deal</span>
+            </Link>
+          </li>
+          <li className="drawer-menu-item">
+            <Link to="/product-category/top-selling/" className="drawer-menu-link">
+              <span className="drawer-icon default-icon"><i className="fa-solid fa-fire"></i></span>
+              <span className="drawer-text">Top Selling</span>
+            </Link>
+          </li>
+          <li className="drawer-menu-item">
+            <Link to="/product-category/new-arrivals/" className="drawer-menu-link active">
+              <span className="drawer-icon blue-icon"><i class="fa-solid fa-plane"></i></span>
+              <span className="drawer-text">New Arrivals</span>
+            </Link>
+          </li>
+        </ul>
+      </div>
+      <h3 className="mobile-title">Categories</h3>
       {renderMobileSubMenu(menuItems)}
     </div>
     {isDesktop && (

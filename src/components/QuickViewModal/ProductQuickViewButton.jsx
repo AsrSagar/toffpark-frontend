@@ -21,8 +21,6 @@ const ProductQuickViewButton = ({ productId, onProductLoaded }) => {
     }
   };
 
-  console.log("Product ID:", getProductById);
-
   return (
     <button
       className="product-button tooltip"

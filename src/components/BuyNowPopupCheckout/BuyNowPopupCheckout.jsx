@@ -539,8 +539,8 @@ const BuyNowPopupCheckout = ({
       if (!finalEmail) {
         const cleanName = billing.name.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
         finalEmail = cleanName 
-          ? `${cleanName}_${phoneSuffix || uniqueSuffix}@temporary.com` 
-          : `guest_${uniqueSuffix}@temporary.com`;
+          ? `${cleanName}_${phoneSuffix || uniqueSuffix}@gmail.com` 
+          : `guest_${uniqueSuffix}@gmail.com`;
       }
 
       // 🛠️ রিকোয়ারমেন্ট ২: Full Name থেকে First & Last Name স্প্লিট করা

@@ -8,8 +8,6 @@ import "./CartPage.css";
 const CartPage = () => {
   const { cartItems, cartTotal, removeFromCart, updateQuantity } = useCart();
 
-  console.log("Cart Items:", cartItems);  
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);

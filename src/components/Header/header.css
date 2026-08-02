@@ -352,9 +352,94 @@ position:relative;
     transition: 0.3s;
 }
 
+.exclusive-mobile-menu{
+  display:none !important;
+}
 
+/* Mobile Drawer Container */
+.mobile-drawer-menu {
+    width: 100%;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 15px;
+    margin-top: 15px;
+}
 
+/* List Styling */
+.drawer-menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
 
+/* Item Base & Divider */
+.drawer-menu-item {
+  position: relative;
+}
+
+.drawer-menu-item:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background-color: #f0f0f0; /* Soft horizontal divider line */
+}
+
+/* Link Styling */
+.drawer-menu-link {
+  display: flex;
+  align-items: center;
+  padding: 15px 15px;
+  text-decoration: none;
+  color: #333333;
+  font-size: 15px;
+  font-weight: 400;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.drawer-menu-link:hover {
+  background-color: #f9f9f9;
+}
+
+/* Active Link Styling (e.g. Free Delivery) */
+.drawer-menu-link.active {
+  color: #2196f3;
+  font-weight: 500;
+}
+
+/* Icon Container & Spacing */
+.drawer-icon {
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: 18px;
+  margin-right: 18px;
+}
+
+/* Individual Icon Colors matching the screenshot */
+.drawer-icon.default-icon {
+  color: #555555;
+}
+
+.drawer-icon.green-icon {
+  color: #2ecc71; /* Green color for New Arrivals Star */
+}
+
+.drawer-icon.blue-icon {
+  color: #2196f3; /* Blue color for Free Delivery Truck */
+}
+
+/* Text Styling */
+.drawer-text {
+  line-height: 1;
+}
+.mobile-title {
+  margin-top: 20px;
+  font-size: 16px;
+  font-weight: 500;
+}
 /* Optional: hide desktop menu on mobile */
 @media only screen and (max-width: 900px) {
   .flex-between {
@@ -433,5 +518,11 @@ position:relative;
   }
   .search-btn-mobile {
     top: 77px;
+  }
+  .exclusive-mobile-menu{
+    display: block !important;
+  }
+  .social-widget-container {
+    bottom: 70px !important;
   }
 }

@@ -6,6 +6,28 @@ import config from "../../config";
 import "./CheckoutPage.css";
 import { Link, useLocation } from "react-router-dom";
 
+// 📩 BulkSMSBD SMS Integration Helper Function
+const sendSMS = async (phone, message) => {
+  try {
+    const apiKey = "01712325853.ZplGH7pep9yYnOOSQ5";
+    const senderid = "8809604903051";
+    
+    // ফোন নম্বর থেকে স্পেস বা ড্যাশ বাদ দেওয়া
+    let cleanPhone = phone ? phone.toString().replace(/[^0-9]/g, "") : "";
+    
+    // নম্বর ৮৮ দিয়ে শুরু না থাকলে যুক্ত করা
+    if (!cleanPhone.startsWith("88")) {
+      cleanPhone = `88${cleanPhone}`;
+    }
+
+    const url = `https://isms.bulksmsbd.info/api/sendsms?api_key=${apiKey}&type=text&phone=${cleanPhone}&senderid=${senderid}&message=${encodeURIComponent(message)}`;
+
+    await axios.get(url);
+  } catch (error) {
+    console.error("SMS Sending Error:", error);
+  }
+};
+
 // Function to get device type, UTM params, and session page views
 const getTrackingData = () => {
   const deviceType = /Mobi|Android/i.test(navigator.userAgent) ? "Mobile" : "Desktop";
@@ -190,14 +212,10 @@ const CheckoutPage = () => {
     }
     
     window.dataLayer = window.dataLayer || [];
-    
-    // ১. প্রথমে ই-কমার্স অবজেক্ট রি-সেট করা
     window.dataLayer.push({ ecommerce: null }); 
 
-    // ২. অবজেক্ট তৈরি করে ডাটা লেয়ারে পুশ করা (এখানে 'gtm' প্রপার্টি এক্সপ্লিসিটলি জেনারেট হওয়া বন্ধ করা হয়েছে)
     const purchasePushData = {
       event: "purchase",
-      // কাস্টম ফিল্ড হিসেবে gtm ডিফাইন করে ওভাররাইড করে দেওয়া যাতে নোড এলিমেন্ট বা জিমেইল ট্র্যাকিং বাস্টল না করে
       gtm: {
         uniqueEventId: undefined,
         element: undefined,
@@ -428,14 +446,14 @@ const CheckoutPage = () => {
       }
       
       // --------------------------
-      // 3. COD (Cash on Delivery)
+      // 2. COD (Cash on Delivery)
       // --------------------------
       if (paymentMethod === "cod") {
         const orderData = {
           payment_method: "cod",
           payment_method_title: "Cash on Delivery",
           set_paid: false,
-          status: "processing", // <-- এই লাইনটি যোগ করুন
+          status: "processing",
           customer_id: orderCustomerId,
           billing: formattedBilling,   
           shipping: formattedBilling,  
@@ -476,6 +494,10 @@ const CheckoutPage = () => {
           customTrackingBilling
         );
 
+        // 📩 Send SMS on COD Order Placed
+        const smsMsg = `Your order #${response.data.id} has been received by Orlazz. Thank you!`;
+        sendSMS(billing.phone, smsMsg);
+
         setOrderId(response.data.id);
         clearCart();
         setShowThankYou(true);
@@ -505,19 +527,22 @@ const CheckoutPage = () => {
       const savedCoupon = sessionStorage.getItem("pending_pur_coupon") || "";
       const savedExtId = sessionStorage.getItem("pending_pur_ext_id") || ""; 
       
-      // সেশন থেকে পেমেন্ট করা ইউজারের কাস্টমার ট্র্যাকিং ডেটা রিকভারি
       const savedBilling = JSON.parse(sessionStorage.getItem("pending_pur_billing")) || {
-        first_name: "Guest Customer",
+        first_name: "Customer",
         phone: "",
         email: "",
         address_1: "",
         city: "Dhaka"
       };
 
-      // ✅ SSLCommerz এ পেমেন্ট সাকসেসফুল হয়ে পেজে ব্যাক করলে পারচেজ ইভেন্ট ফায়ার হবে
       trackPurchaseEvent(order, savedTotal, savedItems, savedCoupon, savedExtId, savedBilling);
 
-      // ক্লিনআপ সেশন স্টোরেজ
+      // 📩 Send SMS on SSLCommerz Payment Success
+      if (savedBilling.phone) {
+        const smsMsg = `Dear ${savedBilling.first_name}, your payment for order #${order} was successful. Total: BDT ${savedTotal}. Thank you!`;
+        sendSMS(savedBilling.phone, smsMsg);
+      }
+
       sessionStorage.removeItem("pending_pur_items");
       sessionStorage.removeItem("pending_pur_total");
       sessionStorage.removeItem("pending_pur_coupon");
@@ -525,7 +550,6 @@ const CheckoutPage = () => {
       sessionStorage.removeItem("pending_pur_billing");
 
       clearCart();
-      // URL থেকে কুয়েরি প্যারামিটার ক্লিন করা যাতে রিফ্রেশ দিলে ডুপ্লিকেট হিট না হয়
       window.history.replaceState({}, document.title, "/checkout");
     }
     
@@ -637,7 +661,6 @@ const CheckoutPage = () => {
 
                           <div className="order-items">
                             {cartItems.map((item) => (
-                              /* ১. এখানে key হিসেবে ইউনিক cartId ব্যবহার করা হয়েছে এরর এড়াতে */
                               <div key={item.cartId} className="item-row">
                                 <div className="item-thumb">
                                   <img src={item.image} alt={item.name} />
@@ -648,8 +671,6 @@ const CheckoutPage = () => {
                                 </div>
                                 <div className="item-pricing">
                                   <span className="new-price">৳{(item.price * item.qty).toFixed(0)}</span>
-                                  
-                                  {/* ২. যদি সেল প্রাইস এবং রেগুলার প্রাইস আলাদা হয় (অর্থাৎ ডিসকাউন্ট একটিভ থাকে), কেবল তখনই পুরোনো প্রাইস দেখাবে */}
                                   {item.regularPrice !== item.price && (
                                     <del className="old-price">৳{(item.regularPrice * item.qty).toFixed(0)}</del>
                                   )}
@@ -704,6 +725,7 @@ const CheckoutPage = () => {
                             </p>
                           )}
                         </div>
+
                         {/* Delivery Method Section */}
                         <div className="payment-method-section">
                           <h3>Delivery Area</h3>
@@ -772,7 +794,7 @@ const CheckoutPage = () => {
                                   <span className="radio-circle"></span>
                                   <div className="text-group">
                                     <span className="method-title">Online Payment</span>
-                                    <span className="method-subtitle">Visa, Mastercard, Amex, bkash, Nagad</span>
+                                    <span className="method-subtitle">Card, bkash, Nagad</span>
                                   </div>
                                 </div>
                                 <img src="/images/sslcz-verified.png" alt="SSLCommerz" className="provider-logo" />

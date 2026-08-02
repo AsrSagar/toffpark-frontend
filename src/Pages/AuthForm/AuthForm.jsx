@@ -7,7 +7,7 @@ const AuthForm = () => {
   const [formData, setFormData] = useState({ username: '', email: '', password: '', rememberMe: false });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const WP_BASE_URL = 'https://backend.orlass.com'; 
+  const WP_BASE_URL = 'https://backend.orlazz.com'; 
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -17,6 +17,36 @@ const AuthForm = () => {
     }));
   };
 
+  // Common Login Helper Function
+  const performLogin = async (username, password) => {
+    const response = await fetch(`${WP_BASE_URL}/wp-json/jwt-auth/v1/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user_display_name', data.user_display_name);
+      localStorage.setItem('user_email', data.user_email);
+      
+      setMessage({ 
+        type: 'success', 
+        text: `Welcome, ${data.user_display_name}! Redirecting to dashboard...` 
+      });
+
+      setTimeout(() => {
+        window.location.href = '/my-account';
+      }, 1500);
+      return true;
+    } else {
+      setMessage({ type: 'error', text: data.message || 'Invalid Username or Password!' });
+      return false;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -24,32 +54,10 @@ const AuthForm = () => {
 
     try {
       if (isLogin) {
-        const response = await fetch(`${WP_BASE_URL}/wp-json/jwt-auth/v1/token`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: formData.username,
-            password: formData.password
-          })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user_display_name', data.user_display_name);
-          localStorage.setItem('user_email', data.user_email);
-          
-          setMessage({ type: 'success', text: `Welcome back, ${data.user_display_name}! Redirecting...` });
-
-          setTimeout(() => {
-            window.location.href = '/my-account';
-          }, 1500);
-        } else {
-          setMessage({ type: 'error', text: data.message || 'Invalid Username or Password!' });
-        }
-
+        // Direct Login Action
+        await performLogin(formData.username, formData.password);
       } else {
+        // Registration Action
         const response = await fetch(`${WP_BASE_URL}/wp-json/wp/v2/users/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -63,8 +71,10 @@ const AuthForm = () => {
         const data = await response.json();
 
         if (response.ok) {
-          setMessage({ type: 'success', text: 'Registration Successful! Please login now.' });
-          setIsLogin(true); 
+          setMessage({ type: 'success', text: 'Registration Successful! Logging you in...' });
+          
+          // Auto-Login immediately after successful registration
+          await performLogin(formData.username, formData.password);
         } else {
           setMessage({ type: 'error', text: data.message || 'Registration failed. Try again!' });
         }
@@ -77,13 +87,18 @@ const AuthForm = () => {
     }
   };
 
+  const toggleTab = (loginStatus) => {
+    setIsLogin(loginStatus);
+    setMessage({ type: '', text: '' });
+  };
+
   return (
     <div className="orl-auth-wrapper">
       <div className="orl-tab-bar">
         <button 
           type="button"
           className={`orl-tab-btn ${isLogin ? 'orl-active' : 'orl-inactive'}`}
-          onClick={() => { setIsLogin(true); setMessage({type:'', text:''}); }}
+          onClick={() => toggleTab(true)}
         >
           Login
         </button>
@@ -91,7 +106,7 @@ const AuthForm = () => {
         <button 
           type="button"
           className={`orl-tab-btn ${!isLogin ? 'orl-active' : 'orl-inactive'}`}
-          onClick={() => { setIsLogin(false); setMessage({type:'', text:''}); }}
+          onClick={() => toggleTab(false)}
         >
           Register
         </button>
@@ -118,6 +133,7 @@ const AuthForm = () => {
               required 
             />
           </div>
+
           {!isLogin && (
             <div className="orl-form-group">
               <label className="orl-form-label">Email address</label>
@@ -130,6 +146,7 @@ const AuthForm = () => {
               />
             </div>
           )}
+
           <div className="orl-form-group">
             <label className="orl-form-label">
               Password <span className="orl-required">*</span>
@@ -156,6 +173,7 @@ const AuthForm = () => {
               </button>
             </div>
           </div>
+
           <div className="orl-captcha-box">
             <div className="orl-captcha-left">
               <input type="checkbox" id="orl-recaptcha-chk" required />
@@ -166,6 +184,7 @@ const AuthForm = () => {
               <span>reCAPTCHA</span>
             </div>
           </div>
+
           <div className="orl-form-footer">
             <div className="orl-footer-left">
               <div className="orl-remember-me">

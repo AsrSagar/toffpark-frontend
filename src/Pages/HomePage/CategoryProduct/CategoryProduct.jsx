@@ -81,8 +81,6 @@ const CategoryProduct = ({ categorySlug = "112", categoryTitle = "Kids Collectio
 
     if (!loading && products.length === 0) return null;
 
-    console.log("Products:", products);
-
     return (
         <aside className="section category-products">
             <div className="container">
