@@ -16,11 +16,119 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { pushDataLayer } from "../../utils/gtm";
 
-
 const getSafeImage = (src) => {
-    return typeof src === "string" && src.trim() !== ""
-        ? src
-        : undefined;
+    return typeof src === "string" && src.trim() !== "" ? src : undefined;
+};
+
+// Skeleton Placeholder Component matching exact theme layout structure
+const ProductDetailsSkeleton = () => {
+    return (
+        <div className="product-single-page skeleton-wrapper" style={{ width: "100%" }}>
+            {/* Breadcrumb Skeleton */}
+            <div id="custom-header">
+                <div className="custom-header-content">
+                    <div className="container">
+                        <div id="breadcrumb">
+                            <div className="breadcrumbs">
+                                <div style={{ width: "220px", height: "16px", backgroundColor: "#e2e8f0", borderRadius: "4px" }}></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div id="content" className="site-content global-layout-right-sidebar single-product-layout">
+                <div className="container">
+                    <div className="inner-wrapper">
+                        <div id="primary" className="content-area">
+                            <main id="main" className="site-main">
+                                <div className="product-single">
+                                    <div className="inner-wrapper">
+                                        
+                                        {/* LEFT COLUMN: Gallery Skeleton */}
+                                        <div className="col-grid-6">
+                                            <div className="single-thumb-detail">
+                                                {/* Main Image Box */}
+                                                <div 
+                                                    style={{ 
+                                                        width: "100%", 
+                                                        aspectRatio: "1 / 1", 
+                                                        backgroundColor: "#e2e8f0", 
+                                                        borderRadius: "8px", 
+                                                        marginBottom: "15px"
+                                                    }} 
+                                                />
+
+                                                {/* 5 Thumbnails Row */}
+                                                <div style={{ display: "flex", gap: "10px", width: "100%" }}>
+                                                    {[...Array(5)].map((_, i) => (
+                                                        <div 
+                                                            key={i} 
+                                                            style={{ 
+                                                                flex: "1", 
+                                                                aspectRatio: "1 / 1", 
+                                                                backgroundColor: "#e2e8f0", 
+                                                                borderRadius: "6px"
+                                                            }} 
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* RIGHT COLUMN: Details Skeleton */}
+                                        <div className="col-grid-6">
+                                            <div className="summary entry-summary" style={{ paddingLeft: "10px" }}>
+                                                {/* Title */}
+                                                <div style={{ width: "85%", height: "28px", backgroundColor: "#e2e8f0", marginBottom: "15px", borderRadius: "4px" }}></div>
+                                                
+                                                {/* Price & Save Tag */}
+                                                <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "20px" }}>
+                                                    <div style={{ width: "90px", height: "24px", backgroundColor: "#e2e8f0", borderRadius: "4px" }}></div>
+                                                    <div style={{ width: "70px", height: "20px", backgroundColor: "#e2e8f0", borderRadius: "4px" }}></div>
+                                                    <div style={{ width: "80px", height: "22px", backgroundColor: "#e2e8f0", borderRadius: "12px" }}></div>
+                                                </div>
+
+                                                {/* Select Size Label */}
+                                                <div style={{ width: "100px", height: "16px", backgroundColor: "#e2e8f0", marginBottom: "10px", borderRadius: "3px" }}></div>
+                                                
+                                                {/* Size Boxes */}
+                                                <div style={{ display: "flex", gap: "8px", marginBottom: "25px" }}>
+                                                    {[...Array(5)].map((_, i) => (
+                                                        <div key={i} style={{ width: "42px", height: "36px", backgroundColor: "#e2e8f0", borderRadius: "4px" }}></div>
+                                                    ))}
+                                                </div>
+
+                                                {/* Quantity Selector + Add To Cart Row */}
+                                                <div style={{ display: "flex", gap: "15px", marginBottom: "15px" }}>
+                                                    <div style={{ width: "100px", height: "45px", backgroundColor: "#e2e8f0", borderRadius: "4px" }}></div>
+                                                    <div style={{ flex: "1", height: "45px", backgroundColor: "#e2e8f0", borderRadius: "25px" }}></div>
+                                                </div>
+
+                                                {/* Buy Now Button */}
+                                                <div style={{ width: "100%", height: "45px", backgroundColor: "#e2e8f0", borderRadius: "25px", marginBottom: "25px" }}></div>
+
+                                                {/* Policy Info Box */}
+                                                <div style={{ width: "100%", height: "70px", backgroundColor: "#e2e8f0", borderRadius: "8px", marginBottom: "20px" }}></div>
+
+                                                {/* SKU & Meta */}
+                                                <div style={{ width: "120px", height: "14px", backgroundColor: "#e2e8f0", marginBottom: "12px", borderRadius: "3px" }}></div>
+                                                <div style={{ width: "100%", height: "12px", backgroundColor: "#e2e8f0", marginBottom: "6px", borderRadius: "3px" }}></div>
+                                                <div style={{ width: "90%", height: "12px", backgroundColor: "#e2e8f0", marginBottom: "6px", borderRadius: "3px" }}></div>
+                                                <div style={{ width: "70%", height: "12px", backgroundColor: "#e2e8f0", borderRadius: "3px" }}></div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </main>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 const ProductDetailsPage = () => {
@@ -42,7 +150,6 @@ const ProductDetailsPage = () => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
     const mainImageRef = useRef(null); 
-    const [variationLoading, setVariationLoading] = useState(false);
     const [isFlying, setIsFlying] = useState(false);
     const [flyCoords, setFlyCoords] = useState({ startX: 0, startY: 0, endX: 0, endY: 0 });
     const API_URL = config.API_URL;
@@ -83,14 +190,11 @@ const ProductDetailsPage = () => {
         }
     };
 
-    // Handle Add to Cart with Animation
     const handleAddWithAnimation = async (e) => {
         e.preventDefault();
         
         const cartIcon = document.getElementById('cart-icon');
         const productImage = mainImageRef.current;
-
-        console.log("Adding to cart:", cartIcon);
 
         if (product.type === "variable" && !selectedVariation) {
             alert("Please select a size");
@@ -138,6 +242,7 @@ const ProductDetailsPage = () => {
         if (!permalink) return "";
         return permalink.split("/").filter(Boolean).pop();
     };
+
     const goToProduct = (permalink) => {
         const slug = getSlugFromPermalink(permalink);
 
@@ -158,7 +263,7 @@ const ProductDetailsPage = () => {
     useEffect(() => {
         let isMounted = true;
 
-        const fetchProduct = async () => {
+        const fetchProductData = async () => {
             try {
                 setLoading(true);
 
@@ -181,8 +286,15 @@ const ProductDetailsPage = () => {
                 setProduct(p);
                 setActiveImage(getSafeImage(p.images?.[0]?.src) || "");
 
+                if (p.type === "variable") {
+                    const variationRes = await wcApiV3.get(`/products/${p.id}/variations`);
+                    if (isMounted) {
+                        setVariations(variationRes.data);
+                    }
+                }
+
             } catch (err) {
-                console.error("Product fetch error:", err);
+                console.error("Product details or variations fetch error:", err);
             } finally {
                 if (isMounted) {
                     setLoading(false);
@@ -190,57 +302,12 @@ const ProductDetailsPage = () => {
             }
         };
 
-        fetchProduct();
+        fetchProductData();
 
         return () => {
             isMounted = false;
         };
     }, [slug]);
-
-
-    useEffect(() => {
-        if (!product || product.type !== "variable") return;
-
-        let cancelled = false;
-
-        const fetchVariations = async () => {
-            try {
-                setVariationLoading(true);
-
-                const variationRes = await wcApiV3.get(
-                    `/products/${product.id}/variations`
-                );
-
-                if (!cancelled) {
-                    setVariations(variationRes.data);
-                }
-            } catch (err) {
-                console.error("Variation fetch error:", err);
-            } finally {
-                if (!cancelled) {
-                    setVariationLoading(false);
-                }
-            }
-        };
-
-        let idleId;
-
-        if ("requestIdleCallback" in window) {
-            idleId = window.requestIdleCallback(fetchVariations);
-        } else {
-            idleId = setTimeout(fetchVariations, 500);
-        }
-
-        return () => {
-            cancelled = true;
-
-            if ("cancelIdleCallback" in window) {
-                window.cancelIdleCallback(idleId);
-            } else {
-                clearTimeout(idleId);
-            }
-        };
-    }, [product]);
 
     useEffect(() => {
         if (!product?.id) return; 
@@ -280,22 +347,10 @@ const ProductDetailsPage = () => {
             }
         };
 
-        let idleId;
-
-        if ("requestIdleCallback" in window) {
-            idleId = window.requestIdleCallback(fetchRelatedProducts);
-        } else {
-            idleId = setTimeout(fetchRelatedProducts, 1500);
-        }
+        fetchRelatedProducts();
 
         return () => {
             cancelled = true;
-
-            if ("cancelIdleCallback" in window) {
-                window.cancelIdleCallback(idleId);
-            } else {
-                clearTimeout(idleId);
-            }
         };
 
     }, [product]);
@@ -335,9 +390,6 @@ const ProductDetailsPage = () => {
             const itemsToAdd = [];
             const dataLayerItems = [];
 
-            // ---------------------------
-            // MAIN PRODUCT
-            // ---------------------------
             const mainPrice = parseFloat(
                 mainProduct.price || product.price || 0
             );
@@ -363,9 +415,6 @@ const ProductDetailsPage = () => {
                 quantity: quantity,
             });
 
-            // ---------------------------
-            // FBT PRODUCTS
-            // ---------------------------
             for (const p of fbtProducts) {
                 if (!fbtSelected[p.id]) continue;
 
@@ -433,7 +482,7 @@ const ProductDetailsPage = () => {
                         item_variant: selectedSize,
                         price,
                         quantity: 1,
-                        variation_id: matchedVariation.id, // 🔥 useful for WooCommerce tracking
+                        variation_id: matchedVariation.id,
                     });
                 } catch (err) {
                     console.error("FBT item error:", err);
@@ -441,9 +490,6 @@ const ProductDetailsPage = () => {
                 }
             }
 
-            // ---------------------------
-            // ADD TO CART ACTION
-            // ---------------------------
             for (const item of itemsToAdd) {
                 if (item.variation) {
                     await addToCart(
@@ -456,18 +502,12 @@ const ProductDetailsPage = () => {
                 }
             }
 
-            // ---------------------------
-            // TOTAL VALUE (SAFE)
-            // ---------------------------
             const totalValue = dataLayerItems.reduce(
                 (sum, item) =>
                     sum + (item.price || 0) * (item.quantity || 0),
                 0
             );
 
-            // ---------------------------
-            // GA4 EVENT
-            // ---------------------------
             window.dataLayer = window.dataLayer || [];
 
             window.dataLayer.push({
@@ -483,7 +523,6 @@ const ProductDetailsPage = () => {
                 },
             });
 
-            console.log("GA4 add_to_cart fired", dataLayerItems);
         } catch (error) {
             console.error("Add to cart error:", error);
             alert("Something went wrong while adding items to cart.");
@@ -493,9 +532,9 @@ const ProductDetailsPage = () => {
     };
     
     const sizeAttribute = product?.attributes?.find(
-    attr =>
-        attr.slug === "pa_size" ||
-        attr?.name?.toLowerCase() === "size"
+        attr =>
+            attr.slug === "pa_size" ||
+            attr?.name?.toLowerCase() === "size"
     );
 
     const currentPrice = parseFloat(product?.price || 0);
@@ -526,7 +565,6 @@ const ProductDetailsPage = () => {
         return txt.value;
     };
 
-    // Category filtering rules parsing
     const productCategories = product?.categories?.map(c => c.slug) || [];
     let ribbonText = ""; 
     if (productCategories.includes("best-selling")) {
@@ -537,13 +575,12 @@ const ProductDetailsPage = () => {
         ribbonText = "New Arrival";
     }
 
+    if (loading || !product) {
+        return <ProductDetailsSkeleton />;
+    }
+
     return (
         <>
-            {loading || !product ? (
-                <div className="full-page-loader">
-                    <img src="/images/Logo-loading-main1.gif" alt="loader" style={{ width: "200px" }} />
-                </div>
-            ) : (
             <div className="product-single-page">
                 <div id="custom-header">
                     <div className="custom-header-content">
@@ -637,12 +674,12 @@ const ProductDetailsPage = () => {
                                                                         src={getSafeImage(img?.src)}
                                                                         alt="thumb"
                                                                         style={{
-                                                                            width: "100px",
-                                                                            height: "100px",
+                                                                            width: "100%",
+                                                                            aspectRatio: "1/1",
                                                                             objectFit: "cover",
                                                                             margin: "5px auto",
                                                                             borderRadius: "4px",
-                                                                            border: "1px solid #eee",
+                                                                            border: activeIndex === index ? "1px solid #333" : "1px solid #eee",
                                                                             opacity: activeIndex === index ? 1 : 0.6,
                                                                             cursor: "pointer",
                                                                             transition: "0.3s"
@@ -704,24 +741,22 @@ const ProductDetailsPage = () => {
                                                     {sizeAttribute && (
                                                         <div className="quick-filter filter-by-size">
                                                             <div className="filter-size-container">
-                                                                {(sizeAttribute?.options || []).map((size) => {
-                                                                    const available = variationLoading
-                                                                        ? true
-                                                                        : isSizeAvailable(size);
+                                                                {sizeAttribute.options.map((size) => {
+                                                                    const available = isSizeAvailable(size);
 
                                                                     return (
                                                                         <button
                                                                             type="button"
                                                                             key={size}
-                                                                            disabled={!variationLoading && !available}
+                                                                            disabled={!available}
                                                                             className={`filter-size-box
                                                                                 ${selectedSize === size ? "active" : ""}
-                                                                                ${!variationLoading && !available ? "disabled" : ""}`}
+                                                                                ${!available ? "disabled" : ""}`}
                                                                             onClick={() => available && handleSizeSelect(size)}
                                                                         >
                                                                             {size}
 
-                                                                            {!variationLoading && !available && (
+                                                                            {!available && (
                                                                                 <span className="size-cross">✕</span>
                                                                             )}
                                                                         </button>
@@ -954,7 +989,7 @@ const ProductDetailsPage = () => {
                     </div>
                 </div>
             </div>
-            )}
+
             <AnimatePresence>
                 {isFlying && (
                     <motion.img

@@ -11,7 +11,6 @@ const ThankYouPopup = ({ show, orderId, onClose }) => {
     const handleContinueShopping = () => {
         onClose();           
         navigate("/shop");
-        console.log("Continue Shopping");
     };
 
     return (

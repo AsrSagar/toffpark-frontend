@@ -38,16 +38,16 @@
   overflow: hidden;
   white-space: nowrap;
   position: relative;
-  display: flex;
   align-items: center;
 }
 
 .notic-item p {
-  display: inline-block;
   margin: 0;
   /* Animation settings */
-  animation: marquee-reverse 15s linear infinite;
+  /* animation: marquee-reverse 15s linear infinite; */
   color: #000;
+  text-align: center;
+  display: block;
 }
 
 /* Left to Right Animation Logic */

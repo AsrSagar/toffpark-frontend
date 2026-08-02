@@ -60,7 +60,7 @@ const SocialContactWidget = () => {
         ) : (
           <div style={{ position: 'relative' }}>
             <img 
-              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=100&auto=format&fit=crop" // এখানে আপনার এজেন্টের ইমেজ পাথ বসাবেন
+              src="https://backend.orlazz.com/wp-content/uploads/2026/08/Chat-Image-3.jpeg" // এখানে আপনার এজেন্টের ইমেজ পাথ বসাবেন
               alt="Support" 
               className="agent-img"
             />

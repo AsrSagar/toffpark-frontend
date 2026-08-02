@@ -1,7 +1,7 @@
 /* মেইন কন্টেইনার ফিক্সড পজিশন */
 .social-widget-container {
   position: fixed;
-  bottom: 100px;
+  bottom: 40px;
   right: 24px;
   z-index: 9999;
   display: flex;

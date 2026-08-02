@@ -73,7 +73,6 @@ useEffect(() => {
                 return res.json();
             })
             .then(orderData => {
-                console.log("Orders Data Received in Fetch:", orderData); // 🔍 ডেব্যাগিং লগ
                 setOrders(Array.isArray(orderData) ? orderData : []);
                 return user; // পরবর্তী চেইনের জন্য ইউজার অবজেক্ট পাস করলাম
             });
@@ -155,8 +154,6 @@ useEffect(() => {
     if (loading) {
         return <div className="ow-dashboard-loading">Loading account data...</div>;
     }
-
-    console.log("Orders Data:", orders);
 
     return (
         <aside className="section no-padding static-page-section">

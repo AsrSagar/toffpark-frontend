@@ -23,7 +23,6 @@ const BlogSinglePage = () => {
           setPost(null);
         }
       } catch (error) {
-        console.log("API Error:", error);
         setPost(null);
       }
 

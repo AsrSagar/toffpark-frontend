@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useThemeOptions } from "../../context/ThemeOptionsContext";
 import NavBar from "./NavBar";
-import axios from "axios";
 import config from "../../config";
 import "./Topbar.css";
 
@@ -12,10 +11,30 @@ const Header = () => {
 
   // Fetch menu items from API
   useEffect(() => {
-    axios
-      .get(`${config.API_URL}/reactpress/v1/menu/main-menu`)
-      .then((res) => setMenuItems(res.data))
-      .catch((err) => console.error(err));
+    const controller = new AbortController();
+
+    const loadMenu = async () => {
+      try {
+        const res = await fetch(
+          `${config.API_URL}/reactpress/v1/menu/main-menu`,
+          {
+            signal: controller.signal,
+            cache: "force-cache",
+          }
+        );
+
+        const data = await res.json();
+        setMenuItems(data);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error(err);
+        }
+      }
+    };
+
+    loadMenu();
+
+    return () => controller.abort();
   }, []);
 
   // Close menu if clicking outside
@@ -33,9 +52,7 @@ const Header = () => {
     }
     return () => document.removeEventListener("click", handleClickOutside);
   }, [mobileMenu]);
-
-  console.log("Theme Options:", options);
-
+  
   return (
     <header className="site-header">
       <div className="top-header">

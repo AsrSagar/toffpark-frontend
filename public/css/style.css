@@ -8233,6 +8233,15 @@ form.checkout {
 .sort-by ul li button:last-child {
 	border-bottom: none;
 }
+
+.popup-checkout input,
+.popup-checkout textarea,
+.popup-checkout select,
+.checkout input,
+.checkout textarea,
+.checkout select {
+    font-size: 16px !important;
+}
 /* ================= RESPONSIVE ================= */
 @media (max-width: 600px) {
     .popup-custom-coupon {
