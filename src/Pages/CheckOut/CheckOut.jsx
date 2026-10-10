@@ -494,11 +494,13 @@ const CheckoutPage = () => {
           customTrackingBilling
         );
 
-        // 📩 Send SMS on COD Order Placed
-        const smsMsg = `Your order #${response.data.id} has been received by Orlazz. Thank you!`;
+        // ১. SMS পাঠানোর স্থানে আপডেট
+        const customOrderId = `OL${response.data.id}`;
+        const smsMsg = `Your order #${customOrderId} has been received by Orlazz. Thank you!`;
         sendSMS(billing.phone, smsMsg);
 
-        setOrderId(response.data.id);
+        // ২. State-এ কাস্টম অর্ডার আইডি সেট করুন
+        setOrderId(customOrderId); // এটি থ্যাঙ্ক ইউ পেজে #OL22222 দেখাবে
         clearCart();
         setShowThankYou(true);
       }

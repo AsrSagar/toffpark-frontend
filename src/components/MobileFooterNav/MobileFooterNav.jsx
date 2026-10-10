@@ -78,7 +78,13 @@ const MobileFooterNav = () => {
         <div className="mobile-search-box">
           <div class="search-header">
             <p><strong>Search Products</strong></p>
-            <span class="close-btn-mobile" onclick="toggleSearchModal()"> x</span>
+            <span 
+              className="close-btn-mobile" 
+              onClick={() => setShowSearch(false)}
+              style={{ cursor: 'pointer' }}
+            > 
+              ×
+            </span>
           </div>
           <input
             type="text"

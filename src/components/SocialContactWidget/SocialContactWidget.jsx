@@ -19,7 +19,6 @@ const SocialContactWidget = () => {
       
       {/* Social Options Panel */}
       <div className={`social-options ${isOpen ? 'open' : ''}`}>
-        {/* Messenger */}
         <a 
           href="https://www.facebook.com/orlazzofficial/" 
           target="_blank" 
