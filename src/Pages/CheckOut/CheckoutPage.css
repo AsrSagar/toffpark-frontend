@@ -720,6 +720,19 @@
   font-weight: 500;
 }
 
+
+/* Mobile responsive CSS বা Global CSS ফাইলে যোগ করুন */
+@media screen and (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 @media (max-width: 768px) {
   .product-billing-fields_field-wrapper {
     margin-bottom: 25px;

@@ -14,6 +14,7 @@ const NavBar = () => {
   const { options } = useThemeOptions();
 
   const [menuItems, setMenuItems] = useState([]);
+  const [specialOffers, setSpecialOffers] = useState([]); // Special Offers State
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
@@ -23,10 +24,9 @@ const NavBar = () => {
   const desktopSearchRef = useRef(null);
   const mobileSearchRef = useRef(null);
   const [mobileMenu, setMobileMenu] = useState(false);
-  const [activeMenu, setActiveMenu] = useState(null); // top-level open
-  const [activeSubMenu, setActiveSubMenu] = useState(null); // nested submenu open
+  const [activeMenu, setActiveMenu] = useState(null);
+  const [activeSubMenu, setActiveSubMenu] = useState(null);
 
-  // Desktop check state
   const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
 
   const toggleMenu = () => setMobileMenu(!mobileMenu);
@@ -40,24 +40,23 @@ const NavBar = () => {
     }
   };
 
-  // Logo button click scroll to top logic
   const handleLogoClick = () => {
-    closeMenu(); // Mobile-er jonno menu open thakle ta auto close hobe
+    closeMenu();
     window.scrollTo({
       top: 0,
-      behavior: "smooth", // Instant top-e jete smooth bad diye "auto" likhte paren
+      behavior: "smooth",
     });
   };
 
-  // Resize Listener to update isDesktop state
   useEffect(() => {
     const handleResize = () => {
       setIsDesktop(window.innerWidth > 768);
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Main Menu Fetching
   useEffect(() => {
     axios
       .get(`${API_URL}/reactpress/v1/menu/main-menu`)
@@ -65,10 +64,37 @@ const NavBar = () => {
       .catch((err) => console.error(err));
   }, [API_URL]);
 
+  // Special Offers / Product Categories Fetching
+  useEffect(() => {
+    const allowedSlugs = ["sale", "mega-deal", "top-selling", "new-arrivals"];
+
+    // প্রতিটি স্লাগের জন্য আলাদা API Request তৈরি
+    const categoryRequests = allowedSlugs.map((slug) =>
+      axios.get(`${API_URL}/wc/v3/products/categories`, {
+        params: {
+          slug: slug,
+          hide_empty: false, // ক্যাটাগরিতে প্রোডাক্ট না থাকলেও যেন ডাটা আসে (টেস্ট করার জন্য false রাখুন)
+        },
+      })
+    );
+
+    Promise.all(categoryRequests)
+      .then((responses) => {
+        // পাওয়া রেসপন্সগুলো থেকে ক্যাটাগরি এক্সট্র্যাক্ট করা
+        const categories = responses
+          .map((res) => res.data[0]) // প্রতিটি API కాల్ থেকে প্রথম ক্যাটাগরি নেওয়া
+          .filter(Boolean); // undefined / null বাদ দেওয়া
+
+        setSpecialOffers(categories);
+      })
+      .catch((err) =>
+        console.error("Error fetching special categories:", err)
+      );
+  }, [API_URL]);
+
   /* =============================
         SEARCH PRODUCTS
   ============================= */
-
   useEffect(() => {
     if (!searchTerm) {
       setSearchResults([]);
@@ -98,7 +124,6 @@ const NavBar = () => {
   /* =============================
         OUTSIDE CLICK CLOSE
   ============================= */
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -126,7 +151,7 @@ const NavBar = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 100) { // ১০০ পিক্সেল স্ক্রল করার পর স্টিকি হবে
+      if (window.scrollY > 100) {
         setIsSticky(true);
       } else {
         setIsSticky(false);
@@ -140,7 +165,7 @@ const NavBar = () => {
   }, []);
 
   const mapWpUrlToReact = (url) => {
-    return url.replace(SITE_URL, "/");
+    return url ? url.replace(SITE_URL, "/") : "/";
   };
 
   const renderSubMenu = (items) => {
@@ -206,28 +231,53 @@ const NavBar = () => {
       <ul className={`sub-menu ${level === "top" ? "top-level" : ""}`}>
         {items.map((item) => {
           const hasChildren = item.children && item.children.length > 0;
-          const isActive = level === "top" ? activeMenu === item.id : activeSubMenu === item.id;
+          const isActive =
+            level === "top" ? activeMenu === item.id : activeSubMenu === item.id;
 
           return (
-            <li key={item.id} className={`menu-item ${hasChildren ? "menu-item-has-children" : ""}`}>
+            <li
+              key={item.id}
+              className={`menu-item ${
+                hasChildren ? "menu-item-has-children" : ""
+              }`}
+            >
               {hasChildren ? (
                 <div
-                  className="menu-parent-title"
-                  onClick={() => toggleSubMenu(item.id, level)}
+                  className="menu-parent-title-wrapper"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    width: "100%",
+                  }}
                 >
-                  {item.title}
-                  <span className="submenu-icon">{isActive ? "-" : "+"}</span>
+                  <Link
+                    to={mapWpUrlToReact(item.url)}
+                    onClick={closeMenu}
+                    style={{ flexGrow: 1 }}
+                  >
+                    {item.title}
+                  </Link>
+                  <span
+                    className="submenu-icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSubMenu(item.id, level);
+                    }}
+                    style={{ padding: "8px 12px", cursor: "pointer" }}
+                  >
+                    {isActive ? "-" : "+"}
+                  </span>
                 </div>
               ) : (
-                <Link
-                  to={mapWpUrlToReact(item.url)}
-                  onClick={closeMenu}
-                >
+                <Link to={mapWpUrlToReact(item.url)} onClick={closeMenu}>
                   {item.title}
                 </Link>
               )}
 
-              {hasChildren && isActive && renderMobileSubMenu(item.children, "sub")}
+              {hasChildren &&
+                isActive &&
+                renderMobileSubMenu(item.children, "sub")}
             </li>
           );
         })}
@@ -242,30 +292,242 @@ const NavBar = () => {
 
   const toggleMiniCart = (e) => {
     e.preventDefault();
-    setCartOpen(true); 
+    setCartOpen(true);
+  };
+
+  const getCategoryIcon = (slug) => {
+    if (slug.includes("sale") || slug.includes("offer")) return "fa-percent green-icon";
+    if (slug.includes("deal") || slug.includes("mega")) return "fa-star green-icon";
+    if (slug.includes("top") || slug.includes("best")) return "fa-fire default-icon";
+    return "fa-tag blue-icon";
   };
 
   return (
     <>
-    <header 
-      id="masthead" 
-      className={`site-header ${isSticky ? "sticky-enabled" : ""}`}
+      <header
+        id="masthead"
+        className={`site-header ${isSticky ? "sticky-enabled" : ""}`}
       >
-      <div className="container">
-        
-        <div className="mobile-trigger-wrapper pull-left">
-          <button
-            id="mobile-trigger"
-            onClick={toggleMenu}
-            className={`toggle-menu ${mobileMenu ? "open" : ""}`}
+        <div className="container">
+          <div className="mobile-trigger-wrapper pull-left">
+            <button
+              id="mobile-trigger"
+              onClick={toggleMenu}
+              className={`toggle-menu ${mobileMenu ? "open" : ""}`}
+            >
+              <i className={`fa ${mobileMenu ? "fa-times" : "fa-bars"}`}></i>
+            </button>
+          </div>
+          <div className="site-branding pull-left">
+            <div id="site-identity">
+              <h1 className="site-title">
+                <Link to="/" rel="home" onClick={handleLogoClick}>
+                  <img
+                    src={options.site_logo_dark || "/images/logo-black.png"}
+                    alt="logo"
+                    className="site-logo"
+                  />
+                </Link>
+              </h1>
+            </div>
+          </div>
+
+          <HeaderMiniCart />
+
+          <div className="searchForm pull-right">
+            <div className="product-search-wrapper" ref={desktopSearchRef}>
+              <input
+                type="text"
+                placeholder="Search Products"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <button>
+                <i className="fas fa-search"></i>
+              </button>
+              {searchTerm && (
+                <div className="search-dropdown">
+                  {searchLoading && <p>Searching...</p>}
+
+                  {!searchLoading && searchResults.length === 0 && (
+                    <p>No products found</p>
+                  )}
+
+                  {searchResults.map((product) => {
+                    const regularPrice = parseInt(
+                      product.custom_price_data?.regular_price || product.regular_price
+                    );
+                    const salePrice = parseInt(
+                      product.custom_price_data?.sale_price || product.sale_price
+                    );
+                    const isSale = salePrice < regularPrice;
+                    return (
+                      <Link
+                        key={product.id}
+                        to={`/product/${product.slug}`}
+                        className="search-item"
+                        onClick={() => {
+                          setSearchTerm("");
+                          setSearchResults([]);
+                        }}
+                      >
+                        <img
+                          src={product.images[0]?.src}
+                          alt={product.name}
+                          width="40"
+                        />
+
+                        <div className="search-product-info">
+                          <p>{product.name}</p>
+                          <div className="product-price-container">
+                            {isSale && (
+                              <span className="sale-price">
+                                ৳{salePrice.toFixed(0)}
+                              </span>
+                            )}
+                            {isSale && (
+                              <del className="regular-price">
+                                ৳{regularPrice.toFixed(0)}
+                              </del>
+                            )}
+                            {isSale && (
+                              <span className="save-amount">
+                                {" "}
+                                Save ৳{(regularPrice - salePrice).toFixed(0)}
+                              </span>
+                            )}
+                            {!isSale && (
+                              <span className="regular-price sale-price">
+                                ৳{regularPrice.toFixed(0)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div
+            className="mobile-product-search pull-right"
+            ref={mobileSearchRef}
           >
-            <i className={`fa ${mobileMenu ? "fa-times" : "fa-bars"}`}></i>
-          </button>
+            <button onClick={() => setShowSearch(!showSearch)}>
+              <i className="fas fa-search"></i>
+            </button>
+
+            {showSearch && (
+              <div className="mobile-search-box">
+                <input
+                  type="text"
+                  placeholder="Search Products"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+
+                {searchTerm && (
+                  <div className="search-dropdown">
+                    {searchLoading && <p>Searching...</p>}
+
+                    {!searchLoading && searchResults.length === 0 && (
+                      <p>No products found</p>
+                    )}
+
+                    {searchResults.map((product) => {
+                      const regularPrice = parseInt(
+                        product.custom_price_data?.regular_price || product.regular_price
+                      );
+                      const salePrice = parseInt(
+                        product.custom_price_data?.sale_price || product.sale_price
+                      );
+                      const isSale = salePrice < regularPrice;
+
+                      return (
+                        <Link
+                          key={product.id}
+                          to={`/product/${product.slug}`}
+                          className="search-item"
+                          onClick={() => {
+                            setSearchTerm("");
+                            setSearchResults([]);
+                            setShowSearch(false);
+                          }}
+                        >
+                          <img
+                            src={product.images[0]?.src}
+                            alt={product.name}
+                            width="40"
+                          />
+                          <div className="search-product-info">
+                            <p>{product.name}</p>
+                            <div className="product-price-container">
+                              {isSale && (
+                                <span className="sale-price">
+                                  ৳{salePrice.toFixed(0)}
+                                </span>
+                              )}
+                              {isSale && (
+                                <del className="regular-price">
+                                  ৳{regularPrice.toFixed(0)}
+                                </del>
+                              )}
+                              {isSale && (
+                                <span className="save-amount">
+                                  {" "}
+                                  Save ৳
+                                  {(regularPrice - salePrice).toFixed(0)}
+                                </span>
+                              )}
+                              {!isSale && (
+                                <span className="regular-price sale-price">
+                                  ৳{regularPrice.toFixed(0)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <nav className="main-navigation text-center">
+            <ul>
+              {menuItems.map((item) => (
+                <li
+                  key={item.id}
+                  className={`menu-item menu-item-${
+                    item.id
+                  } ${item.classes?.join(" ")} ${
+                    item.children?.length ? "menu-item-has-children" : ""
+                  }`}
+                >
+                  <Link to={mapWpUrlToReact(item.url)}>{item.title}</Link>
+
+                  {item.mega && item.children
+                    ? renderMegaMenu(item.children)
+                    : renderSubMenu(item.children)}
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
+      </header>
+
+      {mobileMenu && (
+        <div className="mobile-overlay" onClick={closeMenu}></div>
+      )}
+
+      <div className={`mobile-menu ${mobileMenu ? "open" : ""}`}>
         <div className="site-branding pull-left">
           <div id="site-identity">
             <h1 className="site-title">
-              {/* Desktop Logo Link Click Logic Added */}
               <Link to="/" rel="home" onClick={handleLogoClick}>
                 <img
                   src={options.site_logo_dark || "/images/logo-black.png"}
@@ -276,216 +538,57 @@ const NavBar = () => {
             </h1>
           </div>
         </div>
-        
-        <HeaderMiniCart />
-        <div className="searchForm pull-right">
-          <div className="product-search-wrapper" ref={desktopSearchRef}>
-            <input
-              type="text"
-              placeholder="Search Products"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <button>
-              <i className="fas fa-search"></i>
-            </button>
-            {searchTerm && (
-              <div className="search-dropdown">
-
-                {searchLoading && <p>Searching...</p>}
-
-                {!searchLoading && searchResults.length === 0 && (
-                  <p>No products found</p>
-                )}
-
-                {searchResults.map((product) => {
-                  const regularPrice = parseInt(product.custom_price_data.regular_price);
-                  const salePrice = parseInt(product.custom_price_data.sale_price);
-                  const isSale = salePrice < regularPrice;
-                  return(
-                    <Link
-                      key={product.id}
-                      to={`/product/${product.slug}`}
-                      className="search-item"
-                      onClick={() => {
-                        setSearchTerm("");
-                        setSearchResults([]);
-                      }}
-                    >
-                      <img
-                        src={product.images[0]?.src}
-                        alt={product.name}
-                        width="40"
-                      />
-
-                      <div className="search-product-info">
-                        <p>{product.name}</p>
-                        <div className="product-price-container">
-                          {isSale && <span className="sale-price">৳{salePrice.toFixed(0)}</span>}
-                          {isSale && <del className="regular-price">৳{regularPrice.toFixed(0)}</del>}
-                          {isSale && <span className="save-amount"> Save ৳{(regularPrice - salePrice).toFixed(0)}</span>}
-                          {!isSale && <span className="regular-price sale-price">৳{regularPrice.toFixed(0)}</span>}
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-        <div
-          className="mobile-product-search pull-right"
-          ref={mobileSearchRef}
-        >
-          <button onClick={() => setShowSearch(!showSearch)}>
-            <i className="fas fa-search"></i>
+        <div className="mobile-menu-header">
+          <button className="close-menu" onClick={closeMenu}>
+            ✕
           </button>
-
-          {showSearch && (
-            <div className="mobile-search-box">
-              <input
-                type="text"
-                placeholder="Search Products"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-
-              {searchTerm && (
-                <div className="search-dropdown">
-
-                  {searchLoading && <p>Searching...</p>}
-
-                  {!searchLoading && searchResults.length === 0 && (
-                    <p>No products found</p>
-                  )}
-
-                  {searchResults.map((product) => {
-                    const regularPrice = parseInt(product.custom_price_data.regular_price);
-                    const salePrice = parseInt(product.custom_price_data.sale_price);
-                    const isSale = salePrice < regularPrice;
-                
-                    return(
-                      <Link
-                        key={product.id}
-                        to={`/product/${product.slug}`}
-                        className="search-item"
-                        onClick={() => {
-                          setSearchTerm("");
-                          setSearchResults([]);
-                          setShowSearch(false);
-                        }}
-                      >
-                        <img
-                          src={product.images[0]?.src}
-                          alt={product.name}
-                          width="40"
-                        />
-                        <div className="search-product-info">
-                          <p>{product.name} sad</p>
-                          <div className="product-price-container">
-                            {isSale && <span className="sale-price">৳{(salePrice / 100).toFixed(0)}</span>}
-                            {isSale && <del className="regular-price">৳{(regularPrice / 100).toFixed(0)}</del>}
-                            {isSale && <span className="save-amount"> Save ৳{((regularPrice - salePrice) / 100).toFixed(0)}</span>}
-                            {!isSale && <span className="regular-price sale-price">৳{(regularPrice / 100).toFixed(0)}</span>}
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
         </div>
-        <nav className="main-navigation text-center">
-          <ul>
-            {menuItems.map((item) => (
-              <li
-                key={item.id}
-                className={`menu-item menu-item-${item.id} ${item.classes?.join(
-                  " "
-                )} ${
-                  item.children?.length ? "menu-item-has-children" : ""
-                }`}
-              >
-                <Link to={mapWpUrlToReact(item.url)}>
-                  {item.title}
-                </Link>
 
-                {item.mega && item.children
-                  ? renderMegaMenu(item.children)
-                  : renderSubMenu(item.children)}
-              </li>
-            ))}
+        {/* Dynamic Special Offers by Specific Slugs */}
+        <div className="mobile-drawer-menu">
+          <h3 className="mobile-title">Special Offers</h3>
+          <ul className="drawer-menu-list">
+            {specialOffers.length > 0 ? (
+              specialOffers.map((cat) => {
+                const iconClass = getCategoryIcon(cat.slug);
+                return (
+                  <li key={cat.id} className="drawer-menu-item">
+                    <Link
+                      to={`/product-category/${cat.slug}`}
+                      className="drawer-menu-link"
+                      onClick={closeMenu}
+                    >
+                      <span className={`drawer-icon ${iconClass.split(" ")[1]}`}>
+                        <i className={`fa-solid ${iconClass.split(" ")[0]}`}></i>
+                      </span>
+                      <span className="drawer-text">{cat.name}</span>
+                    </Link>
+                  </li>
+                );
+              })
+            ) : (
+              <p style={{ padding: "0 15px", color: "#888" }}>Loading offers...</p>
+            )}
           </ul>
-        </nav>
-      </div>
-    </header>
-    {mobileMenu && <div className="mobile-overlay" onClick={closeMenu}></div>}
-    <div className={`mobile-menu ${mobileMenu ? "open" : ""}`}>
-      <div className="site-branding pull-left">
-        <div id="site-identity">
-          <h1 className="site-title">
-            {/* Mobile Logo Link Click Logic Added */}
-            <Link to="/" rel="home" onClick={handleLogoClick}>
-              <img
-                src={options.site_logo_dark || "/images/logo-black.png"}
-                alt="logo"
-                className="site-logo"
-              />
-            </Link>
-          </h1>
         </div>
+
+        <h3 className="mobile-title">Categories</h3>
+        {renderMobileSubMenu(menuItems)}
       </div>
-      <div className="mobile-menu-header">
-        <button className="close-menu" onClick={closeMenu}>
-          ✕
-        </button>
-      </div>
-      <div className="mobile-drawer-menu">
-        <h3 className="mobile-title">Special Offers</h3>
-        <ul className="drawer-menu-list">
-          <li className="drawer-menu-item">
-            <Link to="/product-category/sale/" className="drawer-menu-link">
-              <span className="drawer-icon green-icon"><i class="fa-solid fa-percent"></i></span>
-              <span className="drawer-text">Up To 15% Sales</span>
-            </Link>
-          </li>
-          <li className="drawer-menu-item">
-            <Link to="/product-category/mega-deal/" className="drawer-menu-link">
-              <span className="drawer-icon green-icon"><i className="fa-solid fa-star"></i></span>
-              <span className="drawer-text">Mega Deal</span>
-            </Link>
-          </li>
-          <li className="drawer-menu-item">
-            <Link to="/product-category/top-selling/" className="drawer-menu-link">
-              <span className="drawer-icon default-icon"><i className="fa-solid fa-fire"></i></span>
-              <span className="drawer-text">Top Selling</span>
-            </Link>
-          </li>
-          <li className="drawer-menu-item">
-            <Link to="/product-category/new-arrivals/" className="drawer-menu-link active">
-              <span className="drawer-icon blue-icon"><i class="fa-solid fa-plane"></i></span>
-              <span className="drawer-text">New Arrivals</span>
-            </Link>
-          </li>
-        </ul>
-      </div>
-      <h3 className="mobile-title">Categories</h3>
-      {renderMobileSubMenu(menuItems)}
-    </div>
-    {isDesktop && (
-      <div className="floating-cart" onClick={toggleMiniCart} id="cart-icon">
-        <div className="cart-icon-box">
-          <span className="cart-icon">🛒</span> 
-          <span className="item-count">{cartItems.length} Items</span>
+
+      {isDesktop && (
+        <div
+          className="floating-cart"
+          onClick={toggleMiniCart}
+          id="cart-icon"
+        >
+          <div className="cart-icon-box">
+            <span className="cart-icon">🛒</span>
+            <span className="item-count">{cartItems.length} Items</span>
+          </div>
+          <div className="cart-price">৳{subtotal.toFixed(0)}</div>
         </div>
-        <div className="cart-price">
-          ৳{subtotal.toFixed(0)}
-        </div>
-      </div>
-    )}
+      )}
     </>
   );
 };
