@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import config from "../../config"; // আপনার Config ফাইলের পাথ ঠিক রাখুন
+import config from "../../config"; 
 
 import HeroSection from "./HeroSection/HeroSection";
 import AdsBanner from "./AdsBanner/AdsBanner";
@@ -8,6 +8,7 @@ import CustomerFeedback from "./CustomerFeedback/CustomerFeedback";
 import CategoryProduct from "./CategoryProduct/CategoryProduct";
 import SalesPopup from "../../components/SalesPopup/SalesPopup";
 import PopularCategory from "./PopularCategory/PopularCategory";
+import HomeContent from "./HomeContent/HomeContent";
 
 const Home = () => {
     const [sections, setSections] = useState([]);
@@ -16,7 +17,6 @@ const Home = () => {
     useEffect(() => {
         window.scrollTo(0, 0);
 
-        // WordPress API থেকে ড্র্যাগ অ্যান্ড ড্রপ লেআউট ডেটা আনা
         const fetchLayout = async () => {
             try {
                 const res = await fetch(`${config.API_URL}/custom/v1/home-layout`);
@@ -80,6 +80,7 @@ const Home = () => {
                         <div id="primary" className="content-area">
                             <main id="main" className="site-main">
                                 {sections.map((section, index) => renderSection(section, index))}
+                                <HomeContent />
                             </main>
                         </div>
                     </div>
