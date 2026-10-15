@@ -816,6 +816,16 @@ const ProductDetailsPage = () => {
                                                         )}
                                                     </form>
                                                 </div>
+                                                <div className="fbt-mobile">
+                                                    <FrequentlyBoughtTogether
+                                                        productId={product.id}
+                                                        onChange={(products, selected, selectedSize) => {
+                                                            setFbtProducts(products);
+                                                            setFbtSelected(selected);
+                                                            setFbtSelectedSize(selectedSize); 
+                                                        }}
+                                                    />
+                                                </div>
                                                 <div className="product-info-wrapper">
                                                     <div className="policy-accordion">
                                                         <div className="accordion-header">
@@ -845,16 +855,7 @@ const ProductDetailsPage = () => {
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div className="fbt-mobile">
-                                                    <FrequentlyBoughtTogether
-                                                        productId={product.id}
-                                                        onChange={(products, selected, selectedSize) => {
-                                                            setFbtProducts(products);
-                                                            setFbtSelected(selected);
-                                                            setFbtSelectedSize(selectedSize); 
-                                                        }}
-                                                    />
-                                                </div>
+                                                
                                             </div>
                                         </div>
                                     </div>

@@ -370,6 +370,7 @@ span.total-label {
     50% { transform: scale(1.3); }
 }
 
+
 /* Responsive */
 @media (max-width: 991px) {
     .flex-wrapper {
@@ -389,5 +390,11 @@ span.total-label {
     }
     .main-combo-video-section {
         padding: 0px 0px 30px 0px;
+    }
+    .combo-select {
+        width: 110px;
+    }
+    .combo-select select {
+        font-size: 12px !important;
     }
 }

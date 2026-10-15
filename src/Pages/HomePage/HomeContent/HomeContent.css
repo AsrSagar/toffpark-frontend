@@ -39,7 +39,9 @@
     color: #000;
     font-weight: 600;
 }
-
+.home-content-section {
+    margin-bottom: 80px;
+}
 /* Responsive */
 @media (max-width: 768px) {
     .category-content-section {
